@@ -39,8 +39,8 @@ services:
       - DB_PORT=5432
       - PORT=3003
     volumes:
-      - uploads_data:/app/uploads
-      - public_data:/app/public
+      - /data/akaydin/uploads:/app/uploads
+      - /data/akaydin/public:/app/public
     depends_on:
       postgres:
         condition: service_healthy
@@ -54,9 +54,6 @@ services:
     image: akaydin-frontend:latest
     container_name: akaydin-frontend
     restart: unless-stopped
-    volumes:
-      - uploads_data:/var/www/uploads:ro
-      - public_data:/var/www/public:ro
     depends_on:
       - backend
     networks:
@@ -71,8 +68,6 @@ services:
 
 volumes:
   pg_data:
-  uploads_data:
-  public_data:
 
 networks:
   akaydin_net:

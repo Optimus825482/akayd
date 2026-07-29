@@ -22,6 +22,13 @@ import compression from 'compression';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Kalıcı uploads klasörü — deploy'da silinmeyen bir konum
+const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, '../uploads');
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  console.log(`Uploads klasörü oluşturuldu: ${UPLOADS_DIR}`);
+}
+
 const app = express();
 const PORT = process.env.PORT || 3003;
 
@@ -83,7 +90,7 @@ app.use('/uploads', (req, res, next) => {
   // URL temizleme: çift slash'ları tek slash yap, /akaydin-tarim prefix'ini kaldır
   req.url = req.url.replace(/\/akaydin-tarim\//g, '/').replace(/\/+/g, '/');
   next();
-}, express.static(path.join(__dirname, '../uploads'), {
+}, express.static(UPLOADS_DIR, {
   maxAge: '7d',
   setHeaders: (res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -191,7 +198,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../uploads/'));
+    cb(null, UPLOADS_DIR);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
