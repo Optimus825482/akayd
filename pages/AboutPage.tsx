@@ -46,10 +46,10 @@ const AboutPage: React.FC<AboutPageProps> = ({ content, seoSettings }) => {
             <div className="container relative z-10">
                 <p className="text-accent-bg/60 text-xs font-semibold tracking-[0.2em] uppercase mb-4">Hakkımızda</p>
                 <h1 className="text-4xl md:text-6xl font-[family-name:var(--font-display)] font-bold text-white mb-4">
-                    {content.title || 'Toprağın Gücü, Teknolojinin Aklı'}
+                    {content.title || 'Akaydın Tarım'}
                 </h1>
                 <p className="text-lg text-white/60 max-w-2xl">
-                    {content.content?.slice(0, 120) || 'Akaydın Tarım — Hendek, Sakarya'}
+                    {content.content?.replace(/<[^>]*>/g, '').slice(0, 160) || 'Hendek, Sakarya\'da fındık üretimi ve tarımsal danışmanlık'}...
                 </p>
             </div>
         </section>

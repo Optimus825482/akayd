@@ -36,7 +36,7 @@ const AboutManagement: React.FC<AboutManagementProps> = ({
         setLoading(true);
         try {
             const formData = new FormData();
-            formData.append('title', aboutForm.title || '');
+            formData.append('title', aboutForm.title || 'Akaydın Tarım');
             formData.append('content', aboutForm.content || '');
             formData.append('mission', aboutForm.mission || '');
             formData.append('vision', aboutForm.vision || '');

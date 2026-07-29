@@ -619,15 +619,15 @@ app.put('/api/about', adminAuth, upload.array('images', 10), imageOptimizer, asy
     if (existing.rows.length > 0) {
       await db.query(
         'UPDATE about_page SET title = $1, content = $2, mission = $3, vision = $4, images = $5 WHERE id = $6',
-        [title || '', content || '', mission, vision, imagesJson, existing.rows[0].id]
+        [title || null, content || null, mission, vision, imagesJson, existing.rows[0].id]
       );
     } else {
       await db.query(
         'INSERT INTO about_page (title, content, mission, vision, images) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-        [title || '', content || '', mission, vision, imagesJson]
+        [title || null, content || null, mission, vision, imagesJson]
       );
     }
-    
+
     res.json({ 
       title: title || '', 
       content: content || '', 

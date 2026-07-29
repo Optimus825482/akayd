@@ -277,16 +277,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             addNotification={addNotification}
                         />
                     )}
-
                     {activeSection === 'contact-page' && (
                         <ContactPageManagement
                             contactContent={contactContent}
                             onUpdateContact={async (updatedContact) => {
                                 try {
-                                    // Contact API ile güncelle ve props'u da güncelle
                                     await updateContactContent(updatedContact);
                                     setContactContent(updatedContact);
-                                    // Tüm uygulamadaki veriyi yenile
                                     await refreshData();
                                     addNotification('success', 'Başarılı!', 'İletişim bilgileri güncellendi.');
                                 } catch (error) {
