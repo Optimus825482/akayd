@@ -1,3 +1,6 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 /* Mobile Header Animations */
 @keyframes fadeInRight {
     from {
@@ -157,9 +160,10 @@ h6 {
     background: #a8a8a8;
 }
 
-/* Smooth transitions */
-* {
-    transition: all 0.2s ease;
+/* Smooth transitions - only for interactive elements */
+a, button, .transition-colors, .transition-transform, .transition-all, .transition-opacity {
+    transition-duration: 0.2s;
+    transition-timing-function: ease;
 }
 
 /* Focus states for accessibility */

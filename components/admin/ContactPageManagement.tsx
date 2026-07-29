@@ -20,7 +20,6 @@ const ContactPageManagement: React.FC<ContactPageManagementProps> = ({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('Form submit ediliyor, contactForm state:', contactForm);
         await onUpdateContact(contactForm);
     };
 
@@ -53,10 +52,7 @@ const ContactPageManagement: React.FC<ContactPageManagementProps> = ({
                             <input
                                 type="url"
                                 value={contactForm.website || ''}
-                                onChange={(e) => {
-                                    console.log('Website değişiyor:', e.target.value);
-                                    setContactForm({ ...contactForm, website: e.target.value });
-                                }}
+                                onChange={(e) => setContactForm({ ...contactForm, website: e.target.value })}
                                 className="border border-gray-300 rounded-lg px-4 py-3 w-full focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                                 placeholder="https://www.akaydintarim.com"
                             />
@@ -92,10 +88,7 @@ const ContactPageManagement: React.FC<ContactPageManagementProps> = ({
                             <input
                                 type="text"
                                 value={contactForm.whatsapp_phone || ''}
-                                onChange={(e) => {
-                                    console.log('WhatsApp numarası değişiyor:', e.target.value);
-                                    setContactForm({ ...contactForm, whatsapp_phone: e.target.value });
-                                }}
+                                onChange={(e) => setContactForm({ ...contactForm, whatsapp_phone: e.target.value })}
                                 className="border border-gray-300 rounded-lg px-4 py-3 w-full focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                                 placeholder="+90 555 123 45 67"
                             />

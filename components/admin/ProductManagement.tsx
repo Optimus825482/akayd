@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import type { Product, Notification } from '../../types';
 import { productsAPI } from '../../services/api';
 
+const STATIC_URL = import.meta.env.VITE_STATIC_URL || 'http://localhost:3003';
+const imgUrl = (path: string) => path ? `${STATIC_URL}${path}` : '';
+
 interface ProductManagementProps {
     products: Product[];
     setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
@@ -68,10 +71,8 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
                         ? {
                             ...updatedProduct,
                             id: updatedProduct.id.toString(),
-                            imageUrl: updatedProduct.image_url && updatedProduct.image_url.startsWith('/uploads/')
-                                ? `http://localhost:3003${updatedProduct.image_url}`
-                                : updatedProduct.image_url || 'https://picsum.photos/300/200?random=1',
-                            images: updatedProduct.images || []
+                            imageUrl: updatedProduct.image_url ? imgUrl(updatedProduct.image_url) : 'https://picsum.photos/300/200?random=1',
+                            images: (updatedProduct.images || []).map((i: string) => imgUrl(i))
                         }
                         : p
                 ));
@@ -81,10 +82,8 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
                 setProducts(prev => [...prev, {
                     ...newProduct,
                     id: newProduct.id.toString(),
-                    imageUrl: newProduct.image_url && newProduct.image_url.startsWith('/uploads/')
-                        ? `http://localhost:3003${newProduct.image_url}`
-                        : newProduct.image_url || 'https://picsum.photos/300/200?random=1',
-                    images: newProduct.images || []
+                    imageUrl: newProduct.image_url ? imgUrl(newProduct.image_url) : 'https://picsum.photos/300/200?random=1',
+                    images: (newProduct.images || []).map((i: string) => imgUrl(i))
                 }]);
                 addNotification('success', 'Başarılı!', 'Yeni ürün eklendi.');
             }

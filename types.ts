@@ -170,17 +170,23 @@ export interface PageSEO {
 // SEO Analysis Interface
 export interface SEOAnalysis {
   page_url: string;
+  title?: string;
   title_length: number;
+  description?: string;
   description_length: number;
-  keywords_density: { [key: string]: number };
   has_meta_description: boolean;
   has_og_tags: boolean;
   has_canonical: boolean;
-  images_without_alt: number;
-  internal_links: number;
-  external_links: number;
-  page_speed_score?: number;
-  mobile_friendly: boolean;
+  content_stats?: {
+    total_products?: number;
+    total_blog_posts?: number;
+    total_services?: number;
+  };
+  site_health?: {
+    has_schema?: boolean;
+    sitemap_enabled?: boolean;
+    has_analytics?: boolean;
+  };
   recommendations: string[];
 }
 

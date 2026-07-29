@@ -18,7 +18,7 @@ build/
 .env.test.local
 .env.production.local
 .env.production
-*.local
+.env.hosting
 
 # IDE files
 .vscode/*
@@ -76,3 +76,7 @@ database/
 
 # Gereksiz dosyalar klasörü (unnecessary files folder)
 GEREKSIZ_DOSYALAR/
+
+# Uploaded files (keep folder structure)
+uploads/*
+!uploads/.gitkeep

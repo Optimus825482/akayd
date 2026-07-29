@@ -431,19 +431,52 @@ const SEOManagement: React.FC<SEOManagementProps> = ({ addNotification }) => {
                         {/* Existing Page SEO List */}
                         <div className="space-y-3">
                             {pageSEOList.map((pageSEO) => (
-                                <div key={pageSEO.id} className="border border-gray-200 rounded-lg p-4">
+                                <div key={pageSEO.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                                     <div className="flex items-center justify-between">
-                                        <div>
-                                            <h5 className="font-medium text-gray-900">{pageSEO.page_path}</h5>
+                                        <div className="flex-1">
+                                            <div className="flex items-center space-x-2 mb-1">
+                                                <h5 className="font-medium text-gray-900">{pageSEO.page_path}</h5>
+                                                {pageSEO.noindex && <span className="px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded">No Index</span>}
+                                                {pageSEO.nofollow && <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded">No Follow</span>}
+                                            </div>
                                             <p className="text-sm text-gray-600">{pageSEO.page_title}</p>
-                                            <p className="text-xs text-gray-500">{pageSEO.meta_description}</p>
+                                            {pageSEO.meta_description && (
+                                                <p className="text-xs text-gray-500 mt-1 line-clamp-1">{pageSEO.meta_description}</p>
+                                            )}
                                         </div>
-                                        <div className="flex items-center space-x-2">
-                                            {pageSEO.noindex && <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded">No Index</span>}
-                                            {pageSEO.nofollow && <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">No Follow</span>}
+                                        <div className="flex items-center space-x-2 ml-4">
                                             <button
-                                                onClick={() => seoAPI.deletePageSEO(pageSEO.id!).then(loadPageSEO)}
-                                                className="text-red-600 hover:text-red-800"
+                                                onClick={() => {
+                                                    setNewPageSEO({
+                                                        page_path: pageSEO.page_path,
+                                                        page_title: pageSEO.page_title,
+                                                        meta_description: pageSEO.meta_description,
+                                                        meta_keywords: pageSEO.meta_keywords,
+                                                        og_title: pageSEO.og_title,
+                                                        og_description: pageSEO.og_description,
+                                                        og_image: pageSEO.og_image,
+                                                        canonical_url: pageSEO.canonical_url,
+                                                        noindex: pageSEO.noindex,
+                                                        nofollow: pageSEO.nofollow
+                                                    });
+                                                    // Scroll to form
+                                                    document.querySelector('form')?.scrollIntoView({ behavior: 'smooth' });
+                                                }}
+                                                className="text-blue-600 hover:text-blue-800 text-sm bg-blue-100 hover:bg-blue-200 px-3 py-1 rounded transition-colors"
+                                                title="Düzenle"
+                                            >
+                                                ✏️
+                                            </button>
+                                            <button
+                                                onClick={async () => {
+                                                    if (confirm(`${pageSEO.page_path} için SEO ayarlarını silmek istediğinize emin misiniz?`)) {
+                                                        await seoAPI.deletePageSEO(pageSEO.id!);
+                                                        loadPageSEO();
+                                                        addNotification('success', 'Silindi', 'Sayfa SEO ayarı kaldırıldı.');
+                                                    }
+                                                }}
+                                                className="text-red-600 hover:text-red-800 text-sm bg-red-100 hover:bg-red-200 px-3 py-1 rounded transition-colors"
+                                                title="Sil"
                                             >
                                                 🗑️
                                             </button>
@@ -479,33 +512,79 @@ const SEOManagement: React.FC<SEOManagementProps> = ({ addNotification }) => {
 
                         {analysisResult && (
                             <div className="bg-gray-50 p-6 rounded-lg space-y-4">
-                                <h4 className="font-semibold text-gray-900">Analiz Sonuçları</h4>
+                                <h4 className="font-semibold text-gray-900">Analiz Sonuçları: {analysisResult.page_url}</h4>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                     <div className="bg-white p-4 rounded-lg">
                                         <h5 className="text-sm font-medium text-gray-600">Başlık Uzunluğu</h5>
-                                        <p className={`text-lg font-bold ${analysisResult.title_length > 60 ? 'text-red-600' : 'text-green-600'}`}>
-                                            {analysisResult.title_length} karakter
+                                        <p className={`text-lg font-bold ${(analysisResult.title_length || 0) > 60 ? 'text-red-600' : 'text-green-600'}`}>
+                                            {analysisResult.title_length || 0} karakter
                                         </p>
                                     </div>
 
                                     <div className="bg-white p-4 rounded-lg">
                                         <h5 className="text-sm font-medium text-gray-600">Açıklama Uzunluğu</h5>
-                                        <p className={`text-lg font-bold ${analysisResult.description_length > 160 ? 'text-red-600' : 'text-green-600'}`}>
-                                            {analysisResult.description_length} karakter
+                                        <p className={`text-lg font-bold ${(analysisResult.description_length || 0) > 160 ? 'text-red-600' : 'text-green-600'}`}>
+                                            {analysisResult.description_length || 0} karakter
                                         </p>
                                     </div>
 
                                     <div className="bg-white p-4 rounded-lg">
-                                        <h5 className="text-sm font-medium text-gray-600">İç Linkler</h5>
-                                        <p className="text-lg font-bold text-blue-600">{analysisResult.internal_links}</p>
+                                        <h5 className="text-sm font-medium text-gray-600">Meta Description</h5>
+                                        <p className="text-lg font-bold text-blue-600">
+                                            {analysisResult.has_meta_description ? '✅ Var' : '❌ Yok'}
+                                        </p>
                                     </div>
 
                                     <div className="bg-white p-4 rounded-lg">
-                                        <h5 className="text-sm font-medium text-gray-600">Dış Linkler</h5>
-                                        <p className="text-lg font-bold text-purple-600">{analysisResult.external_links}</p>
+                                        <h5 className="text-sm font-medium text-gray-600">OG Tags</h5>
+                                        <p className="text-lg font-bold text-purple-600">
+                                            {analysisResult.has_og_tags ? '✅ Var' : '❌ Yok'}
+                                        </p>
                                     </div>
                                 </div>
+
+                                {/* Content Stats */}
+                                {analysisResult.content_stats && (
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="bg-white p-4 rounded-lg">
+                                            <h5 className="text-sm font-medium text-gray-600">Ürünler</h5>
+                                            <p className="text-lg font-bold text-green-600">{analysisResult.content_stats.total_products}</p>
+                                        </div>
+                                        <div className="bg-white p-4 rounded-lg">
+                                            <h5 className="text-sm font-medium text-gray-600">Blog Yazıları</h5>
+                                            <p className="text-lg font-bold text-blue-600">{analysisResult.content_stats.total_blog_posts}</p>
+                                        </div>
+                                        <div className="bg-white p-4 rounded-lg">
+                                            <h5 className="text-sm font-medium text-gray-600">Hizmetler</h5>
+                                            <p className="text-lg font-bold text-purple-600">{analysisResult.content_stats.total_services}</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Site Health */}
+                                {analysisResult.site_health && (
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="bg-white p-4 rounded-lg">
+                                            <h5 className="text-sm font-medium text-gray-600">Schema Markup</h5>
+                                            <p className={`text-sm font-bold ${analysisResult.site_health.has_schema ? 'text-green-600' : 'text-red-600'}`}>
+                                                {analysisResult.site_health.has_schema ? '✅ Mevcut' : '❌ Eksik'}
+                                            </p>
+                                        </div>
+                                        <div className="bg-white p-4 rounded-lg">
+                                            <h5 className="text-sm font-medium text-gray-600">Sitemap</h5>
+                                            <p className={`text-sm font-bold ${analysisResult.site_health.sitemap_enabled ? 'text-green-600' : 'text-red-600'}`}>
+                                                {analysisResult.site_health.sitemap_enabled ? '✅ Aktif' : '❌ Pasif'}
+                                            </p>
+                                        </div>
+                                        <div className="bg-white p-4 rounded-lg">
+                                            <h5 className="text-sm font-medium text-gray-600">Analytics</h5>
+                                            <p className={`text-sm font-bold ${analysisResult.site_health.has_analytics ? 'text-green-600' : 'text-yellow-600'}`}>
+                                                {analysisResult.site_health.has_analytics ? '✅ Mevcut' : '⚠️ Eksik'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="bg-white p-4 rounded-lg">
                                     <h5 className="font-medium text-gray-900 mb-3">📋 Öneriler</h5>

@@ -4,6 +4,9 @@ import type { Product, ContactPageContent, SEOSettings, PageSEO } from '../types
 import SEOHead from '../components/SEOHead';
 import { productsAPI, seoAPI } from '../services/api';
 
+const STATIC_URL = import.meta.env.VITE_STATIC_URL || 'http://localhost:3003';
+const imgUrl = (path: string) => path ? `${STATIC_URL}${path}` : '';
+
 interface ProductDetailPageProps {
     contactContent: ContactPageContent;
     seoSettings?: SEOSettings | null;
@@ -47,13 +50,9 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ contactContent, s
                         category: foundProduct.category,
                         price: foundProduct.price || 0,
                         isFeatured: foundProduct.is_featured || false,
-                        imageUrl: foundProduct.image_url && foundProduct.image_url.startsWith('/uploads/')
-                            ? `http://localhost:3003${foundProduct.image_url}`
-                            : foundProduct.image_url || 'https://picsum.photos/600/400?random=1',
+                        imageUrl: foundProduct.image_url ? imgUrl(foundProduct.image_url) : 'https://picsum.photos/600/400?random=1',
                         images: foundProduct.images && Array.isArray(foundProduct.images)
-                            ? foundProduct.images.map((img: string) =>
-                                img.startsWith('/uploads/') ? `http://localhost:3003${img}` : img
-                            )
+                            ? foundProduct.images.map((img: string) => imgUrl(img) || img)
                             : []
                     };
                     setProduct(mappedProduct);

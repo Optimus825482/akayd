@@ -155,9 +155,14 @@ const BlogPage: React.FC<BlogPageProps> = ({ blogPosts, seoSettings }) => {
                 {selectedPost.content && (
                   <div className="prose prose-lg max-w-none">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">📝 Detaylı İçerik</h3>
-                    <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                      {selectedPost.content}
-                    </div>
+                    <div 
+                      className="text-gray-700 leading-relaxed blog-content"
+                      dangerouslySetInnerHTML={{ 
+                        __html: selectedPost.content.includes('<') 
+                          ? selectedPost.content 
+                          : selectedPost.content.replace(/\n/g, '<br/>') 
+                      }}
+                    />
                   </div>
                 )}
               </div>

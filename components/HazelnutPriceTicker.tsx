@@ -6,14 +6,20 @@ import type { HazelnutPrices } from '../types';
 const HazelnutPriceTicker: React.FC = () => {
   const [prices, setPrices] = useState<HazelnutPrices | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isStale, setIsStale] = useState(false);
 
   useEffect(() => {
     const fetchPrices = async () => {
+      // Sekme arka plandayken istek yapma (gereksiz ağ trafiğini önle)
+      if (document.visibilityState === 'hidden') return;
+
       try {
         const data = await hazelnutPricesAPI.get();
         setPrices(data);
+        setIsStale(false);
       } catch (error) {
         console.error('Fındık fiyatları yüklenirken hata:', error);
+        setIsStale(true);
         // Varsayılan değerler
         setPrices({
           id: 1,
@@ -37,7 +43,18 @@ const HazelnutPriceTicker: React.FC = () => {
     // 30 saniyede bir otomatik yenileme
     const interval = setInterval(fetchPrices, 30000);
 
-    return () => clearInterval(interval);
+    // Sekme görünür hale geldiğinde hemen yenile
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchPrices();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
   }, []);
 
   if (loading) {
@@ -62,9 +79,16 @@ const HazelnutPriceTicker: React.FC = () => {
     <div className="bg-white rounded-lg shadow-lg p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-800">Güncel Fındık Fiyatı</h3>
-        <span className={`text-sm font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-          {isPositive ? '↗' : '↘'} {isPositive ? '+' : ''}{Number(prices.daily_change || 0).toFixed(2)} ₺
-        </span>
+        <div className="flex items-center gap-2">
+          {isStale && (
+            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-medium">
+              Veri güncel olmayabilir
+            </span>
+          )}
+          <span className={`text-sm font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+            {isPositive ? '↗' : '↘'} {isPositive ? '+' : ''}{Number(prices.daily_change || 0).toFixed(2)} ₺
+          </span>
+        </div>
       </div>
 
       <div className="mb-4">

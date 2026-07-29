@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import type { HeroContent, Notification } from '../../types';
 import { heroAPI } from '../../services/api';
 
+const STATIC_URL = import.meta.env.VITE_STATIC_URL || 'http://localhost:3003';
+const imgUrl = (path: string) => path ? `${STATIC_URL}${path}` : '';
+
 interface HeroManagementProps {
     heroContents: HeroContent[];
     setHeroContents: React.Dispatch<React.SetStateAction<HeroContent[]>>;
@@ -48,12 +51,12 @@ const HeroManagement: React.FC<HeroManagementProps> = ({
             formData.append('subtitle', heroForm.subtitle);
             formData.append('description', heroForm.description);
             formData.append('cta', heroForm.cta);
-            formData.append('backgroundGradient', heroForm.backgroundGradient);
-            formData.append('isActive', heroForm.isActive.toString());
-            formData.append('order', heroForm.order.toString());
+            formData.append('background_gradient', heroForm.backgroundGradient);
+            formData.append('is_active', heroForm.isActive.toString());
+            formData.append('order_index', heroForm.order.toString());
 
             if (heroForm.backgroundImage) {
-                formData.append('backgroundImage', heroForm.backgroundImage);
+                formData.append('background_image', heroForm.backgroundImage);
             }
 
             if (editingHero) {
@@ -63,9 +66,7 @@ const HeroManagement: React.FC<HeroManagementProps> = ({
                         ? {
                             ...updatedHero,
                             id: updatedHero.id.toString(),
-                            backgroundImage: updatedHero.background_image && updatedHero.background_image.startsWith('/uploads/')
-                                ? `http://localhost:3003${updatedHero.background_image}`
-                                : updatedHero.background_image || ''
+                            backgroundImage: updatedHero.background_image ? imgUrl(updatedHero.background_image) : ''
                         }
                         : h
                 ));
@@ -75,9 +76,7 @@ const HeroManagement: React.FC<HeroManagementProps> = ({
                 setHeroContents(prev => [...prev, {
                     ...newHero,
                     id: newHero.id.toString(),
-                    backgroundImage: newHero.background_image && newHero.background_image.startsWith('/uploads/')
-                        ? `http://localhost:3003${newHero.background_image}`
-                        : newHero.background_image || ''
+                    backgroundImage: newHero.background_image ? imgUrl(newHero.background_image) : ''
                 }]);
                 addNotification('success', 'Başarılı!', 'Yeni hero içeriği eklendi.');
             }

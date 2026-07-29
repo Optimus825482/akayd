@@ -1,0 +1,49 @@
+services:
+  app:
+    build: .
+    container_name: akaydin-tarim
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3003}:3003"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+    volumes:
+      - uploads_data:/app/uploads
+      - public_data:/app/public
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - akaydin_net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: akaydin-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change_me}
+      POSTGRES_DB: ${DB_NAME:-akaydin_tarim}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./docker/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-akaydin_tarim}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - akaydin_net
+
+volumes:
+  uploads_data:
+  public_data:
+  pg_data:
+
+networks:
+  akaydin_net:
+    driver: bridge

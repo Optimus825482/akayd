@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import type { AboutPageContent, Notification } from '../../types';
 import { aboutAPI } from '../../services/api';
 
+const STATIC_URL = import.meta.env.VITE_STATIC_URL || 'http://localhost:3003';
+const imgUrl = (path: string) => path ? `${STATIC_URL}${path}` : '';
+
 interface AboutManagementProps {
     aboutContent: AboutPageContent;
     setAboutContent: React.Dispatch<React.SetStateAction<AboutPageContent>>;
@@ -160,7 +163,7 @@ const AboutManagement: React.FC<AboutManagementProps> = ({
                                     <div key={index} className="relative group">
                                         <div className="w-full h-24 rounded-lg overflow-hidden">
                                             <img
-                                                src={image.startsWith('/uploads') ? `http://localhost:3003${image}` : image}
+                                                src={imgUrl(image) || image}
                                                 alt={`Hakkımızda görseli ${index + 1}`}
                                                 className="w-full h-full object-cover border border-gray-300 group-hover:opacity-75 transition-opacity"
                                             />
@@ -249,7 +252,7 @@ const AboutManagement: React.FC<AboutManagementProps> = ({
                                 {aboutContent.images.slice(0, 3).map((image, index) => (
                                     <img
                                         key={index}
-                                        src={image.startsWith('/uploads') ? `http://localhost:3003${image}` : image}
+                                        src={imgUrl(image) || image}
                                         alt={`Preview ${index + 1}`}
                                         className="w-32 h-20 object-cover rounded border"
                                     />

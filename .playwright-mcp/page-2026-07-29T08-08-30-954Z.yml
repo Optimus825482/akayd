@@ -1,0 +1,163 @@
+- generic [ref=e1072]:
+  - generic [ref=e1075]:
+    - generic [ref=e1076]:
+      - generic [ref=e1077]: +90 (264) 123 45 67
+      - generic [ref=e1081]: info@akaydintarim.com
+    - generic [ref=e1085]: Remzi Efendi Cd. No:24 D:b, 54300 Hendek/Sakarya
+  - banner [ref=e1090]:
+    - generic [ref=e1092]:
+      - link [ref=e1094] [cursor=pointer]:
+        - /url: "#/"
+        - img "Akaydın Tarım Logo" [ref=e1096]
+        - generic [ref=e1097]:
+          - text: Akaydın Tarım
+          - paragraph [ref=e1098]: Fındık Uzmanı
+      - generic [ref=e1100]:
+        - link "Ana Sayfa" [ref=e1101] [cursor=pointer]:
+          - /url: "#/"
+        - link "Hakkımızda" [ref=e1102] [cursor=pointer]:
+          - /url: "#/hakkimizda"
+        - link "Hizmetlerimiz" [ref=e1103] [cursor=pointer]:
+          - /url: "#/hizmetlerimiz"
+        - link "Ürünlerimiz" [ref=e1104] [cursor=pointer]:
+          - /url: "#/urunler"
+        - link "Blog" [ref=e1105] [cursor=pointer]:
+          - /url: "#/blog"
+        - link "İletişim" [ref=e1106] [cursor=pointer]:
+          - /url: "#/iletisim"
+  - main [ref=e1107]:
+    - generic [ref=e1108]:
+      - generic [ref=e1112]:
+        - heading "Bize Ulaşın" [level=1] [ref=e1113]:
+          - generic [ref=e1114]: Bize
+          - generic [ref=e1115]: Ulaşın
+        - paragraph [ref=e1116]: Sorularınız, önerileriniz veya işbirliği talepleriniz için bizimle iletişime geçmekten çekinmeyin.
+      - generic [ref=e1119]:
+        - generic [ref=e1120]:
+          - generic [ref=e1121]:
+            - generic [ref=e1122]: ✉️
+            - heading "Mesaj Gönderin" [level=3] [ref=e1124]
+          - generic [ref=e1125]:
+            - generic [ref=e1126]:
+              - generic [ref=e1127]:
+                - generic [ref=e1128]: Adınız Soyadınız *
+                - textbox "Adınız Soyadınız *" [ref=e1129]:
+                  - /placeholder: Adınızı ve soyadınızı girin
+              - generic [ref=e1130]:
+                - generic [ref=e1131]: E-posta Adresiniz *
+                - textbox "E-posta Adresiniz *" [ref=e1132]:
+                  - /placeholder: ornek@email.com
+            - generic [ref=e1133]:
+              - generic [ref=e1134]: Telefon Numaranız
+              - textbox "Telefon Numaranız" [ref=e1135]:
+                - /placeholder: 0555 123 45 67
+            - generic [ref=e1136]:
+              - generic [ref=e1137]: Konu
+              - combobox "Konu" [ref=e1138]:
+                - option "Konu seçin" [selected]
+                - option "Fındık İşleme Hizmeti"
+                - option "Ürün Bilgileri"
+                - option "Hizmet Talebi"
+                - option "Genel Bilgi"
+                - option "Diğer"
+            - generic [ref=e1139]:
+              - generic [ref=e1140]: Mesajınız *
+              - textbox "Mesajınız *" [ref=e1141]:
+                - /placeholder: Mesajınızı buraya yazın...
+            - button [ref=e1143] [cursor=pointer]
+        - generic [ref=e1147]:
+          - generic [ref=e1148]:
+            - generic [ref=e1149]:
+              - generic [ref=e1150]: 📍
+              - heading "İletişim Bilgilerimiz" [level=3] [ref=e1152]
+            - generic [ref=e1153]:
+              - generic [ref=e1154]:
+                - generic [ref=e1155]: 📍
+                - generic [ref=e1157]:
+                  - heading "Adres" [level=4] [ref=e1158]
+                  - paragraph [ref=e1159]: Başpınar, Remzi Efendi Cd. No:24 D:b, 54300 Hendek/Sakarya
+              - generic [ref=e1160]:
+                - generic [ref=e1161]: 📞
+                - generic [ref=e1163]:
+                  - heading "Telefon" [level=4] [ref=e1164]
+                  - paragraph [ref=e1165]: +90 (264) 123 45 67
+                  - paragraph [ref=e1166]: 7/24 Arayabilirsiniz
+              - generic [ref=e1167]:
+                - generic [ref=e1168]: ✉️
+                - generic [ref=e1170]:
+                  - heading "E-posta" [level=4] [ref=e1171]
+                  - paragraph [ref=e1172]: info@akaydintarim.com
+                  - paragraph [ref=e1173]: 24 saat içinde yanıtlıyoruz
+              - generic [ref=e1174]:
+                - generic [ref=e1175]: 📱
+                - generic [ref=e1177]:
+                  - heading "WhatsApp Sipariş Hattı" [level=4] [ref=e1178]
+                  - link "905397751517" [ref=e1179] [cursor=pointer]:
+                    - /url: https://wa.me/905397751517
+                  - paragraph [ref=e1180]: Hızlı sipariş için WhatsApp
+              - generic [ref=e1181]:
+                - generic [ref=e1182]: ⏰
+                - generic [ref=e1184]:
+                  - heading "Çalışma Saatleri" [level=4] [ref=e1185]
+                  - paragraph [ref=e1186]: "Pazartesi - Cumartesi: 08:00 - 18:00"
+                  - paragraph [ref=e1187]: "Pazar: 09:00 - 15:00"
+          - generic [ref=e1188]:
+            - generic [ref=e1189]:
+              - heading "📍 Konumumuz" [level=4] [ref=e1190]
+              - paragraph [ref=e1191]: Başpınar, Remzi Efendi Cd. No:24 D:b, 54300 Hendek/Sakarya
+            - iframe [ref=e1193]:
+              
+      - generic [ref=e1196]:
+        - heading "Hemen Aramak İster misiniz?" [level=3] [ref=e1197]
+        - paragraph [ref=e1198]: Acil sorularınız için direkt telefon ile arayabilirsiniz. Uzman ekibimiz size hemen yardımcı olmaya hazır.
+        - generic [ref=e1199]:
+          - link [ref=e1200] [cursor=pointer]:
+            - /url: tel:+90 (264) 123 45 67
+          - link [ref=e1204] [cursor=pointer]:
+            - /url: https://wa.me/905397751517
+          - link [ref=e1208] [cursor=pointer]:
+            - /url: "#/hizmetlerimiz"
+  - contentinfo [ref=e1212]:
+    - generic [ref=e1213]:
+      - generic [ref=e1214]:
+        - generic [ref=e1215]:
+          - link "Akaydın Tarım Logo Akaydın Tarım" [ref=e1216] [cursor=pointer]:
+            - /url: "#/"
+            - img "Akaydın Tarım Logo" [ref=e1217]
+            - generic [ref=e1218]: Akaydın Tarım
+          - paragraph [ref=e1219]: Fındık ve tarım sektöründe yenilikçi çözümlerle geleceğin tarımını bugünden inşa ediyoruz.
+        - generic [ref=e1220]:
+          - heading "Hızlı Erişim" [level=3] [ref=e1221]
+          - list [ref=e1222]:
+            - listitem [ref=e1223]:
+              - link "Hakkımızda" [ref=e1224] [cursor=pointer]:
+                - /url: "#/hakkimizda"
+            - listitem [ref=e1225]:
+              - link "Hizmetlerimiz" [ref=e1226] [cursor=pointer]:
+                - /url: "#/hizmetlerimiz"
+            - listitem [ref=e1227]:
+              - link "Ürünler" [ref=e1228] [cursor=pointer]:
+                - /url: "#/urunler"
+            - listitem [ref=e1229]:
+              - link "Blog" [ref=e1230] [cursor=pointer]:
+                - /url: "#/blog"
+        - generic [ref=e1231]:
+          - heading "İletişim" [level=3] [ref=e1232]
+          - list [ref=e1233]:
+            - listitem [ref=e1234]:
+              - generic [ref=e1237]: Başpınar, Remzi Efendi Cd. No:24 D:b, 54300 Hendek/Sakarya
+            - listitem [ref=e1238]:
+              - link "+90 (264) 123 45 67" [ref=e1241] [cursor=pointer]:
+                - /url: tel:+90 (264) 123 45 67
+            - listitem [ref=e1242]:
+              - 'link "WhatsApp: 905397751517" [ref=e1245] [cursor=pointer]':
+                - /url: https://wa.me/905397751517
+            - listitem [ref=e1246]:
+              - link "info@akaydintarim.com" [ref=e1249] [cursor=pointer]:
+                - /url: mailto:info@akaydintarim.com
+        - generic [ref=e1250]:
+          - heading "Bizi Takip Edin" [level=3] [ref=e1251]
+          - generic [ref=e1253]:
+            - paragraph [ref=e1254]: Sosyal medya hesapları henüz eklenmemiş.
+            - paragraph [ref=e1255]: Admin panelinden sosyal medya hesaplarınızı ekleyebilirsiniz.
+      - paragraph [ref=e1257]: © 2026 Akaydın Tarım. Tüm hakları saklıdır.

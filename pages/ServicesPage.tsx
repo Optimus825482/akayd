@@ -98,56 +98,42 @@ const ServicesPage: React.FC<ServicesPageProps> = ({ services, seoSettings }) =>
               ))}
             </div>
 
-            {/* CTA Section */}
-            <div className="bg-gradient-to-r from-green-500 to-emerald-500 rounded-3xl p-8 md:p-12 shadow-2xl text-center">
-              <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">
-                Özel Bir Hizmet mi Arıyorsunuz?
-              </h3>
-              <p className="text-green-100 text-lg mb-8 max-w-2xl mx-auto">
-                İhtiyaçlarınıza özel çözümler geliştirebiliriz. Bizimle iletişime geçin ve projelerinizi birlikte planlayalım.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link
-                  to="/iletisim"
-                  className="group bg-white hover:bg-gray-100 text-green-600 px-8 py-4 rounded-xl text-lg font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
-                >
-                  <span className="flex items-center justify-center">
-                    <svg className="mr-3 w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                    </svg>
-                    Projemi Konuşalım
-                  </span>
-                </Link>
-                <Link
-                  to="/hakkimizda"
-                  className="group border-2 border-white text-white hover:bg-white hover:text-green-600 px-8 py-4 rounded-xl text-lg font-bold transition-all duration-300 transform hover:scale-105"
-                >
-                  <span className="flex items-center justify-center">
-                    <svg className="mr-3 w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Hakkımızda Bilgi Al
-                  </span>
-                </Link>
-              </div>
-            </div>
+        {/* CTA Section */}
+        <div className="bg-gradient-to-r from-green-500 to-emerald-500 rounded-3xl p-8 md:p-12 shadow-2xl text-center">
+          <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">
+            Özel Bir Hizmet mi Arıyorsunuz?
+          </h3>
+          <p className="text-green-100 text-lg mb-8 max-w-2xl mx-auto">
+            İhtiyaçlarınıza özel çözümler geliştirebiliriz. Bizimle iletişime geçin ve projelerinizi birlikte planlayalım.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              to="/iletisim"
+              className="group bg-white hover:bg-gray-100 text-green-600 px-8 py-4 rounded-xl text-lg font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
+            >
+              <span className="flex items-center justify-center">
+                <svg className="mr-3 w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                Projemi Konuşalım
+              </span>
+            </Link>
+            <Link
+              to="/hakkimizda"
+              className="group border-2 border-white text-white hover:bg-white hover:text-green-600 px-8 py-4 rounded-xl text-lg font-bold transition-all duration-300 transform hover:scale-105"
+            >
+              <span className="flex items-center justify-center">
+                <svg className="mr-3 w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Hakkımızda Bilgi Al
+              </span>
+            </Link>
           </div>
-        </section>
-
-        {/* Add CSS animations */}
-        <style>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
+        </div>
       </div>
+    </section>
+  </div>
     </>
   );
 };

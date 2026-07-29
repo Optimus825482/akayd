@@ -27,6 +27,21 @@ export default defineConfig(({ mode }) => {
     build: {
       cssCodeSplit: true,
       sourcemap: false,
+      minify: "esbuild",
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: [
+              "react",
+              "react-dom",
+              "react-router-dom",
+              "react-helmet-async",
+            ],
+            admin: ["react-icons"],
+          },
+        },
+      },
+      chunkSizeWarningLimit: 500,
     },
   };
 });

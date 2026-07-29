@@ -1,19 +1,28 @@
-const API_BASE_URL = "http://localhost:3003/api";
+import type { ContactPageContent, SEOSettings, PageSEO } from "../types";
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:3003/api";
 
 // Genel API çağrısı fonksiyonu
 async function apiCall(endpoint: string, options: RequestInit = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
+  const token = localStorage.getItem("admin_token");
 
   try {
     const response = await fetch(url, {
       headers: {
         "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...options.headers,
       },
       ...options,
     });
 
     if (!response.ok) {
+      // 401: geçersiz/expired token → temizle
+      if (response.status === 401 && token) {
+        localStorage.removeItem("admin_token");
+      }
       throw new Error(`API hatası: ${response.status}`);
     }
 
@@ -24,17 +33,26 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
   }
 }
 
-// Dosya yükleme için özel fonksiyon
-async function uploadFile(endpoint: string, formData: FormData) {
+// Dosya yükleme için özel fonksiyon (POST ve PUT destekler)
+async function uploadFile(
+  endpoint: string,
+  formData: FormData,
+  method: string = "POST",
+) {
   const url = `${API_BASE_URL}${endpoint}`;
+  const token = localStorage.getItem("admin_token");
 
   try {
     const response = await fetch(url, {
-      method: "POST",
+      method,
       body: formData,
+      ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
     });
 
     if (!response.ok) {
+      if (response.status === 401 && token) {
+        localStorage.removeItem("admin_token");
+      }
       throw new Error(`API hatası: ${response.status}`);
     }
 
@@ -48,12 +66,12 @@ async function uploadFile(endpoint: string, formData: FormData) {
 // HİZMETLER API
 export const servicesAPI = {
   getAll: () => apiCall("/services"),
-  create: (data: any) =>
+  create: (data: Record<string, unknown>) =>
     apiCall("/services", {
       method: "POST",
       body: JSON.stringify(data),
     }),
-  update: (id: number, data: any) =>
+  update: (id: number, data: Record<string, unknown>) =>
     apiCall(`/services/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
@@ -68,13 +86,8 @@ export const servicesAPI = {
 export const productsAPI = {
   getAll: () => apiCall("/products"),
   create: (formData: FormData) => uploadFile("/products", formData),
-  update: (id: number, formData: FormData) => {
-    const url = `${API_BASE_URL}/products/${id}`;
-    return fetch(url, {
-      method: "PUT",
-      body: formData,
-    }).then((res) => res.json());
-  },
+  update: (id: number, formData: FormData) =>
+    uploadFile(`/products/${id}`, formData, "PUT"),
   delete: (id: number) =>
     apiCall(`/products/${id}`, {
       method: "DELETE",
@@ -85,13 +98,8 @@ export const productsAPI = {
 export const blogAPI = {
   getAll: () => apiCall("/blog-posts"),
   create: (formData: FormData) => uploadFile("/blog-posts", formData),
-  update: (id: number, formData: FormData) => {
-    const url = `${API_BASE_URL}/blog-posts/${id}`;
-    return fetch(url, {
-      method: "PUT",
-      body: formData,
-    }).then((res) => res.json());
-  },
+  update: (id: number, formData: FormData) =>
+    uploadFile(`/blog-posts/${id}`, formData, "PUT"),
   delete: (id: number) =>
     apiCall(`/blog-posts/${id}`, {
       method: "DELETE",
@@ -113,13 +121,7 @@ export const blogAPI = {
 // HAKKIMIZDA API
 export const aboutAPI = {
   get: () => apiCall("/about"),
-  update: (formData: FormData) => {
-    const url = `${API_BASE_URL}/about`;
-    return fetch(url, {
-      method: "PUT",
-      body: formData,
-    }).then((res) => res.json());
-  },
+  update: (formData: FormData) => uploadFile("/about", formData, "PUT"),
   deleteImage: (imagePath: string) =>
     apiCall("/about/image", {
       method: "DELETE",
@@ -130,7 +132,7 @@ export const aboutAPI = {
 // İLETİŞİM API
 export const contactAPI = {
   get: () => apiCall("/contact"),
-  update: (data: any) =>
+  update: (data: Partial<ContactPageContent>) =>
     apiCall("/contact", {
       method: "PUT",
       body: JSON.stringify(data),
@@ -141,13 +143,8 @@ export const contactAPI = {
 export const heroAPI = {
   getAll: () => apiCall("/hero"),
   create: (formData: FormData) => uploadFile("/hero", formData),
-  update: (id: number, formData: FormData) => {
-    const url = `${API_BASE_URL}/hero/${id}`;
-    return fetch(url, {
-      method: "PUT",
-      body: formData,
-    }).then((res) => res.json());
-  },
+  update: (id: number, formData: FormData) =>
+    uploadFile(`/hero/${id}`, formData, "PUT"),
   delete: (id: number) =>
     apiCall(`/hero/${id}`, {
       method: "DELETE",
@@ -227,7 +224,7 @@ export const hazelnutPricesAPI = {
 export const seoAPI = {
   // SEO Settings
   getSettings: () => apiCall("/seo/settings"),
-  updateSettings: (data: any) =>
+  updateSettings: (data: Partial<SEOSettings>) =>
     apiCall("/seo/settings", {
       method: "PUT",
       body: JSON.stringify(data),
@@ -237,12 +234,12 @@ export const seoAPI = {
   getPageSEO: (pagePath: string) =>
     apiCall(`/seo/pages?path=${encodeURIComponent(pagePath)}`),
   getAllPageSEO: () => apiCall("/seo/pages"),
-  createPageSEO: (data: any) =>
+  createPageSEO: (data: Partial<PageSEO>) =>
     apiCall("/seo/pages", {
       method: "POST",
       body: JSON.stringify(data),
     }),
-  updatePageSEO: (id: number, data: any) =>
+  updatePageSEO: (id: number, data: Partial<PageSEO>) =>
     apiCall(`/seo/pages/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
@@ -272,138 +269,6 @@ export const seoAPI = {
   getRobots: () => apiCall("/seo/robots"),
 };
 
-// VISITOR ANALYTICS API
-export const analyticsAPI = {
-  // Session tracking
-  createSession: (sessionData: any) =>
-    apiCall("/analytics/sessions", {
-      method: "POST",
-      body: JSON.stringify(sessionData),
-    }),
-
-  updateSession: (sessionId: string, sessionData: any) =>
-    apiCall(`/analytics/sessions/${sessionId}`, {
-      method: "PUT",
-      body: JSON.stringify(sessionData),
-    }),
-
-  // Page views
-  trackPageView: (pageViewData: any) =>
-    apiCall("/analytics/page-views", {
-      method: "POST",
-      body: JSON.stringify(pageViewData),
-    }),
-
-  // Visitor actions
-  trackAction: (actionData: any) =>
-    apiCall("/analytics/actions", {
-      method: "POST",
-      body: JSON.stringify(actionData),
-    }),
-
-  // Analytics dashboard data
-  getDashboardStats: (dateRange?: { from: string; to: string }) => {
-    const params = dateRange
-      ? `?from=${dateRange.from}&to=${dateRange.to}`
-      : "";
-    return apiCall(`/analytics/dashboard${params}`);
-  },
-
-  // Detailed analytics
-  getSessions: (params?: any) => {
-    const queryParams = params
-      ? `?${new URLSearchParams(params).toString()}`
-      : "";
-    return apiCall(`/analytics/sessions${queryParams}`);
-  },
-
-  getPageViews: (params?: any) => {
-    const queryParams = params
-      ? `?${new URLSearchParams(params).toString()}`
-      : "";
-    return apiCall(`/analytics/page-views${queryParams}`);
-  },
-
-  getPopularPages: (limit: number = 10) =>
-    apiCall(`/analytics/popular-pages?limit=${limit}`),
-
-  getActiveVisitors: () => apiCall("/analytics/active-visitors"),
-
-  getDailyAnalytics: (dateRange: { from: string; to: string }) =>
-    apiCall(`/analytics/daily?from=${dateRange.from}&to=${dateRange.to}`),
-
-  // Real-time data
-  getRealTimeStats: () => apiCall("/analytics/realtime"),
-
-  // Real-time visitor activity
-  getLiveVisitors: () => apiCall("/analytics/live-visitors"),
-
-  // Current page views (last 5 minutes)
-  getCurrentPageViews: () => apiCall("/analytics/current-pageviews"),
-
-  // Recent visitor actions
-  getRecentActions: (limit: number = 50) =>
-    apiCall(`/analytics/recent-actions?limit=${limit}`),
-
-  // Hourly stats for today
-  getTodayHourlyStats: () => apiCall("/analytics/today-hourly"),
-
-  // Traffic sources
-  getTrafficSources: (days: number = 30) =>
-    apiCall(`/analytics/traffic-sources?days=${days}`),
-
-  // Device breakdown for real-time
-  getDeviceBreakdown: () => apiCall("/analytics/device-breakdown"),
-
-  // Device and browser stats
-  getDeviceStats: (dateRange?: { from: string; to: string }) => {
-    const params = dateRange
-      ? `?from=${dateRange.from}&to=${dateRange.to}`
-      : "";
-    return apiCall(`/analytics/device-stats${params}`);
-  },
-
-  getBrowserStats: (dateRange?: { from: string; to: string }) => {
-    const params = dateRange
-      ? `?from=${dateRange.from}&to=${dateRange.to}`
-      : "";
-    return apiCall(`/analytics/browser-stats${params}`);
-  },
-
-  // Geographic stats
-  getGeographicStats: (dateRange?: { from: string; to: string }) => {
-    const params = dateRange
-      ? `?from=${dateRange.from}&to=${dateRange.to}`
-      : "";
-    return apiCall(`/analytics/geographic-stats${params}`);
-  },
-
-  // Export data
-  exportData: (
-    format: "csv" | "json",
-    dateRange: { from: string; to: string }
-  ) =>
-    apiCall(
-      `/analytics/export?format=${format}&from=${dateRange.from}&to=${dateRange.to}`
-    ),
-
-  // Settings
-  getSettings: () => apiCall("/analytics/settings"),
-
-  updateSettings: (settings: any) =>
-    apiCall("/analytics/settings", {
-      method: "PUT",
-      body: JSON.stringify(settings),
-    }),
-
-  // Data cleanup
-  cleanupOldData: (olderThanDays: number) =>
-    apiCall("/analytics/cleanup", {
-      method: "POST",
-      body: JSON.stringify({ olderThanDays }),
-    }),
-};
-
 export default {
   servicesAPI,
   productsAPI,
@@ -414,5 +279,4 @@ export default {
   contactMessagesAPI,
   hazelnutPricesAPI,
   seoAPI,
-  analyticsAPI,
 };

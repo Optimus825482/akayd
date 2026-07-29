@@ -1,7 +1,11 @@
+import 'dotenv/config';
 // Memory-optimized imports
 import express from 'express';
 import cors from 'cors';
-import mysql from 'mysql2/promise';
+import helmet from 'helmet';
+import bcrypt from 'bcryptjs';
+import pkg from 'pg';
+const { Pool } = pkg;
 import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
@@ -10,38 +14,179 @@ import crypto from 'crypto';
 import multer from 'multer';
 import cron from 'node-cron';
 import axios from 'axios';
+import { imageOptimizer } from './imageProcessor.js';
 
-// Only import when needed - lazy loading
-let fs;
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 3003;
+const PORT = process.env.PORT || 3003;
+
+// Admin Auth
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const SALT_ROUNDS = 10;
+let ADMIN_PASSWORD_HASH = null;
+
+// Admin şifresini hash'le (sunucu başlangıcında)
+if (ADMIN_PASSWORD) {
+  bcrypt.hash(ADMIN_PASSWORD, SALT_ROUNDS).then(hash => {
+    ADMIN_PASSWORD_HASH = hash;
+    console.log('Admin şifresi hash\'lendi.');
+  }).catch(err => {
+    console.error('Şifre hashleme hatası:', err);
+  });
+}
+
+const adminTokens = new Set();
+
+// Yardımcı: boolean/string değerleri PostgreSQL smallint için 0/1 integer'a çevir
+const toSmallInt = (val) => {
+  if (val === true || val === 1 || val === 'true' || val === '1') return 1;
+  return 0;
+};
+
+const adminAuth = (req, res, next) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token || !adminTokens.has(token)) {
+    return res.status(401).json({ error: 'Yetkisiz erişim' });
+  }
+  next();
+};
 
 // Middleware
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',')
+  : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'];
+
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'],
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
-app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
+app.use(express.json({ limit: '1mb' }));
 
-// MySQL bağlantısı
-const db = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'akaydin',
-  password: process.env.DB_PASSWORD || '518518',
-  database: process.env.DB_NAME || 'akaydin_tarim',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
+// /akaydin-tarim prefix temizleyici
+app.use('/uploads', (req, res, next) => {
+  // Dosya istekleri için CORS header'ları ekle
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  // URL temizleme: çift slash'ları tek slash yap, /akaydin-tarim prefix'ini kaldır
+  req.url = req.url.replace(/\/akaydin-tarim\//g, '/').replace(/\/+/g, '/');
+  next();
+}, express.static(path.join(__dirname, '../uploads'), {
+  maxAge: '7d',
+  setHeaders: (res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  }
+}));
+
+// Cache middleware
+app.use((req, res, next) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api/admin')) {
+    res.setHeader('Cache-Control', 'public, max-age=30');
+  }
+  next();
+});
+
+// Multer hata handler
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ error: 'Dosya boyutu çok büyük. Maksimum 10MB yüklenebilir.' });
+    }
+    return res.status(400).json({ error: `Dosya yükleme hatası: ${err.message}` });
+  }
+  if (err.message && err.message.includes('Desteklenmeyen dosya türü')) {
+    return res.status(400).json({ error: err.message });
+  }
+  next(err);
+});
+
+// Rate limiting
+const rateLimit = new Map();
+const RATE_LIMIT_WINDOW = 60 * 1000;
+const RATE_LIMIT_MAX = 100;
+
+// Periyodik temizlik: süresi dolmuş timestamp'leri filtrele, boş kalan IP'leri sil
+const RATE_LIMIT_CLEANUP_INTERVAL = 10 * 60 * 1000; // 10 dakika
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, timestamps] of rateLimit) {
+    const valid = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW);
+    if (valid.length === 0) {
+      rateLimit.delete(ip);
+    } else {
+      rateLimit.set(ip, valid);
+    }
+  }
+}, RATE_LIMIT_CLEANUP_INTERVAL);
+
+app.use((req, res, next) => {
+  const ip = req.ip;
+  const now = Date.now();
+  if (!rateLimit.has(ip)) {
+    rateLimit.set(ip, []);
+  }
+  const timestamps = rateLimit.get(ip).filter(t => now - t < RATE_LIMIT_WINDOW);
+  if (timestamps.length >= RATE_LIMIT_MAX) {
+    return res.status(429).json({ error: 'Çok fazla istek, lütfen bekleyin' });
+  }
+  timestamps.push(now);
+  rateLimit.set(ip, timestamps);
+  next();
+});
+
+// PostgreSQL bağlantısı (retry ile)
+if (!process.env.DB_USER || !process.env.DB_PASSWORD) {
+  console.error('HATA: DB_USER ve DB_PASSWORD environment variable zorunludur');
+  process.exit(1);
+}
+
+async function createPool(retries = 5, delay = 5000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const pool = new Pool({
+        host: process.env.DB_HOST || 'localhost',
+        port: parseInt(process.env.DB_PORT) || 5432,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME || 'akaydin_tarim',
+        max: 10,
+        idleTimeoutMillis: 30000,
+      });
+      // Test bağlantısı
+      const client = await pool.connect();
+      client.release();
+      console.log('Veritabanı bağlantısı başarılı.');
+      return pool;
+    } catch (err) {
+      console.error(`DB bağlantı hatası (deneme ${i + 1}/${retries}):`, err.message);
+      if (i === retries - 1) throw err;
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+}
+
+const db = await createPool();
+
+// DB hata event handler
+db.on('error', (err) => {
+  console.error('Veritabanı havuz hatası:', err.message);
 });
 
 // Multer configuration
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, path.join(__dirname, '../uploads/'));
@@ -52,39 +197,78 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ storage: storage });
+const fileFilter = (req, file, cb) => {
+  if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error(`Desteklenmeyen dosya türü: ${file.mimetype}. Sadece JPEG, PNG, GIF, WebP ve SVG kabul edilmektedir.`), false);
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: { fileSize: MAX_FILE_SIZE }
+});
+
+// Admin login/logout
+app.post('/api/admin/login', async (req, res) => {
+  const { password } = req.body;
+  if (!ADMIN_PASSWORD_HASH) return res.status(500).json({ error: 'Admin şifresi yapılandırılmamış' });
+  try {
+    const match = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
+    if (!match) return res.status(401).json({ error: 'Hatalı şifre' });
+  } catch {
+    // bcrypt karşılaştırma hatası durumunda düz metin karşılaştırmaya geri dön
+    if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Hatalı şifre' });
+  }
+  const token = crypto.randomBytes(32).toString('hex');
+  adminTokens.add(token);
+  setTimeout(() => adminTokens.delete(token), 24 * 60 * 60 * 1000);
+  res.json({ token, message: 'Giriş başarılı' });
+});
+
+app.post('/api/admin/logout', adminAuth, (req, res) => {
+  adminTokens.delete(req.headers.authorization?.replace('Bearer ', ''));
+  res.json({ message: 'Çıkış başarılı' });
+});
+
+// Admin token doğrulama
+app.get('/api/admin/verify', adminAuth, (req, res) => {
+  res.json({ valid: true });
+});
 
 // SERVICES API
 app.get('/api/services', async (req, res) => {
   try {
-    const [rows] = await db.execute('SELECT * FROM services ORDER BY id DESC');
-    res.json(rows);
+    const rows = await db.query('SELECT * FROM services ORDER BY id DESC');
+    res.json(rows.rows);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Hizmetler alınırken hata oluştu' });
   }
 });
 
-app.post('/api/services', async (req, res) => {
+app.post('/api/services', adminAuth, async (req, res) => {
   try {
     const { title, description, iconName } = req.body;
-    const [result] = await db.execute(
-      'INSERT INTO services (title, description, icon_name) VALUES (?, ?, ?)',
+    const result = await db.query(
+      'INSERT INTO services (title, description, icon_name) VALUES ($1, $2, $3) RETURNING id',
       [title, description, iconName]
     );
-    res.json({ id: result.insertId, title, description, iconName });
+    res.json({ id: result.rows[0].id, title, description, iconName });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Hizmet eklenirken hata oluştu' });
   }
 });
 
-app.put('/api/services/:id', async (req, res) => {
+app.put('/api/services/:id', adminAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { title, description, iconName } = req.body;
-    await db.execute(
-      'UPDATE services SET title = ?, description = ?, icon_name = ? WHERE id = ?',
+    await db.query(
+      'UPDATE services SET title = $1, description = $2, icon_name = $3 WHERE id = $4',
       [title, description, iconName, id]
     );
     res.json({ id, title, description, iconName });
@@ -94,10 +278,10 @@ app.put('/api/services/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/services/:id', async (req, res) => {
+app.delete('/api/services/:id', adminAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    await db.execute('DELETE FROM services WHERE id = ?', [id]);
+    await db.query('DELETE FROM services WHERE id = $1', [id]);
     res.json({ message: 'Hizmet başarıyla silindi' });
   } catch (error) {
     console.error(error);
@@ -108,10 +292,10 @@ app.delete('/api/services/:id', async (req, res) => {
 // PRODUCTS API
 app.get('/api/products', async (req, res) => {
   try {
-    const [rows] = await db.execute('SELECT * FROM products ORDER BY id DESC');
+    const rows = await db.query('SELECT * FROM products ORDER BY id DESC');
     
     // Images alanını parse et ve is_featured'ı boolean'a çevir
-    const processedRows = rows.map(row => ({
+    const processedRows = rows.rows.map(row => ({
       ...row,
       images: row.images ? JSON.parse(row.images) : [],
       isFeatured: Boolean(row.is_featured) // Veritabanından gelen tinyint'i boolean'a çevir
@@ -124,7 +308,7 @@ app.get('/api/products', async (req, res) => {
   }
 });
 
-app.post('/api/products', upload.array('images', 10), async (req, res) => {
+app.post('/api/products', adminAuth, upload.array('images', 10), imageOptimizer, async (req, res) => {
   try {
     const { name, description, category, is_featured } = req.body;
     const uploadedFiles = req.files || [];
@@ -136,14 +320,14 @@ app.post('/api/products', upload.array('images', 10), async (req, res) => {
     const images = uploadedFiles.map(file => `/uploads/${file.filename}`);
     const imagesJson = JSON.stringify(images);
     
-    const isFeatured = is_featured === 'true' || is_featured === true || is_featured === 1;
-    
-    const [result] = await db.execute(
-      'INSERT INTO products (name, description, category, image_url, images, is_featured) VALUES (?, ?, ?, ?, ?, ?)',
+    const isFeatured = toSmallInt(is_featured);
+
+    const result = await db.query(
+      'INSERT INTO products (name, description, category, image_url, images, is_featured) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
       [name, description, category, imageUrl, imagesJson, isFeatured]
     );
     res.json({ 
-      id: result.insertId, 
+      id: result.rows[0].id, 
       name, 
       description, 
       category, 
@@ -157,19 +341,19 @@ app.post('/api/products', upload.array('images', 10), async (req, res) => {
   }
 });
 
-app.put('/api/products/:id', upload.array('images', 10), async (req, res) => {
+app.put('/api/products/:id', adminAuth, upload.array('images', 10), imageOptimizer, async (req, res) => {
   try {
     const { id } = req.params;
     const { name, description, category, is_featured, deletedImages, keepExistingImages } = req.body;
     const uploadedFiles = req.files || [];
     
     // Mevcut images'ları al
-    const [existing] = await db.execute('SELECT * FROM products WHERE id = ?', [id]);
+    const existing = await db.query('SELECT * FROM products WHERE id = $1', [id]);
     let currentImages = [];
     
-    if (existing.length > 0 && existing[0].images) {
+    if (existing.rows.length > 0 && existing.rows[0].images) {
       try {
-        currentImages = JSON.parse(existing[0].images);
+        currentImages = JSON.parse(existing.rows[0].images);
       } catch {
         currentImages = [];
       }
@@ -204,13 +388,13 @@ app.put('/api/products/:id', upload.array('images', 10), async (req, res) => {
     }
     
     // Ana resim (ilk resim)
-    const imageUrl = allImages.length > 0 ? allImages[0] : existing[0]?.image_url || '';
+    const imageUrl = allImages.length > 0 ? allImages[0] : existing.rows[0]?.image_url || '';
     const imagesJson = JSON.stringify(allImages);
     
-    const isFeatured = is_featured === 'true' || is_featured === true || is_featured === 1;
+    const isFeatured = toSmallInt(is_featured);
     
-    await db.execute(
-      'UPDATE products SET name = ?, description = ?, category = ?, image_url = ?, images = ?, is_featured = ? WHERE id = ?',
+    await db.query(
+      'UPDATE products SET name = $1, description = $2, category = $3, image_url = $4, images = $5, is_featured = $6 WHERE id = $7',
       [name, description, category, imageUrl, imagesJson, isFeatured, id]
     );
     res.json({ 
@@ -228,10 +412,10 @@ app.put('/api/products/:id', upload.array('images', 10), async (req, res) => {
   }
 });
 
-app.delete('/api/products/:id', async (req, res) => {
+app.delete('/api/products/:id', adminAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    await db.execute('DELETE FROM products WHERE id = ?', [id]);
+    await db.query('DELETE FROM products WHERE id = $1', [id]);
     res.json({ message: 'Ürün başarıyla silindi' });
   } catch (error) {
     console.error(error);
@@ -242,26 +426,26 @@ app.delete('/api/products/:id', async (req, res) => {
 // BLOG POSTS API
 app.get('/api/blog-posts', async (req, res) => {
   try {
-    const [rows] = await db.execute('SELECT * FROM blog_posts ORDER BY id DESC');
-    res.json(rows);
+    const rows = await db.query('SELECT * FROM blog_posts ORDER BY id DESC');
+    res.json(rows.rows);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Blog yazıları alınırken hata oluştu' });
   }
 });
 
-app.post('/api/blog-posts', upload.single('image'), async (req, res) => {
+app.post('/api/blog-posts', adminAuth, upload.single('image'), imageOptimizer, async (req, res) => {
   try {
-    const { title, content, excerpt, author } = req.body;
+    const { title, content, excerpt, author, seo_title, seo_description, seo_keywords } = req.body;
     const imageUrl = req.file ? `/uploads/${req.file.filename}` : '';
     const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
     
-    const [result] = await db.execute(
-      'INSERT INTO blog_posts (title, summary, content, excerpt, author, date, image_url, views, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 0, NOW())',
-      [title, excerpt || '', content || '', excerpt || '', author || 'Akaydın Tarım', currentDate, imageUrl]
+    const result = await db.query(
+      'INSERT INTO blog_posts (title, summary, content, excerpt, author, date, image_url, views, seo_title, seo_description, seo_keywords, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, 0, $8, $9, $10, NOW()) RETURNING id',
+      [title, excerpt || '', content || '', excerpt || '', author || 'Akaydın Tarım', currentDate, imageUrl, seo_title || null, seo_description || null, seo_keywords || null]
     );
     res.json({ 
-      id: result.insertId, 
+      id: result.rows[0].id, 
       title, 
       summary: excerpt || '',
       content: content || '', 
@@ -271,6 +455,9 @@ app.post('/api/blog-posts', upload.single('image'), async (req, res) => {
       image_url: imageUrl,
       image: req.file ? req.file.filename : null,
       views: 0,
+      seo_title: seo_title || null,
+      seo_description: seo_description || null,
+      seo_keywords: seo_keywords || null,
       created_at: new Date()
     });
   } catch (error) {
@@ -279,25 +466,25 @@ app.post('/api/blog-posts', upload.single('image'), async (req, res) => {
   }
 });
 
-app.put('/api/blog-posts/:id', upload.single('image'), async (req, res) => {
+app.put('/api/blog-posts/:id', adminAuth, upload.single('image'), imageOptimizer, async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, content, excerpt, author } = req.body;
+    const { title, content, excerpt, author, seo_title, seo_description, seo_keywords } = req.body;
     
     // Mevcut kayıt bilgilerini al
-    const [existing] = await db.execute('SELECT * FROM blog_posts WHERE id = ?', [id]);
-    if (existing.length === 0) {
+    const existing = await db.query('SELECT * FROM blog_posts WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
       return res.status(404).json({ error: 'Blog yazısı bulunamadı' });
     }
     
-    let imageUrl = existing[0].image_url || '';
+    let imageUrl = existing.rows[0].image_url || '';
     if (req.file) {
       imageUrl = `/uploads/${req.file.filename}`;
     }
     
-    await db.execute(
-      'UPDATE blog_posts SET title = ?, summary = ?, content = ?, excerpt = ?, author = ?, image_url = ?, updated_at = NOW() WHERE id = ?',
-      [title, excerpt || '', content || '', excerpt || '', author || 'Akaydın Tarım', imageUrl, id]
+    await db.query(
+      'UPDATE blog_posts SET title = $1, summary = $2, content = $3, excerpt = $4, author = $5, image_url = $6, seo_title = $7, seo_description = $8, seo_keywords = $9, updated_at = NOW() WHERE id = $10',
+      [title, excerpt || '', content || '', excerpt || '', author || 'Akaydın Tarım', imageUrl, seo_title || null, seo_description || null, seo_keywords || null, id]
     );
     
     res.json({ 
@@ -307,10 +494,13 @@ app.put('/api/blog-posts/:id', upload.single('image'), async (req, res) => {
       content: content || '', 
       excerpt: excerpt || '',
       author: author || 'Akaydın Tarım',
-      date: existing[0].date,
+      date: existing.rows[0].date,
       image_url: imageUrl,
       image: req.file ? req.file.filename : null,
-      views: existing[0].views || 0
+      views: existing.rows[0].views || 0,
+      seo_title: seo_title || null,
+      seo_description: seo_description || null,
+      seo_keywords: seo_keywords || null
     });
   } catch (error) {
     console.error(error);
@@ -318,10 +508,10 @@ app.put('/api/blog-posts/:id', upload.single('image'), async (req, res) => {
   }
 });
 
-app.delete('/api/blog-posts/:id', async (req, res) => {
+app.delete('/api/blog-posts/:id', adminAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    await db.execute('DELETE FROM blog_posts WHERE id = ?', [id]);
+    await db.query('DELETE FROM blog_posts WHERE id = $1', [id]);
     res.json({ message: 'Blog yazısı başarıyla silindi' });
   } catch (error) {
     console.error(error);
@@ -333,7 +523,7 @@ app.delete('/api/blog-posts/:id', async (req, res) => {
 app.post('/api/blog-posts/:id/view', async (req, res) => {
   try {
     const { id } = req.params;
-    await db.execute('UPDATE blog_posts SET views = views + 1 WHERE id = ?', [id]);
+    await db.query('UPDATE blog_posts SET views = views + 1 WHERE id = $1', [id]);
     res.json({ message: 'View count updated' });
   } catch (error) {
     console.error(error);
@@ -342,15 +532,15 @@ app.post('/api/blog-posts/:id/view', async (req, res) => {
 });
 
 // Blog istatistikleri için endpoint
-app.get('/api/blog-posts/stats', async (req, res) => {
+app.get('/api/blog-posts/stats', adminAuth, async (req, res) => {
   try {
-    const [totalRows] = await db.execute('SELECT COUNT(*) as total FROM blog_posts');
-    const [viewsRows] = await db.execute('SELECT SUM(views) as totalViews FROM blog_posts');
-    const [topRows] = await db.execute('SELECT title, views FROM blog_posts ORDER BY views DESC LIMIT 5');
+    const totalRows = await db.query('SELECT COUNT(*) as total FROM blog_posts');
+    const viewsRows = await db.query('SELECT SUM(views) as totalViews FROM blog_posts');
+    const topRows = await db.query('SELECT title, views FROM blog_posts ORDER BY views DESC LIMIT 5');
     
     res.json({
-      totalPosts: totalRows[0].total,
-      totalViews: viewsRows[0].totalViews || 0,
+      totalPosts: totalRows.rows[0].total,
+      totalViews: viewsRows.rows[0].totalViews || 0,
       topPosts: topRows
     });
   } catch (error) {
@@ -362,8 +552,8 @@ app.get('/api/blog-posts/stats', async (req, res) => {
 // ABOUT PAGE API
 app.get('/api/about', async (req, res) => {
   try {
-    const [rows] = await db.execute('SELECT * FROM about_page LIMIT 1');
-    const aboutData = rows[0] || { mission: '', vision: '', title: '', content: '', images: null };
+    const rows = await db.query('SELECT * FROM about_page LIMIT 1');
+    const aboutData = rows.rows[0] || { mission: '', vision: '', title: '', content: '', images: null };
     
     // JSON string'i parse et
     if (aboutData.images) {
@@ -383,18 +573,18 @@ app.get('/api/about', async (req, res) => {
   }
 });
 
-app.put('/api/about', upload.array('images', 10), async (req, res) => {
+app.put('/api/about', adminAuth, upload.array('images', 10), imageOptimizer, async (req, res) => {
   try {
     const { title, content, mission, vision, deletedImages } = req.body;
     const uploadedFiles = req.files || [];
     
     // Mevcut images'ları al
-    const [existing] = await db.execute('SELECT * FROM about_page LIMIT 1');
+    const existing = await db.query('SELECT * FROM about_page LIMIT 1');
     let currentImages = [];
     
-    if (existing.length > 0 && existing[0].images) {
+    if (existing.rows.length > 0 && existing.rows[0].images) {
       try {
-        currentImages = JSON.parse(existing[0].images);
+        currentImages = JSON.parse(existing.rows[0].images);
       } catch {
         currentImages = [];
       }
@@ -423,14 +613,14 @@ app.put('/api/about', upload.array('images', 10), async (req, res) => {
     
     const imagesJson = JSON.stringify(allImages);
     
-    if (existing.length > 0) {
-      await db.execute(
-        'UPDATE about_page SET title = ?, content = ?, mission = ?, vision = ?, images = ? WHERE id = ?',
-        [title || '', content || '', mission, vision, imagesJson, existing[0].id]
+    if (existing.rows.length > 0) {
+      await db.query(
+        'UPDATE about_page SET title = $1, content = $2, mission = $3, vision = $4, images = $5 WHERE id = $6',
+        [title || '', content || '', mission, vision, imagesJson, existing.rows[0].id]
       );
     } else {
-      await db.execute(
-        'INSERT INTO about_page (title, content, mission, vision, images) VALUES (?, ?, ?, ?, ?)',
+      await db.query(
+        'INSERT INTO about_page (title, content, mission, vision, images) VALUES ($1, $2, $3, $4, $5) RETURNING id',
         [title || '', content || '', mission, vision, imagesJson]
       );
     }
@@ -449,7 +639,7 @@ app.put('/api/about', upload.array('images', 10), async (req, res) => {
 });
 
 // About resim silme API
-app.delete('/api/about/image', async (req, res) => {
+app.delete('/api/about/image', adminAuth, async (req, res) => {
   try {
     const { imagePath } = req.body;
     
@@ -458,12 +648,12 @@ app.delete('/api/about/image', async (req, res) => {
     }
     
     // Mevcut images'ları al
-    const [existing] = await db.execute('SELECT * FROM about_page LIMIT 1');
+    const existing = await db.query('SELECT * FROM about_page LIMIT 1');
     let currentImages = [];
     
-    if (existing.length > 0 && existing[0].images) {
+    if (existing.rows.length > 0 && existing.rows[0].images) {
       try {
-        currentImages = JSON.parse(existing[0].images);
+        currentImages = JSON.parse(existing.rows[0].images);
       } catch {
         currentImages = [];
       }
@@ -487,10 +677,10 @@ app.delete('/api/about/image', async (req, res) => {
     // Veritabanını güncelle
     const imagesJson = JSON.stringify(updatedImages);
     
-    if (existing.length > 0) {
-      await db.execute(
-        'UPDATE about_page SET images = ? WHERE id = ?',
-        [imagesJson, existing[0].id]
+    if (existing.rows.length > 0) {
+      await db.query(
+        'UPDATE about_page SET images = $1 WHERE id = $2',
+        [imagesJson, existing.rows[0].id]
       );
     }
     
@@ -508,8 +698,8 @@ app.delete('/api/about/image', async (req, res) => {
 // CONTACT PAGE API
 app.get('/api/contact', async (req, res) => {
   try {
-    const [rows] = await db.execute('SELECT * FROM contact_page LIMIT 1');
-    res.json(rows[0] || { 
+    const rows = await db.query('SELECT * FROM contact_page LIMIT 1');
+    res.json(rows.rows[0] || { 
       company_name: 'Akaydın Tarım',
       address: '', 
       phone: '', 
@@ -530,7 +720,7 @@ app.get('/api/contact', async (req, res) => {
   }
 });
 
-app.put('/api/contact', async (req, res) => {
+app.put('/api/contact', adminAuth, async (req, res) => {
   try {
     const { 
       company_name,
@@ -548,25 +738,25 @@ app.put('/api/contact', async (req, res) => {
       map_embed
     } = req.body;
     
-    const [existing] = await db.execute('SELECT id FROM contact_page LIMIT 1');
+    const existing = await db.query('SELECT id FROM contact_page LIMIT 1');
     
-    if (existing.length > 0) {
-      await db.execute(
+    if (existing.rows.length > 0) {
+      await db.query(
         `UPDATE contact_page SET 
-         company_name = ?,
-         address = ?, 
-         phone = ?, 
-         whatsapp_phone = ?, 
-         email = ?, 
-         facebook_url = ?, 
-         instagram_url = ?, 
-         twitter_url = ?, 
-         linkedin_url = ?, 
-         youtube_url = ?,
-         website = ?,
-         working_hours = ?,
-         map_embed = ?
-         WHERE id = ?`,
+         company_name = $1,
+         address = $2, 
+         phone = $3, 
+         whatsapp_phone = $4, 
+         email = $5, 
+         facebook_url = $6, 
+         instagram_url = $7, 
+         twitter_url = $8, 
+         linkedin_url = $9, 
+         youtube_url = $10,
+         website = $11,
+         working_hours = $12,
+         map_embed = $13
+         WHERE id = $14`,
         [
           company_name || 'Akaydın Tarım', 
           address || '', 
@@ -581,14 +771,14 @@ app.put('/api/contact', async (req, res) => {
           website || '',
           working_hours || '',
           map_embed || '',
-          existing[0].id
+          existing.rows[0].id
         ]
       );
     } else {
-      await db.execute(
+      await db.query(
         `INSERT INTO contact_page 
          (company_name, address, phone, whatsapp_phone, email, facebook_url, instagram_url, twitter_url, linkedin_url, youtube_url, website, working_hours, map_embed) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
         [
           company_name || 'Akaydın Tarım', 
           address || '', 
@@ -633,19 +823,26 @@ app.post('/api/contact/messages', async (req, res) => {
   try {
     const { name, email, phone, subject, message } = req.body;
     
-    if (!name || !email || !message) {
-      return res.status(400).json({ error: 'Ad, email ve mesaj alanları zorunludur' });
+    // Input validasyonu
+    if (!name || typeof name !== 'string' || name.trim().length < 2) {
+      return res.status(400).json({ error: 'Ad alanı zorunludur ve en az 2 karakter olmalıdır' });
+    }
+    if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'Geçerli bir email adresi gereklidir' });
+    }
+    if (!message || typeof message !== 'string' || message.trim().length < 10) {
+      return res.status(400).json({ error: 'Mesaj alanı zorunludur ve en az 10 karakter olmalıdır' });
     }
 
-    const [result] = await db.execute(
-      'INSERT INTO contact_messages (name, email, phone, subject, message) VALUES (?, ?, ?, ?, ?)',
-      [name, email, phone === undefined ? null : phone, subject === undefined ? null : subject, message]
+    const result = await db.query(
+      'INSERT INTO contact_messages (name, email, phone, subject, message) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+      [name.trim(), email.trim(), phone || null, subject || null, message.trim()]
     );
 
     res.status(201).json({ 
       success: true, 
       message: 'Mesajınız başarıyla gönderildi',
-      id: result.insertId 
+      id: result.rows[0].id 
     });
   } catch (error) {
     console.error('Contact message error:', error);
@@ -653,23 +850,23 @@ app.post('/api/contact/messages', async (req, res) => {
   }
 });
 
-app.get('/api/contact/messages', async (req, res) => {
+app.get('/api/contact/messages', adminAuth, async (req, res) => {
   try {
-    const [rows] = await db.execute(
+    const rows = await db.query(
       'SELECT * FROM contact_messages ORDER BY created_at DESC'
     );
-    res.json(rows);
+    res.json(rows.rows);
   } catch (error) {
     console.error('Get contact messages error:', error);
     res.status(500).json({ error: 'Mesajlar alınırken hata oluştu' });
   }
 });
 
-app.put('/api/contact/messages/:id/read', async (req, res) => {
+app.put('/api/contact/messages/:id/read', adminAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    await db.execute(
-      'UPDATE contact_messages SET is_read = TRUE WHERE id = ?',
+    await db.query(
+      'UPDATE contact_messages SET is_read = 1 WHERE id = $1',
       [id]
     );
     res.json({ success: true, message: 'Mesaj okundu olarak işaretlendi' });
@@ -679,10 +876,10 @@ app.put('/api/contact/messages/:id/read', async (req, res) => {
   }
 });
 
-app.delete('/api/contact/messages/:id', async (req, res) => {
+app.delete('/api/contact/messages/:id', adminAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    await db.execute('DELETE FROM contact_messages WHERE id = ?', [id]);
+    await db.query('DELETE FROM contact_messages WHERE id = $1', [id]);
     res.json({ success: true, message: 'Mesaj silindi' });
   } catch (error) {
     console.error('Delete message error:', error);
@@ -693,26 +890,26 @@ app.delete('/api/contact/messages/:id', async (req, res) => {
 // HERO API
 app.get('/api/hero', async (req, res) => {
   try {
-    const [rows] = await db.execute('SELECT * FROM hero_content ORDER BY order_index ASC');
-    res.json(rows);
+    const rows = await db.query('SELECT * FROM hero_content ORDER BY order_index ASC');
+    res.json(rows.rows);
   } catch (error) {
     console.error('Hero içeriği alınırken hata:', error);
     res.status(500).json({ error: 'Hero içeriği alınırken hata oluştu' });
   }
 });
 
-app.post('/api/hero', upload.single('background_image'), async (req, res) => {
+app.post('/api/hero', adminAuth, upload.single('background_image'), imageOptimizer, async (req, res) => {
   try {
-    const { title, subtitle, description, cta, background_gradient, is_active, order_index } = req.body;
-    const backgroundImage = req.file ? req.file.filename : null;
+	    const { title, subtitle, description, cta, background_gradient, is_active, order_index } = req.body;
+    const backgroundImage = req.file ? `/uploads/${req.file.filename}` : null;
 
-    const [result] = await db.execute(
-      'INSERT INTO hero_content (title, subtitle, description, cta, background_gradient, background_image, is_active, order_index) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [title, subtitle, description, cta, background_gradient, backgroundImage, is_active === 'true', parseInt(order_index) || 1]
+    const result = await db.query(
+      'INSERT INTO hero_content (title, subtitle, description, cta, background_gradient, background_image, is_active, order_index) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id',
+      [title, subtitle, description, cta, background_gradient, backgroundImage, toSmallInt(is_active), parseInt(order_index) || 1]
     );
 
     res.json({ 
-      id: result.insertId, 
+      id: result.rows[0].id, 
       title, 
       subtitle, 
       description, 
@@ -728,24 +925,24 @@ app.post('/api/hero', upload.single('background_image'), async (req, res) => {
   }
 });
 
-app.put('/api/hero/:id', upload.single('background_image'), async (req, res) => {
+app.put('/api/hero/:id', adminAuth, upload.single('background_image'), imageOptimizer, async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, subtitle, description, cta, background_gradient, is_active, order_index } = req.body;
-    const backgroundImage = req.file ? req.file.filename : null;
-
-    let query = 'UPDATE hero_content SET title = ?, subtitle = ?, description = ?, cta = ?, background_gradient = ?, is_active = ?, order_index = ?';
-    let values = [title, subtitle, description, cta, background_gradient, is_active === 'true', parseInt(order_index) || 1];
-
+	    const { title, subtitle, description, cta, background_gradient, is_active, order_index } = req.body;
+    const backgroundImage = req.file ? `/uploads/${req.file.filename}` : null;
+    
+    let query = 'UPDATE hero_content SET title = $1, subtitle = $2, description = $3, cta = $4, background_gradient = $5, is_active = $6, order_index = $7';
+    let values = [title, subtitle, description, cta, background_gradient, toSmallInt(is_active), parseInt(order_index) || 1];
+    
     if (backgroundImage) {
-      query += ', background_image = ?';
+      query += ', background_image = $8';
       values.push(backgroundImage);
     }
 
-    query += ' WHERE id = ?';
+    query += ' WHERE id = $' + (values.length + 1);
     values.push(id);
 
-    await db.execute(query, values);
+    await db.query(query, values);
 
     res.json({ 
       id: parseInt(id), 
@@ -764,10 +961,10 @@ app.put('/api/hero/:id', upload.single('background_image'), async (req, res) => 
   }
 });
 
-app.delete('/api/hero/:id', async (req, res) => {
+app.delete('/api/hero/:id', adminAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    await db.execute('DELETE FROM hero_content WHERE id = ?', [id]);
+    await db.query('DELETE FROM hero_content WHERE id = $1', [id]);
     res.json({ message: 'Hero içeriği silindi' });
   } catch (error) {
     console.error('Hero içeriği silinirken hata:', error);
@@ -775,12 +972,12 @@ app.delete('/api/hero/:id', async (req, res) => {
   }
 });
 
-app.put('/api/hero/order', async (req, res) => {
+app.put('/api/hero/order', adminAuth, async (req, res) => {
   try {
     const { items } = req.body;
     
     for (const item of items) {
-      await db.execute('UPDATE hero_content SET order_index = ? WHERE id = ?', [item.order, item.id]);
+      await db.query('UPDATE hero_content SET order_index = $1 WHERE id = $2', [item.order, item.id]);
     }
     
     res.json({ message: 'Sıralama güncellendi' });
@@ -793,32 +990,8 @@ app.put('/api/hero/order', async (req, res) => {
 // HAZELNUT PRICES API
 app.get('/api/hazelnut-prices', async (req, res) => {
   try {
-    const [rows] = await db.execute('SELECT * FROM hazelnut_prices ORDER BY updated_at DESC LIMIT 1');
-    if (rows.length === 0) {
-      // Varsayılan fiyatlar döndür
-      res.json({
-        id: 1,
-        tmo_price: 45.50,
-        borsa_price: 46.70,
-        serbest_price: 48.00,
-        daily_change: 2.30,
-        change_percentage: 5.2,
-        updated_at: new Date()
-      });
-    } else {
-      res.json(rows[0]);
-    }
-  } catch (error) {
-    console.error('Fındık fiyatları alınırken hata:', error);
-    res.status(500).json({ error: 'Fındık fiyatları alınırken hata oluştu' });
-  }
-});
-
-// HAZELNUT PRICES API
-app.get('/api/hazelnut-prices', async (req, res) => {
-  try {
-    const [rows] = await db.execute('SELECT * FROM hazelnut_prices ORDER BY created_at DESC LIMIT 1');
-    if (rows.length === 0) {
+    const rows = await db.query('SELECT * FROM hazelnut_prices ORDER BY created_at DESC LIMIT 1');
+    if (rows.rows.length === 0) {
       // Varsayılan değerler
       res.json({
         id: 1,
@@ -833,7 +1006,7 @@ app.get('/api/hazelnut-prices', async (req, res) => {
         updated_at: new Date()
       });
     } else {
-      res.json(rows[0]);
+      res.json(rows.rows[0]);
     }
   } catch (error) {
     console.error('Fındık fiyatları yüklenirken hata:', error);
@@ -842,10 +1015,10 @@ app.get('/api/hazelnut-prices', async (req, res) => {
 });
 
 // Fiyat geçmişi
-app.get('/api/hazelnut-prices/history', async (req, res) => {
+app.get('/api/hazelnut-prices/history', adminAuth, async (req, res) => {
   try {
-    const [rows] = await db.execute('SELECT * FROM hazelnut_prices ORDER BY created_at DESC LIMIT 50');
-    res.json(rows);
+    const rows = await db.query('SELECT * FROM hazelnut_prices ORDER BY created_at DESC LIMIT 50');
+    res.json(rows.rows);
   } catch (error) {
     console.error('Fiyat geçmişi yüklenirken hata:', error);
     res.status(500).json({ error: 'Fiyat geçmişi yüklenirken hata oluştu' });
@@ -853,17 +1026,17 @@ app.get('/api/hazelnut-prices/history', async (req, res) => {
 });
 
 // Yeni fiyat kaydı oluştur
-app.post('/api/hazelnut-prices', async (req, res) => {
+app.post('/api/hazelnut-prices', adminAuth, async (req, res) => {
   try {
     const { price, daily_change, change_percentage, source, update_mode, scraping_enabled, notes } = req.body;
     
-    const [result] = await db.execute(
-      'INSERT INTO hazelnut_prices (price, daily_change, change_percentage, source, update_mode, scraping_enabled, notes) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [price || 0, daily_change || 0, change_percentage || 0, source || 'manual', update_mode || 'manual', scraping_enabled !== undefined ? scraping_enabled : true, notes || '']
+    const result = await db.query(
+      'INSERT INTO hazelnut_prices (price, daily_change, change_percentage, source, update_mode, scraping_enabled, notes) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+      [price || 0, daily_change || 0, change_percentage || 0, source || 'manual', update_mode || 'manual', toSmallInt(scraping_enabled), notes || '']
     );
     
     res.json({ 
-      id: result.insertId,
+      id: result.rows[0].id,
       message: 'Fındık fiyatı kaydedildi',
       price,
       daily_change,
@@ -875,17 +1048,17 @@ app.post('/api/hazelnut-prices', async (req, res) => {
   }
 });
 
-app.put('/api/hazelnut-prices', async (req, res) => {
+app.put('/api/hazelnut-prices', adminAuth, async (req, res) => {
   try {
     const { price, daily_change, change_percentage, source, update_mode, scraping_enabled, notes } = req.body;
     
     // En son kaydı güncelle (update ayarları için)
-    const [latest] = await db.execute('SELECT id FROM hazelnut_prices ORDER BY created_at DESC LIMIT 1');
+    const latest = await db.query('SELECT id FROM hazelnut_prices ORDER BY created_at DESC LIMIT 1');
     
-    if (latest.length > 0) {
-      await db.execute(
-        'UPDATE hazelnut_prices SET update_mode = ?, scraping_enabled = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-        [update_mode || 'manual', scraping_enabled !== undefined ? scraping_enabled : true, latest[0].id]
+    if (latest.rows.length > 0) {
+      await db.query(
+        'UPDATE hazelnut_prices SET update_mode = $1, scraping_enabled = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
+        [update_mode || 'manual', toSmallInt(scraping_enabled), latest.rows[0].id]
       );
     }
     
@@ -897,7 +1070,7 @@ app.put('/api/hazelnut-prices', async (req, res) => {
 });
 
 // Web scraping endpoint for hazelnut prices
-app.post('/api/hazelnut-prices/scrape', async (req, res) => {
+app.post('/api/hazelnut-prices/scrape', adminAuth, async (req, res) => {
   try {
     // Web scraping fonksiyonu
     const scrapePrices = async () => {
@@ -968,28 +1141,28 @@ app.post('/api/hazelnut-prices/scrape', async (req, res) => {
         }
         
         // Mevcut fiyatları al
-        const [current] = await db.execute('SELECT * FROM hazelnut_prices ORDER BY created_at DESC LIMIT 1');
+        const current = await db.query('SELECT * FROM hazelnut_prices ORDER BY created_at DESC LIMIT 1');
         
         let dailyChange = 0;
         let changePercentage = 0;
         
-        if (current.length > 0 && current[0].price) {
-          dailyChange = scrapedPrice - current[0].price;
-          changePercentage = (dailyChange / current[0].price) * 100;
+        if (current.rows.length > 0 && current.rows[0].price) {
+          dailyChange = scrapedPrice - current.rows[0].price;
+          changePercentage = (dailyChange / current.rows[0].price) * 100;
         }
         
         // En son kaydın update_mode ve scraping_enabled ayarlarını al
         let updateMode = 'manual';
-        let scrapingEnabled = true;
+        let scrapingEnabled = 1;
         
-        if (current.length > 0) {
-          updateMode = current[0].update_mode || 'manual';
-          scrapingEnabled = current[0].scraping_enabled !== undefined ? current[0].scraping_enabled : true;
+        if (current.rows.length > 0) {
+          updateMode = current.rows[0].update_mode || 'manual';
+          scrapingEnabled = toSmallInt(current.rows[0].scraping_enabled);
         }
         
         // Scraped price'ı yeni kayıt olarak ekle
-        const [result] = await db.execute(
-          'INSERT INTO hazelnut_prices (price, daily_change, change_percentage, source, scraped_price, last_scraped_at, update_mode, scraping_enabled, notes) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?)',
+        const result = await db.query(
+          'INSERT INTO hazelnut_prices (price, daily_change, change_percentage, source, scraped_price, last_scraped_at, update_mode, scraping_enabled, notes) VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, $6, $7, $8) RETURNING id',
           [scrapedPrice, dailyChange, changePercentage, 'scraped', scrapedPrice, updateMode, scrapingEnabled, `Otomatik scraping - ${new Date().toLocaleString('tr-TR')}`]
         );
         
@@ -999,7 +1172,7 @@ app.post('/api/hazelnut-prices/scrape', async (req, res) => {
           dailyChange,
           changePercentage,
           timestamp: new Date(),
-          recordId: result.insertId
+          recordId: result.rows[0].id
         };
       } catch (error) {
         console.error('Scraping hatası:', error.message);
@@ -1019,23 +1192,23 @@ app.post('/api/hazelnut-prices/scrape', async (req, res) => {
 });
 
 // Otomatik mod durumunda scraped price'ı serbest_price olarak güncelle
-app.post('/api/hazelnut-prices/apply-scraped', async (req, res) => {
+app.post('/api/hazelnut-prices/apply-scraped', adminAuth, async (req, res) => {
   try {
-    const [current] = await db.execute('SELECT * FROM hazelnut_prices ORDER BY created_at DESC LIMIT 1');
+    const current = await db.query('SELECT * FROM hazelnut_prices ORDER BY created_at DESC LIMIT 1');
     
-    if (current.length > 0 && current[0].scraped_price && current[0].update_mode === 'automatic') {
-      const scrapedPrice = current[0].scraped_price;
+    if (current.rows.length > 0 && current.rows[0].scraped_price && current.rows[0].update_mode === 'automatic') {
+      const scrapedPrice = current.rows[0].scraped_price;
       
       // Yeni kayıt oluştur
-      const [result] = await db.execute(
-        'INSERT INTO hazelnut_prices (price, daily_change, change_percentage, source, update_mode, scraping_enabled, notes) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [scrapedPrice, current[0].daily_change || 0, current[0].change_percentage || 0, 'scraped', current[0].update_mode, current[0].scraping_enabled, `Scraped fiyat uygulandı - ${new Date().toLocaleString('tr-TR')}`]
+      const result = await db.query(
+        'INSERT INTO hazelnut_prices (price, daily_change, change_percentage, source, update_mode, scraping_enabled, notes) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+        [scrapedPrice, current.rows[0].daily_change || 0, current.rows[0].change_percentage || 0, 'scraped', current.rows[0].update_mode, toSmallInt(current.rows[0].scraping_enabled), `Scraped fiyat uygulandı - ${new Date().toLocaleString('tr-TR')}`]
       );
       
       res.json({ 
         message: 'Scraped fiyat yeni kayıt olarak uygulandı',
         price: scrapedPrice,
-        recordId: result.insertId
+        recordId: result.rows[0].id
       });
     } else {
       res.json({ message: 'Uygulanacak scraped fiyat bulunamadı veya manuel mod aktif' });
@@ -1050,9 +1223,9 @@ app.post('/api/hazelnut-prices/apply-scraped', async (req, res) => {
 const autoScrapeJob = cron.schedule('0 */4 * * *', async () => {
   try {
     // Önce scraping enabled ve automatic mode kontrolü yap
-    const [settings] = await db.execute('SELECT * FROM hazelnut_prices ORDER BY updated_at DESC LIMIT 1');
+    const settings = await db.query('SELECT * FROM hazelnut_prices ORDER BY updated_at DESC LIMIT 1');
     
-    if (settings.length > 0 && settings[0].scraping_enabled && settings[0].update_mode === 'automatic') {
+    if (settings.rows.length > 0 && settings.rows[0].scraping_enabled && settings.rows[0].update_mode === 'automatic') {
       // Scraping yap
       const response = await axios.get('https://www.findiktv.com/urunler/findik/sakarya/fiyati', {
         headers: {
@@ -1077,19 +1250,19 @@ const autoScrapeJob = cron.schedule('0 */4 * * *', async () => {
       
       if (scrapedPrice && !isNaN(scrapedPrice) && scrapedPrice >= 100 && scrapedPrice <= 300) {
         // Scraped price'ı güncelle
-        await db.execute(
-          'UPDATE hazelnut_prices SET scraped_price = ?, last_scraped_at = CURRENT_TIMESTAMP WHERE id = ?',
-          [scrapedPrice, settings[0].id]
+        await db.query(
+          'UPDATE hazelnut_prices SET scraped_price = $1, last_scraped_at = CURRENT_TIMESTAMP WHERE id = $2',
+          [scrapedPrice, settings.rows[0].id]
         );
         
-        // Otomatik mod ise serbest_price'ı da güncelle
-        const currentPrice = settings[0].serbest_price || 0;
+        // Otomatik mod ise price'ı da güncelle
+        const currentPrice = Number(settings.rows[0].price) || 0;
         const dailyChange = scrapedPrice - currentPrice;
         const changePercentage = currentPrice > 0 ? (dailyChange / currentPrice) * 100 : 0;
         
-        await db.execute(
-          'UPDATE hazelnut_prices SET serbest_price = ?, daily_change = ?, change_percentage = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-          [scrapedPrice, dailyChange, changePercentage, settings[0].id]
+        await db.query(
+          'UPDATE hazelnut_prices SET scraped_price = $1, daily_change = $2, change_percentage = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4',
+          [scrapedPrice, dailyChange, changePercentage, settings.rows[0].id]
         );
         
         console.log(`Otomatik fiyat güncellendi: ${scrapedPrice} TL`);
@@ -1113,8 +1286,8 @@ autoScrapeJob.start();
 // SEO Settings
 app.get('/api/seo/settings', async (req, res) => {
   try {
-    const [rows] = await db.execute('SELECT * FROM seo_settings LIMIT 1');
-    res.json(rows[0] || {
+    const rows = await db.query('SELECT * FROM seo_settings LIMIT 1');
+    res.json(rows.rows[0] || {
       site_title: 'Akaydın Tarım - Fındık Üretimi ve Satışı',
       site_description: 'Hendek/Sakarya\'da kaliteli fındık üretimi ve satışı. Organik tarım ürünleri.',
       site_keywords: 'fındık, tarım, hendek, sakarya, organik',
@@ -1140,7 +1313,7 @@ app.get('/api/seo/settings', async (req, res) => {
   }
 });
 
-app.put('/api/seo/settings', async (req, res) => {
+app.put('/api/seo/settings', adminAuth, async (req, res) => {
   try {
     const {
       site_title, site_description, site_keywords, site_author,
@@ -1151,30 +1324,29 @@ app.put('/api/seo/settings', async (req, res) => {
       schema_organization, sitemap_enabled
     } = req.body;
 
-    const [existing] = await db.execute('SELECT id FROM seo_settings LIMIT 1');
+    const existing = await db.query('SELECT id FROM seo_settings LIMIT 1');
     
-    if (existing.length > 0) {
-      await db.execute(
+    if (existing.rows.length > 0) {
+      await db.query(
         `UPDATE seo_settings SET 
-         site_title = ?, site_description = ?, site_keywords = ?, site_author = ?,
-         og_title = ?, og_description = ?, og_image = ?, og_url = ?,
-         twitter_card = ?, twitter_site = ?, twitter_creator = ?,
-         canonical_url = ?, robots_txt = ?,
-         google_analytics_id = ?, google_search_console = ?, facebook_pixel_id = ?,
-         schema_organization = ?, sitemap_enabled = ?
-         WHERE id = ?`,
+         site_title = $1, site_description = $2, site_keywords = $3, site_author = $4,
+         og_title = $5, og_description = $6, og_image = $7, og_url = $8,
+         twitter_card = $9, twitter_site = $10, twitter_creator = $11,
+         canonical_url = $12, robots_txt = $13,
+         google_analytics_id = $14, google_search_console = $15, facebook_pixel_id = $16,
+         schema_organization = $17, sitemap_enabled = $18
+         WHERE id = $19`,
         [
           site_title, site_description, site_keywords, site_author,
           og_title, og_description, og_image, og_url,
           twitter_card, twitter_site, twitter_creator,
           canonical_url, robots_txt,
           google_analytics_id, google_search_console, facebook_pixel_id,
-          schema_organization, sitemap_enabled,
-          existing[0].id
+          schema_organization, toSmallInt(sitemap_enabled)
         ]
       );
     } else {
-      await db.execute(
+      await db.query(
         `INSERT INTO seo_settings 
          (site_title, site_description, site_keywords, site_author,
           og_title, og_description, og_image, og_url,
@@ -1182,14 +1354,14 @@ app.put('/api/seo/settings', async (req, res) => {
           canonical_url, robots_txt,
           google_analytics_id, google_search_console, facebook_pixel_id,
           schema_organization, sitemap_enabled) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `,
         [
           site_title, site_description, site_keywords, site_author,
           og_title, og_description, og_image, og_url,
           twitter_card, twitter_site, twitter_creator,
           canonical_url, robots_txt,
           google_analytics_id, google_search_console, facebook_pixel_id,
-          schema_organization, sitemap_enabled
+          schema_organization, toSmallInt(sitemap_enabled)
         ]
       );
     }
@@ -1202,15 +1374,22 @@ app.put('/api/seo/settings', async (req, res) => {
 });
 
 // Page SEO
+// Page SEO - Public read with query, admin-only listing
 app.get('/api/seo/pages', async (req, res) => {
   try {
     const { path } = req.query;
     if (path) {
-      const [rows] = await db.execute('SELECT * FROM page_seo WHERE page_path = ?', [path]);
-      res.json(rows[0] || null);
+      // Public access: sayfa SEO verisi (admin token gerekmez)
+      const rows = await db.query('SELECT * FROM page_seo WHERE page_path = $1', [path]);
+      res.json(rows.rows[0] || null);
     } else {
-      const [rows] = await db.execute('SELECT * FROM page_seo ORDER BY page_path');
-      res.json(rows);
+      // Admin-only: tüm sayfa SEO listesi (token kontrolü)
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (!token || !adminTokens.has(token)) {
+        return res.status(401).json({ error: 'Yetkisiz erişim' });
+      }
+      const rows = await db.query('SELECT * FROM page_seo ORDER BY page_path');
+      res.json(rows.rows);
     }
   } catch (error) {
     console.error(error);
@@ -1218,7 +1397,7 @@ app.get('/api/seo/pages', async (req, res) => {
   }
 });
 
-app.post('/api/seo/pages', async (req, res) => {
+app.post('/api/seo/pages', adminAuth, async (req, res) => {
   try {
     const {
       page_path, page_title, meta_description, meta_keywords,
@@ -1226,16 +1405,16 @@ app.post('/api/seo/pages', async (req, res) => {
       noindex, nofollow
     } = req.body;
 
-    await db.execute(
+    await db.query(
       `INSERT INTO page_seo 
        (page_path, page_title, meta_description, meta_keywords,
         og_title, og_description, og_image, canonical_url,
         noindex, nofollow) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
       [
         page_path, page_title, meta_description, meta_keywords,
         og_title, og_description, og_image, canonical_url,
-        noindex || false, nofollow || false
+        toSmallInt(noindex), toSmallInt(nofollow)
       ]
     );
     
@@ -1246,7 +1425,7 @@ app.post('/api/seo/pages', async (req, res) => {
   }
 });
 
-app.put('/api/seo/pages/:id', async (req, res) => {
+app.put('/api/seo/pages/:id', adminAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const {
@@ -1255,16 +1434,16 @@ app.put('/api/seo/pages/:id', async (req, res) => {
       noindex, nofollow
     } = req.body;
 
-    await db.execute(
+    await db.query(
       `UPDATE page_seo SET 
-       page_path = ?, page_title = ?, meta_description = ?, meta_keywords = ?,
-       og_title = ?, og_description = ?, og_image = ?, canonical_url = ?,
-       noindex = ?, nofollow = ?
-       WHERE id = ?`,
+       page_path = $1, page_title = $2, meta_description = $3, meta_keywords = $4,
+       og_title = $5, og_description = $6, og_image = $7, canonical_url = $8,
+       noindex = $9, nofollow = $10
+       WHERE id = $11`,
       [
         page_path, page_title, meta_description, meta_keywords,
         og_title, og_description, og_image, canonical_url,
-        noindex || false, nofollow || false, id
+        toSmallInt(noindex), toSmallInt(nofollow), id
       ]
     );
     
@@ -1275,10 +1454,10 @@ app.put('/api/seo/pages/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/seo/pages/:id', async (req, res) => {
+app.delete('/api/seo/pages/:id', adminAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    await db.execute('DELETE FROM page_seo WHERE id = ?', [id]);
+    await db.query('DELETE FROM page_seo WHERE id = $1', [id]);
     res.json({ message: 'Sayfa SEO ayarı silindi' });
   } catch (error) {
     console.error(error);
@@ -1286,39 +1465,97 @@ app.delete('/api/seo/pages/:id', async (req, res) => {
   }
 });
 
-// SEO Analysis
-app.get('/api/seo/analyze', async (req, res) => {
+// SEO Analysis - Gerçek sayfa analizi
+app.get('/api/seo/analyze', adminAuth, async (req, res) => {
   try {
     const { url } = req.query;
     if (!url) {
       return res.status(400).json({ error: 'URL parametresi gerekli' });
     }
 
-    // Basit SEO analizi simülasyonu
+    // Veritabanından SEO ayarlarını ve sayfa verilerini topla
+    const [seoSettings, pageSEO, products, blogPosts, services] = await Promise.all([
+      db.query('SELECT * FROM seo_settings LIMIT 1'),
+      db.query('SELECT * FROM page_seo WHERE page_path = $1', [url]),
+      db.query('SELECT COUNT(*) as cnt FROM products'),
+      db.query('SELECT COUNT(*) as cnt FROM blog_posts'),
+      db.query('SELECT COUNT(*) as cnt FROM services'),
+    ]);
+
+    const settings = seoSettings.rows[0] || {};
+    const pageData = pageSEO.rows[0] || {};
+
+    const recommendations = [];
+
+    // Title analizi
+    const pageTitle = pageData.page_title || settings.site_title || '';
+    const titleLength = pageTitle.length;
+    if (!pageTitle) {
+      recommendations.push('Sayfa başlığı (title) ayarlanmamış. SEO için her sayfaya özel başlık ekleyin.');
+    } else if (titleLength < 30) {
+      recommendations.push(`Başlık çok kısa (${titleLength} karakter). 50-60 karakter aralığında olmalıdır.`);
+    } else if (titleLength > 60) {
+      recommendations.push(`Başlık çok uzun (${titleLength} karakter). Google ilk 60 karakteri gösterir.`);
+    }
+
+    // Meta description analizi
+    const description = pageData.meta_description || settings.site_description || '';
+    const descriptionLength = description.length;
+    if (!description) {
+      recommendations.push('Meta açıklaması ayarlanmamış. Her sayfa için 150-160 karakterlik açıklama ekleyin.');
+    } else if (descriptionLength > 160) {
+      recommendations.push(`Meta açıklaması ${descriptionLength} karakter — 160 karakteri geçmemeli.`);
+    }
+
+    // OG tag kontrolü
+    const hasOgTags = !!(settings.og_title || pageData.og_title);
+    if (!hasOgTags) {
+      recommendations.push('Open Graph etiketleri eksik. Sosyal medya paylaşımları için OG tags ekleyin.');
+    }
+
+    // Canonical kontrolü
+    const hasCanonical = !!(settings.canonical_url || pageData.canonical_url);
+    if (!hasCanonical) {
+      recommendations.push('Canonical URL ayarlanmamış. Yinelenen içerik sorunlarını önlemek için ekleyin.');
+    }
+
+    // Site genel öneriler
+    if (!settings.schema_organization) {
+      recommendations.push('Schema markup (Organization) eklenmemiş. Yapılandırılmış veri ekleyin.');
+    }
+    if (!settings.sitemap_enabled) {
+      recommendations.push('Sitemap devre dışı. Arama motorlarının sayfalarınızı keşfetmesi için etkinleştirin.');
+    }
+
+    if (recommendations.length === 0) {
+      recommendations.push('SEO ayarlarınız iyi durumda! Düzenli içerik güncellemeleriyle sıralamanızı artırabilirsiniz.');
+    }
+
+    // İçerik istatistikleri
+    const totalProducts = parseInt(products.rows[0]?.cnt) || 0;
+    const totalBlogPosts = parseInt(blogPosts.rows[0]?.cnt) || 0;
+    const totalServices = parseInt(services.rows[0]?.cnt) || 0;
+
     const analysis = {
       page_url: url,
-      title_length: Math.floor(Math.random() * 80) + 20,
-      description_length: Math.floor(Math.random() * 200) + 50,
-      keywords_density: {
-        'fındık': 3.2,
-        'tarım': 2.1,
-        'organik': 1.8
+      title: pageTitle,
+      title_length: titleLength,
+      description: description,
+      description_length: descriptionLength,
+      has_meta_description: !!description,
+      has_og_tags: hasOgTags,
+      has_canonical: hasCanonical,
+      content_stats: {
+        total_products: totalProducts,
+        total_blog_posts: totalBlogPosts,
+        total_services: totalServices,
       },
-      has_meta_description: true,
-      has_og_tags: true,
-      has_canonical: true,
-      images_without_alt: Math.floor(Math.random() * 5),
-      internal_links: Math.floor(Math.random() * 20) + 5,
-      external_links: Math.floor(Math.random() * 10) + 2,
-      page_speed_score: Math.floor(Math.random() * 40) + 60,
-      mobile_friendly: true,
-      recommendations: [
-        'Meta açıklaması 160 karakteri geçmemeli',
-        'Başlık etiketine ana anahtar kelimeler eklenebilir',
-        'Alt metni olmayan görseller için alt açıklaması ekleyin',
-        'İç bağlantıları artırarak sayfa otoritesini güçlendirin',
-        'Schema markup kullanarak yapılandırılmış veri ekleyin'
-      ]
+      site_health: {
+        has_schema: !!settings.schema_organization,
+        sitemap_enabled: !!settings.sitemap_enabled,
+        has_analytics: !!settings.google_analytics_id,
+      },
+      recommendations
     };
 
     res.json(analysis);
@@ -1328,2043 +1565,94 @@ app.get('/api/seo/analyze', async (req, res) => {
   }
 });
 
-// Sitemap
-app.post('/api/seo/sitemap', async (req, res) => {
+// Sitemap - Gerçek XML oluşturma
+app.get('/api/seo/sitemap', adminAuth, async (req, res) => {
   try {
-    // Sitemap oluşturma simülasyonu
-    res.json({ message: 'Sitemap başarıyla yeniden oluşturuldu' });
+    const [products, blogPosts, seoSettings] = await Promise.all([
+      db.query('SELECT id, updated_at FROM products'),
+      db.query('SELECT id, updated_at FROM blog_posts'),
+      db.query('SELECT * FROM seo_settings LIMIT 1'),
+    ]);
+
+    const baseUrl = (seoSettings.rows[0]?.canonical_url || 'https://www.akaydintarim.com').replace(/\/$/, '');
+    const urls = [
+      { loc: `${baseUrl}/`, priority: '1.0', changefreq: 'daily' },
+      { loc: `${baseUrl}/hakkimizda`, priority: '0.8', changefreq: 'monthly' },
+      { loc: `${baseUrl}/hizmetlerimiz`, priority: '0.8', changefreq: 'monthly' },
+      { loc: `${baseUrl}/urunler`, priority: '0.9', changefreq: 'weekly' },
+      { loc: `${baseUrl}/blog`, priority: '0.9', changefreq: 'weekly' },
+      { loc: `${baseUrl}/iletisim`, priority: '0.7', changefreq: 'monthly' },
+    ];
+
+    // Ürün sayfaları
+    for (const p of products.rows) {
+      urls.push({
+        loc: `${baseUrl}/#/urun/${p.id}`,
+        priority: '0.7',
+        changefreq: 'monthly',
+        lastmod: p.updated_at ? new Date(p.updated_at).toISOString().split('T')[0] : null,
+      });
+    }
+
+    const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.map(u => `  <url>
+    <loc>${u.loc}</loc>${u.lastmod ? `\n    <lastmod>${u.lastmod}</lastmod>` : ''}
+    <changefreq>${u.changefreq}</changefreq>
+    <priority>${u.priority}</priority>
+  </url>`).join('\n')}
+</urlset>`;
+
+    // Sitemap'i public klasörüne yaz
+    const sitemapPath = path.join(__dirname, '../public/sitemap.xml');
+    fs.mkdirSync(path.dirname(sitemapPath), { recursive: true });
+    fs.writeFileSync(sitemapPath, sitemapXml);
+
+    res.json({
+      url: '/sitemap.xml',
+      last_generated: new Date().toISOString(),
+      url_count: urls.length,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Sitemap oluşturulurken hata oluştu' });
   }
 });
 
-app.get('/api/seo/sitemap', async (req, res) => {
-  try {
-    res.json({ url: '/sitemap.xml', last_generated: new Date().toISOString() });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Sitemap bilgileri alınırken hata oluştu' });
-  }
-});
-
-// Robots.txt
-app.put('/api/seo/robots', async (req, res) => {
+// Robots.txt - Gerçek dosya yazma
+app.put('/api/seo/robots', adminAuth, async (req, res) => {
   try {
     const { content } = req.body;
-    // Robots.txt güncelleme simülasyonu
-    res.json({ message: 'Robots.txt güncellendi' });
+    if (!content) {
+      return res.status(400).json({ error: 'Robots.txt içeriği gerekli' });
+    }
+
+    const robotsPath = path.join(__dirname, '../public/robots.txt');
+    fs.mkdirSync(path.dirname(robotsPath), { recursive: true });
+    fs.writeFileSync(robotsPath, content);
+
+    res.json({ message: 'Robots.txt güncellendi ve kaydedildi' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Robots.txt güncellenirken hata oluştu' });
   }
 });
 
-app.get('/api/seo/robots', async (req, res) => {
+app.get('/api/seo/robots', adminAuth, async (req, res) => {
   try {
-    res.json({ content: 'User-agent: *\nAllow: /\nSitemap: https://www.akaydintarim.com/sitemap.xml' });
+    const robotsPath = path.join(__dirname, '../public/robots.txt');
+    let content = 'User-agent: *\nAllow: /\nSitemap: https://www.akaydintarim.com/sitemap.xml';
+    if (fs.existsSync(robotsPath)) {
+      content = fs.readFileSync(robotsPath, 'utf-8');
+    }
+    res.json({ content });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Robots.txt alınırken hata oluştu' });
   }
 });
 
-// ANALYTICS API
-// Helper function to get client IP
-const getClientIP = (req) => {
-  return req.headers['x-forwarded-for'] || 
-         req.connection.remoteAddress || 
-         req.socket.remoteAddress ||
-         (req.connection.socket ? req.connection.socket.remoteAddress : null) ||
-         req.ip;
-};
-
-// Helper function to generate visitor fingerprint
-const generateVisitorFingerprint = (req, additionalData = {}) => {
-  const ip = getClientIP(req);
-  const userAgent = req.get('User-Agent') || '';
-  const acceptLanguage = req.get('Accept-Language') || '';
-  const acceptEncoding = req.get('Accept-Encoding') || '';
-  
-  // Combine multiple factors for fingerprint
-  const fingerprintData = `${ip}|${userAgent}|${acceptLanguage}|${acceptEncoding}|${additionalData.screenResolution || ''}|${additionalData.timezone || ''}|${additionalData.platform || ''}`;
-  
-  // Create a hash of the fingerprint data
-  return crypto.createHash('sha256').update(fingerprintData).digest('hex').substring(0, 32);
-};
-
-// Helper function to check if visitor is unique
-const checkUniqueVisitor = async (fingerprint, sessionId) => {
-  try {
-    // Check if this fingerprint exists in the last 24 hours
-    const [existingVisitor] = await db.execute(
-      `SELECT id, session_id, created_at FROM visitor_sessions 
-       WHERE visitor_fingerprint = ? 
-       AND created_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)
-       ORDER BY created_at DESC LIMIT 1`,
-      [fingerprint]
-    );
-    
-    if (existingVisitor.length > 0) {
-      return {
-        isUnique: false,
-        isNewSession: existingVisitor[0].session_id !== sessionId,
-        lastVisit: existingVisitor[0].created_at,
-        existingSessionId: existingVisitor[0].session_id
-      };
-    }
-    
-    return { isUnique: true, isNewSession: true };
-  } catch (error) {
-    console.error('Unique visitor check error:', error);
-    return { isUnique: true, isNewSession: true }; // Default to unique on error
-  }
-};
-
-// Create visitor session
-app.post('/api/analytics/sessions', async (req, res) => {
-  try {
-    const {
-      session_id,
-      user_agent,
-      country,
-      city,
-      device_type,
-      browser,
-      operating_system,
-      referrer,
-      utm_source,
-      utm_medium,
-      utm_campaign,
-      // New fingerprint data
-      screenResolution,
-      timezone,
-      platform,
-      cookieEnabled,
-      language
-    } = req.body;
-
-    // Validate required parameters
-    if (!session_id) {
-      return res.status(400).json({ error: 'session_id is required' });
-    }
-
-    const ip_address = getClientIP(req);
-    
-    // Generate visitor fingerprint
-    const fingerprint = generateVisitorFingerprint(req, {
-      screenResolution,
-      timezone,
-      platform
-    });
-
-    // Check if this is a unique visitor
-    const uniqueCheck = await checkUniqueVisitor(fingerprint, session_id);
-
-    // Check if session already exists
-    const [existingSessions] = await db.execute(
-      'SELECT id, visitor_fingerprint, is_unique_visitor FROM visitor_sessions WHERE session_id = ?',
-      [session_id]
-    );
-
-    if (existingSessions.length > 0) {
-      // Update existing session
-      await db.execute(
-        `UPDATE visitor_sessions SET 
-         last_activity_at = CURRENT_TIMESTAMP,
-         ip_address = COALESCE(ip_address, ?),
-         country = COALESCE(country, ?),
-         city = COALESCE(city, ?),
-         visitor_fingerprint = COALESCE(visitor_fingerprint, ?)
-         WHERE session_id = ?`,
-        [ip_address || null, country || null, city || null, fingerprint, session_id]
-      );
-      res.json({ 
-        session_id, 
-        updated: true, 
-        fingerprint,
-        isUniqueVisitor: existingSessions[0].is_unique_visitor,
-        isReturnVisitor: !uniqueCheck.isUnique
-      });
-    } else {
-      // Create new session with proper null handling using INSERT IGNORE to prevent duplicates
-      try {
-        await db.execute(
-          `INSERT IGNORE INTO visitor_sessions (
-            session_id, ip_address, user_agent, country, city, 
-            device_type, browser, operating_system, referrer,
-            utm_source, utm_medium, utm_campaign, visitor_fingerprint,
-            is_unique_visitor, is_return_visitor, cookie_enabled, language
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            session_id,
-            ip_address || null,
-            user_agent || null,
-            country || null,
-            city || null,
-            device_type || null,
-            browser || null,
-            operating_system || null,
-            referrer || null,
-            utm_source || null,
-            utm_medium || null,
-            utm_campaign || null,
-            fingerprint,
-            uniqueCheck.isUnique,
-            !uniqueCheck.isUnique,
-            cookieEnabled !== undefined ? cookieEnabled : true,
-            language || null
-          ]
-        );
-        res.json({ 
-          session_id, 
-          created: true, 
-          fingerprint,
-          isUniqueVisitor: uniqueCheck.isUnique,
-          isReturnVisitor: !uniqueCheck.isUnique,
-          lastVisit: uniqueCheck.lastVisit || null
-        });
-      } catch (error) {
-        // If still fails, check if session was created by another request
-        const [checkAgain] = await db.execute(
-          'SELECT id, is_unique_visitor FROM visitor_sessions WHERE session_id = ?',
-          [session_id]
-        );
-        if (checkAgain.length > 0) {
-          res.json({ 
-            session_id, 
-            exists: true, 
-            fingerprint,
-            isUniqueVisitor: checkAgain[0].is_unique_visitor,
-            isReturnVisitor: !uniqueCheck.isUnique
-          });
-        } else {
-          throw error;
-        }
-      }
-    }
-  } catch (error) {
-    console.error('Analytics session error:', error);
-    res.status(500).json({ error: 'Session oluşturulurken hata oluştu' });
-  }
-});
-
-// Update visitor session
-app.put('/api/analytics/sessions/:sessionId', async (req, res) => {
-  try {
-    const { sessionId } = req.params;
-    const { last_activity_at, session_duration, total_page_views, is_bounce } = req.body;
-
-    // Convert undefined values to null for MySQL compatibility
-    const sanitizedData = [
-      last_activity_at === undefined ? null : last_activity_at,
-      session_duration === undefined ? null : session_duration,
-      total_page_views === undefined ? null : total_page_views,
-      is_bounce === undefined ? null : is_bounce,
-      sessionId
-    ];
-
-    await db.execute(
-      `UPDATE visitor_sessions SET 
-       last_activity_at = COALESCE(?, last_activity_at),
-       session_duration = COALESCE(?, session_duration),
-       total_page_views = COALESCE(?, total_page_views),
-       is_bounce = COALESCE(?, is_bounce)
-       WHERE session_id = ?`,
-      sanitizedData
-    );
-
-    res.json({ sessionId, updated: true });
-  } catch (error) {
-    console.error('Analytics session update error:', error);
-    res.status(500).json({ error: 'Session güncellenirken hata oluştu' });
-  }
-});
-
-// Track page view
-app.post('/api/analytics/page-views', async (req, res) => {
-  try {
-    const {
-      session_id,
-      page_path,
-      page_title,
-      referrer,
-      time_on_page,
-      scroll_percentage,
-      exit_page
-    } = req.body;
-
-    // Validate required parameters
-    if (!session_id || !page_path) {
-      return res.status(400).json({ error: 'session_id and page_path are required' });
-    }
-
-    // Check if session exists, create if not
-    const [existingSessions] = await db.execute(
-      'SELECT id FROM visitor_sessions WHERE session_id = ?',
-      [session_id]
-    );
-
-    if (existingSessions.length === 0) {
-      // Create session if it doesn't exist using INSERT IGNORE to prevent duplicates
-      const ip_address = getClientIP(req);
-      try {
-        await db.execute(
-          `INSERT IGNORE INTO visitor_sessions (
-            session_id, ip_address, user_agent, device_type, browser, operating_system
-          ) VALUES (?, ?, ?, ?, ?, ?)`,
-          [
-            session_id,
-            ip_address || null,
-            req.get('User-Agent') || null,
-            'unknown',
-            'unknown',
-            'unknown'
-          ]
-        );
-      } catch (error) {
-        // Ignore duplicate key errors as session might have been created by another request
-        if (error.code !== 'ER_DUP_ENTRY') {
-          throw error;
-        }
-      }
-    }
-
-    // Convert undefined values to null for MySQL compatibility
-    const sanitizedData = [
-      session_id,
-      page_path,
-      page_title || null,
-      referrer || null,
-      time_on_page || 0,
-      scroll_percentage || 0,
-      exit_page || false
-    ];
-
-    await db.execute(
-      `INSERT INTO page_views (
-        session_id, page_path, page_title, referrer,
-        time_on_page, scroll_percentage, exit_page
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      sanitizedData
-    );
-
-    // Update session page count
-    await db.execute(
-      'UPDATE visitor_sessions SET total_page_views = total_page_views + 1 WHERE session_id = ?',
-      [session_id]
-    );
-
-    res.json({ tracked: true });
-  } catch (error) {
-    console.error('Page view tracking error:', error);
-    res.status(500).json({ error: 'Sayfa görüntülemesi kaydedilirken hata oluştu' });
-  }
-});
-
-// Update page view (for sendBeacon)
-app.post('/api/analytics/page-views/update', async (req, res) => {
-  try {
-    const {
-      session_id,
-      page_path,
-      time_on_page,
-      scroll_percentage,
-      exit_page
-    } = req.body;
-
-    if (!session_id || !page_path) {
-      return res.status(400).json({ error: 'session_id and page_path are required' });
-    }
-
-    // Check if session exists, create if not
-    const [existingSessions] = await db.execute(
-      'SELECT id FROM visitor_sessions WHERE session_id = ?',
-      [session_id]
-    );
-
-    if (existingSessions.length === 0) {
-      // Create session if it doesn't exist using INSERT IGNORE to prevent duplicates
-      const ip_address = getClientIP(req);
-      try {
-        await db.execute(
-          `INSERT IGNORE INTO visitor_sessions (
-            session_id, ip_address, user_agent, device_type, browser, operating_system
-          ) VALUES (?, ?, ?, ?, ?, ?)`,
-          [
-            session_id,
-            ip_address || null,
-            req.get('User-Agent') || null,
-            'unknown',
-            'unknown',
-            'unknown'
-          ]
-        );
-      } catch (error) {
-        // Ignore duplicate key errors as session might have been created by another request
-        if (error.code !== 'ER_DUP_ENTRY') {
-          throw error;
-        }
-      }
-    }
-
-    // Update the most recent page view for this session and path
-    await db.execute(
-      `UPDATE page_views SET 
-       time_on_page = COALESCE(?, time_on_page),
-       scroll_percentage = GREATEST(COALESCE(?, 0), scroll_percentage),
-       exit_page = COALESCE(?, exit_page)
-       WHERE session_id = ? AND page_path = ?
-       ORDER BY viewed_at DESC LIMIT 1`,
-      [
-        time_on_page || null,
-        scroll_percentage || null,
-        exit_page !== undefined ? exit_page : null,
-        session_id,
-        page_path
-      ]
-    );
-
-    res.json({ updated: true });
-  } catch (error) {
-    console.error('Page view update error:', error);
-    res.status(500).json({ error: 'Sayfa görüntülemesi güncellenirken hata oluştu' });
-  }
-});
-
-// Track visitor action
-app.post('/api/analytics/actions', async (req, res) => {
-  try {
-    const {
-      session_id,
-      action_type,
-      element_selector,
-      element_text,
-      page_path,
-      additional_data
-    } = req.body;
-
-    // Convert undefined values to null for MySQL compatibility
-    const sanitizedData = [
-      session_id === undefined ? null : session_id,
-      action_type === undefined ? null : action_type,
-      element_selector === undefined ? null : element_selector,
-      element_text === undefined ? null : element_text,
-      page_path === undefined ? null : page_path,
-      additional_data === undefined ? null : (additional_data ? JSON.stringify(additional_data) : null)
-    ];
-
-    await db.execute(
-      `INSERT INTO visitor_actions (
-        session_id, action_type, element_selector, element_text,
-        page_path, additional_data
-      ) VALUES (?, ?, ?, ?, ?, ?)`,
-      sanitizedData
-    );
-
-    res.json({ tracked: true });
-  } catch (error) {
-    console.error('Action tracking error:', error);
-    res.status(500).json({ error: 'Eylem kaydedilirken hata oluştu' });
-  }
-});
-
-// Generate test data endpoint
-app.post('/api/analytics/generate-test-data', async (req, res) => {
-  try {
-    // Generate 50 test sessions over the last 7 days
-    for (let i = 0; i < 50; i++) {
-      const sessionId = `test_session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const devices = ['desktop', 'mobile', 'tablet'];
-      const browsers = ['Chrome', 'Firefox', 'Safari', 'Edge'];
-      const countries = ['TR', 'US', 'DE', 'FR', 'UK'];
-      const cities = ['Istanbul', 'Ankara', 'Izmir', 'Bursa', 'Antalya'];
-      const pages = ['/', '/about', '/services', '/products', '/blog', '/contact'];
-      
-      const device = devices[Math.floor(Math.random() * devices.length)];
-      const browser = browsers[Math.floor(Math.random() * browsers.length)];
-      const country = countries[Math.floor(Math.random() * countries.length)];
-      const city = cities[Math.floor(Math.random() * cities.length)];
-      
-      // Create session
-      const sessionDate = new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000);
-      await db.execute(
-        `INSERT INTO visitor_sessions (
-          session_id, ip_address, user_agent, country, city, 
-          device_type, browser, operating_system, 
-          first_visit_at, last_activity_at, total_page_views, 
-          session_duration, is_bounce, is_active
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          sessionId,
-          `192.168.1.${Math.floor(Math.random() * 255)}`,
-          `Mozilla/5.0 (${device}) ${browser}`,
-          country,
-          city,
-          device,
-          browser,
-          device === 'mobile' ? 'Android' : 'Windows',
-          sessionDate,
-          new Date(sessionDate.getTime() + Math.random() * 60 * 60 * 1000),
-          Math.floor(Math.random() * 10) + 1,
-          Math.floor(Math.random() * 600) + 30,
-          Math.random() > 0.7,
-          Math.random() > 0.8
-        ]
-      );
-      
-      // Create page views for this session
-      const pageCount = Math.floor(Math.random() * 5) + 1;
-      for (let j = 0; j < pageCount; j++) {
-        const page = pages[Math.floor(Math.random() * pages.length)];
-        const viewDate = new Date(sessionDate.getTime() + j * 30000);
-        
-        await db.execute(
-          `INSERT INTO page_views (
-            session_id, page_path, page_title, 
-            time_on_page, scroll_percentage, viewed_at
-          ) VALUES (?, ?, ?, ?, ?, ?)`,
-          [
-            sessionId,
-            page,
-            `Test Page ${page}`,
-            Math.floor(Math.random() * 300) + 10,
-            Math.floor(Math.random() * 100),
-            viewDate
-          ]
-        );
-      }
-      
-      // Create some actions
-      if (Math.random() > 0.5) {
-        const actions = ['click', 'scroll', 'contact'];
-        const action = actions[Math.floor(Math.random() * actions.length)];
-        
-        await db.execute(
-          `INSERT INTO visitor_actions (
-            session_id, action_type, page_path, action_at
-          ) VALUES (?, ?, ?, ?)`,
-          [
-            sessionId,
-            action,
-            pages[Math.floor(Math.random() * pages.length)],
-            sessionDate
-          ]
-        );
-      }
-    }
-    
-    // Create some active visitors
-    for (let i = 0; i < 5; i++) {
-      const sessionId = `active_session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const pages = ['/', '/about', '/services', '/products'];
-      
-      await db.execute(
-        `INSERT INTO active_visitors (
-          session_id, current_page, last_activity
-        ) VALUES (?, ?, ?)`,
-        [
-          sessionId,
-          pages[Math.floor(Math.random() * pages.length)],
-          new Date()
-        ]
-      );
-    }
-    
-    res.json({ 
-      success: true, 
-      message: 'Test analytics data generated successfully' 
-    });
-  } catch (error) {
-    console.error('Test data generation error:', error);
-    res.status(500).json({ error: 'Test data generation failed' });
-  }
-});
-
-// Create test data for analytics
-app.post('/api/analytics/test-data', async (req, res) => {
-  try {
-    const testSessions = [];
-    const testPageViews = [];
-    const testActions = [];
-    
-    // Create 20 test sessions
-    for (let i = 0; i < 20; i++) {
-      const sessionId = `test_session_${Date.now()}_${i}`;
-      const devices = ['desktop', 'mobile', 'tablet'];
-      const browsers = ['Chrome', 'Firefox', 'Safari', 'Edge'];
-      const countries = ['TR', 'US', 'DE', 'FR', 'UK'];
-      const cities = ['Istanbul', 'Ankara', 'Izmir', 'Bursa', 'Antalya'];
-      
-      const device = devices[Math.floor(Math.random() * devices.length)];
-      const browser = browsers[Math.floor(Math.random() * browsers.length)];
-      const country = countries[Math.floor(Math.random() * countries.length)];
-      const city = cities[Math.floor(Math.random() * cities.length)];
-      
-      const isActive = Math.random() > 0.3; // 70% active
-      const sessionDuration = Math.floor(Math.random() * 1800) + 30; // 30 seconds to 30 minutes
-      const pageViews = Math.floor(Math.random() * 10) + 1;
-      
-      const visitTime = new Date();
-      visitTime.setMinutes(visitTime.getMinutes() - Math.floor(Math.random() * 30)); // Last 30 minutes
-      
-      await db.execute(
-        `INSERT INTO visitor_sessions (
-          session_id, ip_address, user_agent, country, city, device_type, 
-          browser, operating_system, first_visit_at, last_activity_at,
-          total_page_views, session_duration, is_bounce, is_active
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          sessionId,
-          `192.168.1.${Math.floor(Math.random() * 255)}`,
-          `Mozilla/5.0 (Test Browser)`,
-          country,
-          city,
-          device,
-          browser,
-          'Windows',
-          visitTime,
-          new Date(),
-          pageViews,
-          sessionDuration,
-          pageViews === 1,
-          isActive
-        ]
-      );
-      
-      // Create page views for this session
-      const pages = ['/', '/services', '/products', '/about', '/contact', '/blog'];
-      for (let j = 0; j < pageViews; j++) {
-        const page = pages[Math.floor(Math.random() * pages.length)];
-        const timeOnPage = Math.floor(Math.random() * 300) + 5; // 5 seconds to 5 minutes
-        const scrollPercentage = Math.floor(Math.random() * 100);
-        
-        const viewTime = new Date(visitTime);
-        viewTime.setMinutes(viewTime.getMinutes() + j * 2);
-        
-        await db.execute(
-          `INSERT INTO page_views (
-            session_id, page_path, page_title, time_on_page, 
-            scroll_percentage, exit_page, viewed_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [
-            sessionId,
-            page,
-            `Test Page ${page}`,
-            timeOnPage,
-            scrollPercentage,
-            j === pageViews - 1, // Last page is exit page
-            viewTime
-          ]
-        );
-        
-        // Create some actions
-        if (Math.random() > 0.5) {
-          const actions = ['click', 'scroll', 'contact'];
-          const actionType = actions[Math.floor(Math.random() * actions.length)];
-          
-          await db.execute(
-            `INSERT INTO visitor_actions (
-              session_id, action_type, page_path, action_at
-            ) VALUES (?, ?, ?, ?)`,
-            [sessionId, actionType, page, viewTime]
-          );
-        }
-      }
-      
-      // Update active visitors table for active sessions
-      if (isActive) {
-        await db.execute(
-          `INSERT INTO active_visitors (session_id, current_page, last_activity) 
-           VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE 
-           current_page = VALUES(current_page), last_activity = VALUES(last_activity)`,
-          [sessionId, pages[Math.floor(Math.random() * pages.length)], new Date()]
-        );
-      }
-    }
-    
-    res.json({ 
-      message: 'Test data created successfully',
-      sessions: 20,
-      estimated_page_views: '20-200',
-      estimated_actions: '10-100'
-    });
-  } catch (error) {
-    console.error('Test data creation error:', error);
-    res.status(500).json({ error: 'Test verisi oluşturulurken hata oluştu' });
-  }
-});
-
-// Debug endpoint to check database data
-app.get('/api/analytics/debug', async (req, res) => {
-  try {
-    const [sessionsCount] = await db.execute('SELECT COUNT(*) as count FROM visitor_sessions');
-    const [pageViewsCount] = await db.execute('SELECT COUNT(*) as count FROM page_views');
-    const [actionsCount] = await db.execute('SELECT COUNT(*) as count FROM visitor_actions');
-    const [activeVisitorsCount] = await db.execute('SELECT COUNT(*) as count FROM active_visitors');
-    
-    const [recentSessions] = await db.execute(
-      'SELECT * FROM visitor_sessions ORDER BY last_activity_at DESC LIMIT 5'
-    );
-    
-    const [recentPageViews] = await db.execute(
-      'SELECT * FROM page_views ORDER BY viewed_at DESC LIMIT 5'
-    );
-
-    res.json({
-      database_status: 'connected',
-      tables: {
-        visitor_sessions: sessionsCount[0].count,
-        page_views: pageViewsCount[0].count,
-        visitor_actions: actionsCount[0].count,
-        active_visitors: activeVisitorsCount[0].count
-      },
-      recent_sessions: recentSessions,
-      recent_page_views: recentPageViews
-    });
-  } catch (error) {
-    console.error('Debug endpoint error:', error);
-    res.status(500).json({ 
-      error: 'Database connection error',
-      details: error.message 
-    });
-  }
-});
-
-// Get dashboard analytics
-app.get('/api/analytics/dashboard', async (req, res) => {
-  try {
-    const { from, to } = req.query;
-    const dateFilter = from && to ? 'AND DATE(created_at) BETWEEN ? AND ?' : '';
-    const dateParams = from && to ? [from, to] : [];
-
-    // Basic stats with unique visitor tracking
-    const [sessionStats] = await db.execute(
-      `SELECT 
-        COUNT(*) as total_sessions,
-        COUNT(DISTINCT visitor_fingerprint) as unique_visitors,
-        SUM(CASE WHEN is_unique_visitor = 1 THEN 1 ELSE 0 END) as new_visitors,
-        SUM(CASE WHEN is_return_visitor = 1 THEN 1 ELSE 0 END) as return_visitors,
-        AVG(session_duration) as avg_session_duration,
-        SUM(CASE WHEN is_bounce THEN 1 ELSE 0 END) / COUNT(*) * 100 as bounce_rate
-       FROM visitor_sessions 
-       WHERE 1=1 ${dateFilter}`,
-      dateParams
-    );
-
-    const [pageViewStats] = await db.execute(
-      `SELECT COUNT(*) as total_page_views
-       FROM page_views pv
-       JOIN visitor_sessions vs ON pv.session_id = vs.session_id
-       WHERE 1=1 ${dateFilter}`,
-      dateParams
-    );
-
-    // Unique visitors by day (last 7 days)
-    const [dailyUniqueVisitors] = await db.execute(
-      `SELECT 
-        DATE(created_at) as date,
-        COUNT(DISTINCT visitor_fingerprint) as unique_visitors
-       FROM visitor_sessions 
-       WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-       GROUP BY DATE(created_at)
-       ORDER BY date DESC`
-    );
-
-    // Device stats
-    const [deviceStats] = await db.execute(
-      `SELECT device_type, 
-        COUNT(*) as sessions,
-        COUNT(DISTINCT visitor_fingerprint) as unique_visitors
-       FROM visitor_sessions 
-       WHERE 1=1 ${dateFilter}
-       GROUP BY device_type`,
-      dateParams
-    );
-
-    // Browser stats
-    const [browserStats] = await db.execute(
-      `SELECT browser, COUNT(*) as count
-       FROM visitor_sessions 
-       WHERE 1=1 ${dateFilter}
-       GROUP BY browser
-       ORDER BY count DESC
-       LIMIT 10`,
-      dateParams
-    );
-
-    // Country stats
-    const [countryStats] = await db.execute(
-      `SELECT country, COUNT(*) as count
-       FROM visitor_sessions 
-       WHERE 1=1 ${dateFilter}
-       GROUP BY country
-       ORDER BY count DESC
-       LIMIT 10`,
-      dateParams
-    );
-
-    // Recent visitors
-    const [recentVisitors] = await db.execute(
-      `SELECT * FROM visitor_sessions 
-       WHERE 1=1 ${dateFilter}
-       ORDER BY last_activity_at DESC 
-       LIMIT 10`,
-      dateParams
-    );
-
-    // Active visitors count
-    const [activeVisitors] = await db.execute(
-      'SELECT COUNT(*) as count FROM active_visitors WHERE last_activity > DATE_SUB(NOW(), INTERVAL 5 MINUTE)'
-    );
-
-    const stats = sessionStats[0];
-    const device_stats = {};
-    const browser_stats = {};
-    const country_stats = {};
-
-    deviceStats.forEach(row => {
-      device_stats[row.device_type] = row.count;
-    });
-
-    browserStats.forEach(row => {
-      browser_stats[row.browser] = row.count;
-    });
-
-    countryStats.forEach(row => {
-      country_stats[row.country] = row.count;
-    });
-
-    res.json({
-      total_sessions: stats.total_sessions || 0,
-      unique_visitors: stats.unique_visitors || 0,
-      total_page_views: pageViewStats[0].total_page_views || 0,
-      avg_session_duration: Math.round(stats.avg_session_duration || 0),
-      bounce_rate: Math.round(stats.bounce_rate || 0),
-      current_active_visitors: activeVisitors[0].count || 0,
-      device_stats,
-      browser_stats,
-      country_stats,
-      recent_visitors: recentVisitors,
-      traffic_sources: {},
-      daily_sessions: [],
-      daily_page_views: []
-    });
-  } catch (error) {
-    console.error('Dashboard analytics error:', error);
-    res.status(500).json({ error: 'Analytics verileri alınırken hata oluştu' });
-  }
-});
-
-// Get sessions with filtering
-app.get('/api/analytics/sessions', async (req, res) => {
-  try {
-    const { limit = 50, offset = 0, orderBy = 'last_activity_at', order = 'DESC' } = req.query;
-    
-    const [sessions] = await db.execute(
-      `SELECT * FROM visitor_sessions 
-       ORDER BY ${orderBy} ${order}
-       LIMIT ? OFFSET ?`,
-      [parseInt(limit), parseInt(offset)]
-    );
-
-    res.json({ sessions });
-  } catch (error) {
-    console.error('Sessions fetch error:', error);
-    res.status(500).json({ error: 'Oturumlar alınırken hata oluştu' });
-  }
-});
-
-// Get popular pages
-app.get('/api/analytics/popular-pages', async (req, res) => {
-  try {
-    const { limit = 10 } = req.query;
-    
-    const [pages] = await db.execute(
-      `SELECT 
-        page_path,
-        page_title,
-        COUNT(*) as total_views,
-        COUNT(DISTINCT session_id) as unique_views,
-        AVG(time_on_page) as avg_time_on_page,
-        SUM(CASE WHEN exit_page THEN 1 ELSE 0 END) / COUNT(*) * 100 as bounce_rate,
-        MAX(viewed_at) as last_updated
-       FROM page_views 
-       GROUP BY page_path, page_title
-       ORDER BY total_views DESC
-       LIMIT ?`,
-      [parseInt(limit)]
-    );
-
-    const popularPages = pages.map((page, index) => ({
-      id: index + 1,
-      page_path: page.page_path,
-      page_title: page.page_title,
-      total_views: page.total_views,
-      unique_views: page.unique_views,
-      avg_time_on_page: Math.round(page.avg_time_on_page || 0),
-      bounce_rate: Math.round(page.bounce_rate || 0),
-      last_updated: page.last_updated
-    }));
-
-    res.json(popularPages);
-  } catch (error) {
-    console.error('Popular pages error:', error);
-    res.status(500).json({ error: 'Popüler sayfalar alınırken hata oluştu' });
-  }
-});
-
-// Get real-time stats
-app.get('/api/analytics/realtime', async (req, res) => {
-  try {
-    // Aktif ziyaretçiler (son 5 dakika)
-    const [activeVisitors] = await db.execute(
-      'SELECT COUNT(*) as count FROM visitor_sessions WHERE is_active = true AND last_activity_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)'
-    );
-
-    // Bugünkü toplam sayfa görüntüleme
-    const [todayPageViews] = await db.execute(
-      'SELECT COUNT(*) as count FROM page_views WHERE DATE(viewed_at) = CURDATE()'
-    );
-
-    // Bugünkü benzersiz ziyaretçiler
-    const [todayUniqueVisitors] = await db.execute(
-      'SELECT COUNT(DISTINCT session_id) as count FROM visitor_sessions WHERE DATE(created_at) = CURDATE()'
-    );
-
-    // Bounce rate hesaplama (bugün için)
-    const [totalSessions] = await db.execute(
-      'SELECT COUNT(*) as total FROM visitor_sessions WHERE DATE(created_at) = CURDATE()'
-    );
-    const [singlePageSessions] = await db.execute(
-      'SELECT COUNT(*) as single FROM visitor_sessions WHERE DATE(created_at) = CURDATE() AND total_page_views = 1'
-    );
-    
-    const bounceRate = totalSessions[0].total > 0 ? 
-      (singlePageSessions[0].single / totalSessions[0].total) * 100 : 0;
-
-    // Ortalama oturum süresi (bugün)
-    const [avgDuration] = await db.execute(
-      'SELECT AVG(session_duration) as avg FROM visitor_sessions WHERE DATE(created_at) = CURDATE() AND session_duration > 0'
-    );
-
-    // En popüler sayfalar (bugün)
-    const [topPages] = await db.execute(
-      `SELECT 
-        page_path as page,
-        COUNT(*) as views
-       FROM page_views 
-       WHERE DATE(viewed_at) = CURDATE()
-       GROUP BY page_path
-       ORDER BY views DESC
-       LIMIT 5`
-    );
-
-    // Cihaz dağılımı (bugün)
-    const [deviceStats] = await db.execute(
-      `SELECT 
-        device_type,
-        COUNT(*) as count
-       FROM visitor_sessions 
-       WHERE DATE(created_at) = CURDATE()
-       GROUP BY device_type`
-    );
-
-    const deviceBreakdown = {
-      desktop: 0,
-      mobile: 0,
-      tablet: 0
-    };
-
-    deviceStats.forEach(stat => {
-      const deviceType = stat.device_type?.toLowerCase() || 'desktop';
-      if (deviceBreakdown.hasOwnProperty(deviceType)) {
-        deviceBreakdown[deviceType] = stat.count;
-      } else {
-        deviceBreakdown.desktop += stat.count; // Bilinmeyen cihazları desktop'a ekle
-      }
-    });
-
-    // Saatlik istatistikler (bugün)
-    const [hourlyStats] = await db.execute(
-      `SELECT 
-        HOUR(viewed_at) as hour,
-        COUNT(DISTINCT session_id) as visitors,
-        COUNT(*) as pageViews
-       FROM page_views 
-       WHERE DATE(viewed_at) = CURDATE()
-       GROUP BY HOUR(viewed_at)
-       ORDER BY hour`
-    );
-
-    res.json({
-      activeVisitors: activeVisitors[0].count || 0,
-      totalPageViews: todayPageViews[0].count || 0,
-      uniqueVisitors: todayUniqueVisitors[0].count || 0,
-      bounceRate: bounceRate,
-      avgSessionDuration: Math.round(avgDuration[0].avg || 0),
-      topPages: topPages || [],
-      deviceBreakdown: deviceBreakdown,
-      hourlyStats: hourlyStats || []
-    });
-  } catch (error) {
-    console.error('Real-time stats error:', error);
-    res.status(500).json({ error: 'Canlı veriler alınırken hata oluştu' });
-  }
-});
-
-// Get analytics settings
-app.get('/api/analytics/settings', async (req, res) => {
-  try {
-    const [settings] = await db.execute('SELECT * FROM analytics_settings ORDER BY id DESC LIMIT 1');
-    
-    if (settings.length > 0) {
-      res.json(settings[0]);
-    } else {
-      // Return default settings
-      res.json({
-        analytics_enabled: true,
-        track_ip_addresses: true,
-        data_retention_days: 365,
-        exclude_ips: '',
-        exclude_user_agents: 'bot,crawler,spider,scraper,facebook,twitter,linkedin,whatsapp',
-        privacy_mode: false
-      });
-    }
-  } catch (error) {
-    console.error('Analytics settings error:', error);
-    res.status(500).json({ error: 'Ayarlar alınırken hata oluştu' });
-  }
-});
-
-// Update analytics settings
-app.put('/api/analytics/settings', async (req, res) => {
-  try {
-    const {
-      analytics_enabled,
-      track_ip_addresses,
-      data_retention_days,
-      exclude_ips,
-      exclude_user_agents,
-      privacy_mode
-    } = req.body;
-
-    // Check if settings exist
-    const [existingSettings] = await db.execute('SELECT id FROM analytics_settings LIMIT 1');
-    
-    if (existingSettings.length > 0) {
-      // Update existing
-      await db.execute(
-        `UPDATE analytics_settings SET 
-         analytics_enabled = ?, track_ip_addresses = ?, data_retention_days = ?,
-         exclude_ips = ?, exclude_user_agents = ?, privacy_mode = ?
-         WHERE id = ?`,
-        [analytics_enabled, track_ip_addresses, data_retention_days, exclude_ips, exclude_user_agents, privacy_mode, existingSettings[0].id]
-      );
-    } else {
-      // Insert new
-      await db.execute(
-        `INSERT INTO analytics_settings (
-          analytics_enabled, track_ip_addresses, data_retention_days,
-          exclude_ips, exclude_user_agents, privacy_mode
-        ) VALUES (?, ?, ?, ?, ?, ?)`,
-        [analytics_enabled, track_ip_addresses, data_retention_days, exclude_ips, exclude_user_agents, privacy_mode]
-      );
-    }
-
-    res.json({ updated: true });
-  } catch (error) {
-    console.error('Analytics settings update error:', error);
-    res.status(500).json({ error: 'Ayarlar güncellenirken hata oluştu' });
-  }
-});
-
-// Export analytics data
-app.get('/api/analytics/export', async (req, res) => {
-  try {
-    const { format = 'json', from, to } = req.query;
-    const dateFilter = from && to ? 'WHERE DATE(vs.first_visit_at) BETWEEN ? AND ?' : '';
-    const dateParams = from && to ? [from, to] : [];
-
-    const [data] = await db.execute(
-      `SELECT 
-        vs.session_id,
-        vs.ip_address,
-        vs.country,
-        vs.city,
-        vs.device_type,
-        vs.browser,
-        vs.operating_system,
-        vs.first_visit_at,
-        vs.session_duration,
-        vs.total_page_views,
-        vs.referrer
-       FROM visitor_sessions vs
-       ${dateFilter}
-       ORDER BY vs.first_visit_at DESC`,
-      dateParams
-    );
-
-    if (format === 'csv') {
-      // Convert to CSV
-      const headers = ['Session ID', 'IP Address', 'Country', 'City', 'Device', 'Browser', 'OS', 'First Visit', 'Duration', 'Page Views', 'Referrer'];
-      const csvData = [
-        headers.join(','),
-        ...data.map(row => [
-          row.session_id,
-          row.ip_address || '',
-          row.country || '',
-          row.city || '',
-          row.device_type || '',
-          row.browser || '',
-          row.operating_system || '',
-          row.first_visit_at,
-          row.session_duration || 0,
-          row.total_page_views || 0,
-          row.referrer || ''
-        ].join(','))
-      ].join('\n');
-      
-      res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', 'attachment; filename=analytics.csv');
-      res.send(csvData);
-    } else {
-      res.json(data);
-    }
-  } catch (error) {
-    console.error('Export error:', error);
-    res.status(500).json({ error: 'Veri dışa aktarılırken hata oluştu' });
-  }
-});
-
-// Get live visitors
-app.get('/api/analytics/live-visitors', async (req, res) => {
-  try {
-    const [liveVisitors] = await db.execute(
-      `SELECT 
-        vs.session_id,
-        vs.country,
-        vs.city,
-        vs.device_type as device,
-        vs.browser,
-        vs.last_activity_at as last_seen,
-        vs.total_page_views as page_views,
-        vs.session_duration as duration,
-        av.current_page
-       FROM visitor_sessions vs
-       LEFT JOIN active_visitors av ON vs.session_id = av.session_id
-       WHERE vs.is_active = true 
-       AND vs.last_activity_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)
-       ORDER BY vs.last_activity_at DESC
-       LIMIT 20`
-    );
-
-    const visitors = liveVisitors.map(visitor => ({
-      session_id: visitor.session_id,
-      current_page: visitor.current_page || '/',
-      location: visitor.city && visitor.country ? `${visitor.city}, ${visitor.country}` : (visitor.country || 'Bilinmeyen'),
-      device: visitor.device || 'desktop',
-      browser: visitor.browser || 'Bilinmeyen',
-      last_seen: visitor.last_seen,
-      page_views: visitor.page_views || 0,
-      duration: visitor.duration || 0
-    }));
-
-    res.json(visitors);
-  } catch (error) {
-    console.error('Live visitors error:', error);
-    res.status(500).json({ error: 'Canlı ziyaretçiler alınırken hata oluştu' });
-  }
-});
-
-// Get current page views (last 5 minutes)
-app.get('/api/analytics/current-pageviews', async (req, res) => {
-  try {
-    const [currentPageViews] = await db.execute(
-      `SELECT 
-        page_path,
-        page_title,
-        COUNT(*) as views,
-        COUNT(DISTINCT session_id) as unique_views
-       FROM page_views 
-       WHERE viewed_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)
-       GROUP BY page_path, page_title
-       ORDER BY views DESC
-       LIMIT 10`
-    );
-
-    res.json(currentPageViews);
-  } catch (error) {
-    console.error('Current page views error:', error);
-    res.status(500).json({ error: 'Güncel sayfa görüntülemeleri alınırken hata oluştu' });
-  }
-});
-
-// Get recent visitor actions
-app.get('/api/analytics/recent-actions', async (req, res) => {
-  try {
-    const { limit = 50 } = req.query;
-    
-    const [recentActions] = await db.execute(
-      `SELECT 
-        va.action_type,
-        va.element_selector,
-        va.element_text,
-        va.page_path,
-        va.action_at,
-        vs.country,
-        vs.device_type,
-        vs.browser
-       FROM visitor_actions va
-       JOIN visitor_sessions vs ON va.session_id = vs.session_id
-       WHERE va.action_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)
-       ORDER BY va.action_at DESC
-       LIMIT ?`,
-      [parseInt(limit)]
-    );
-
-    res.json(recentActions);
-  } catch (error) {
-    console.error('Recent actions error:', error);
-    res.status(500).json({ error: 'Son aktiviteler alınırken hata oluştu' });
-  }
-});
-
-// Get today's hourly stats
-app.get('/api/analytics/today-hourly', async (req, res) => {
-  try {
-    const [hourlyStats] = await db.execute(
-      `SELECT 
-        HOUR(pv.viewed_at) as hour,
-        COUNT(DISTINCT pv.session_id) as visitors,
-        COUNT(*) as pageViews
-       FROM page_views pv
-       WHERE DATE(pv.viewed_at) = CURDATE()
-       GROUP BY HOUR(pv.viewed_at)
-       ORDER BY hour`
-    );
-
-    // Fill missing hours with 0
-    const hours = Array.from({length: 24}, (_, i) => {
-      const hourData = hourlyStats.find(h => h.hour === i);
-      return {
-        hour: i,
-        visitors: hourData ? hourData.visitors : 0,
-        pageViews: hourData ? hourData.pageViews : 0
-      };
-    });
-
-    res.json(hours);
-  } catch (error) {
-    console.error('Today hourly stats error:', error);
-    res.status(500).json({ error: 'Bugünün saatlik istatistikleri alınırken hata oluştu' });
-  }
-});
-
-// Get traffic sources
-app.get('/api/analytics/traffic-sources', async (req, res) => {
-  try {
-    const { days = 30 } = req.query;
-    
-    const [trafficSources] = await db.execute(
-      `SELECT 
-        COALESCE(utm_source, 'direct') as source,
-        COUNT(*) as sessions,
-        COUNT(DISTINCT ip_address) as unique_visitors
-       FROM visitor_sessions 
-       WHERE first_visit_at > DATE_SUB(NOW(), INTERVAL ? DAY)
-       GROUP BY COALESCE(utm_source, 'direct')
-       ORDER BY sessions DESC
-       LIMIT 10`,
-      [parseInt(days)]
-    );
-
-    res.json(trafficSources);
-  } catch (error) {
-    console.error('Traffic sources error:', error);
-    res.status(500).json({ error: 'Trafik kaynakları alınırken hata oluştu' });
-  }
-});
-
-// Get device breakdown for real-time
-app.get('/api/analytics/device-breakdown', async (req, res) => {
-  try {
-    const [deviceBreakdown] = await db.execute(
-      `SELECT 
-        device_type,
-        COUNT(*) as count
-       FROM visitor_sessions 
-       WHERE is_active = true 
-       AND last_activity_at > DATE_SUB(NOW(), INTERVAL 30 MINUTE)
-       GROUP BY device_type`
-    );
-
-    const breakdown = {
-      desktop: 0,
-      mobile: 0,
-      tablet: 0
-    };
-
-    deviceBreakdown.forEach(device => {
-      breakdown[device.device_type] = device.count;
-    });
-
-    res.json(breakdown);
-  } catch (error) {
-    console.error('Device breakdown error:', error);
-    res.status(500).json({ error: 'Cihaz dağılımı alınırken hata oluştu' });
-  }
-});
-
-// Get unique visitor stats
-app.get('/api/analytics/unique-visitors', async (req, res) => {
-  try {
-    const { from, to, groupBy = 'day' } = req.query;
-    const dateFilter = from && to ? 'AND DATE(created_at) BETWEEN ? AND ?' : '';
-    const dateParams = from && to ? [from, to] : [];
-    
-    let groupByClause;
-    switch(groupBy) {
-      case 'hour':
-        groupByClause = 'DATE_FORMAT(created_at, "%Y-%m-%d %H:00:00")';
-        break;
-      case 'week':
-        groupByClause = 'YEARWEEK(created_at)';
-        break;
-      case 'month':
-        groupByClause = 'DATE_FORMAT(created_at, "%Y-%m")';
-        break;
-      default:
-        groupByClause = 'DATE(created_at)';
-    }
-
-    const [uniqueVisitorStats] = await db.execute(
-      `SELECT 
-        ${groupByClause} as period,
-        COUNT(DISTINCT visitor_fingerprint) as unique_visitors,
-        SUM(CASE WHEN is_unique_visitor = 1 THEN 1 ELSE 0 END) as new_visitors,
-        SUM(CASE WHEN is_return_visitor = 1 THEN 1 ELSE 0 END) as return_visitors,
-        COUNT(*) as total_sessions
-       FROM visitor_sessions 
-       WHERE 1=1 ${dateFilter}
-       GROUP BY ${groupByClause}
-       ORDER BY period DESC`,
-      dateParams
-    );
-
-    res.json(uniqueVisitorStats);
-  } catch (error) {
-    console.error('Unique visitor stats error:', error);
-    res.status(500).json({ error: 'Unique ziyaretçi istatistikleri alınırken hata oluştu' });
-  }
-});
-
-// Get visitor fingerprint details
-app.get('/api/analytics/visitor-fingerprints', async (req, res) => {
-  try {
-    const { limit = 100 } = req.query;
-    
-    const [fingerprints] = await db.execute(
-      `SELECT 
-        visitor_fingerprint,
-        COUNT(*) as session_count,
-        MIN(created_at) as first_visit,
-        MAX(last_activity_at) as last_visit,
-        COUNT(DISTINCT DATE(created_at)) as visit_days,
-        GROUP_CONCAT(DISTINCT device_type) as devices,
-        GROUP_CONCAT(DISTINCT browser) as browsers
-       FROM visitor_sessions 
-       WHERE visitor_fingerprint IS NOT NULL
-       GROUP BY visitor_fingerprint
-       ORDER BY session_count DESC, last_visit DESC
-       LIMIT ?`,
-      [parseInt(limit)]
-    );
-
-    res.json(fingerprints);
-  } catch (error) {
-    console.error('Visitor fingerprints error:', error);
-    res.status(500).json({ error: 'Ziyaretçi parmak izleri alınırken hata oluştu' });
-  }
-});
-
-// Check if visitor is returning
-app.post('/api/analytics/check-returning-visitor', async (req, res) => {
-  try {
-    const { fingerprint, sessionId } = req.body;
-    
-    if (!fingerprint) {
-      return res.status(400).json({ error: 'Fingerprint gerekli' });
-    }
-
-    const uniqueCheck = await checkUniqueVisitor(fingerprint, sessionId);
-    
-    res.json({
-      isUniqueVisitor: uniqueCheck.isUnique,
-      isReturnVisitor: !uniqueCheck.isUnique,
-      lastVisit: uniqueCheck.lastVisit,
-      isNewSession: uniqueCheck.isNewSession
-    });
-  } catch (error) {
-    console.error('Check returning visitor error:', error);
-    res.status(500).json({ error: 'Returning visitor kontrolü yapılırken hata oluştu' });
-  }
-});
-
-// Get visitor journey by fingerprint
-app.get('/api/analytics/visitor-journey/:fingerprint', async (req, res) => {
-  try {
-    const { fingerprint } = req.params;
-    
-    // Get all sessions for this fingerprint
-    const [sessions] = await db.execute(
-      `SELECT 
-        vs.session_id,
-        vs.created_at,
-        vs.last_activity_at,
-        vs.session_duration,
-        vs.total_page_views,
-        vs.device_type,
-        vs.browser,
-        vs.country,
-        vs.city,
-        vs.referrer,
-        vs.utm_source,
-        vs.utm_medium,
-        vs.utm_campaign
-       FROM visitor_sessions vs
-       WHERE vs.visitor_fingerprint = ?
-       ORDER BY vs.created_at DESC`,
-      [fingerprint]
-    );
-
-    // Get page views for these sessions
-    const sessionIds = sessions.map(s => s.session_id);
-    let pageViews = [];
-    
-    if (sessionIds.length > 0) {
-      const placeholders = sessionIds.map(() => '?').join(',');
-      const [pvRows] = await db.execute(
-        `SELECT 
-          pv.session_id,
-          pv.page_path,
-          pv.page_title,
-          pv.viewed_at,
-          pv.time_on_page,
-          pv.scroll_percentage
-         FROM page_views pv
-         WHERE pv.session_id IN (${placeholders})
-         ORDER BY pv.viewed_at ASC`,
-        sessionIds
-      );
-      pageViews = pvRows;
-    }
-
-    res.json({
-      fingerprint,
-      sessions,
-      pageViews,
-      totalSessions: sessions.length,
-      firstVisit: sessions.length > 0 ? sessions[sessions.length - 1].created_at : null,
-      lastVisit: sessions.length > 0 ? sessions[0].last_activity_at : null
-    });
-  } catch (error) {
-    console.error('Visitor journey error:', error);
-    res.status(500).json({ error: 'Ziyaretçi yolculuğu alınırken hata oluştu' });
-  }
-});
-
-// Cleanup old data
-app.post('/api/analytics/cleanup', async (req, res) => {
-  try {
-    const { olderThanDays = 365 } = req.body;
-    
-    await db.execute(
-      'DELETE FROM visitor_sessions WHERE first_visit_at < DATE_SUB(NOW(), INTERVAL ? DAY)',
-      [olderThanDays]
-    );
-
-    res.json({ cleaned: true });
-  } catch (error) {
-    console.error('Cleanup error:', error);
-    res.status(500).json({ error: 'Veri temizlenirken hata oluştu' });
-  }
-});
-
-// ACTIVE VISITORS API - Aktif Ziyaretçiler
-// =====================================
-
-// Get active visitors (last 5 minutes)
-app.get('/api/analytics/active-visitors', async (req, res) => {
-  try {
-    const [activeVisitors] = await db.execute(`
-      SELECT DISTINCT
-        vs.session_id,
-        vs.ip_address,
-        vs.country,
-        vs.city,
-        vs.device_type,
-        vs.browser,
-        vs.operating_system,
-        vs.visitor_fingerprint,
-        vs.is_return_visitor,
-        vs.created_at as first_visit,
-        vs.last_activity_at,
-        COALESCE(pv.current_page, '/') as current_page,
-        COALESCE(pv.page_title, 'Ana Sayfa') as current_page_title,
-        TIMESTAMPDIFF(SECOND, vs.created_at, NOW()) as session_duration,
-        vs.total_page_views,
-        pv.viewed_at as last_page_view
-      FROM visitor_sessions vs
-      LEFT JOIN (
-        SELECT session_id, page_path as current_page, page_title, viewed_at,
-               ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY viewed_at DESC) as rn
-        FROM page_views 
-        WHERE viewed_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)
-      ) pv ON vs.session_id = pv.session_id AND pv.rn = 1
-      WHERE vs.last_activity_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)
-      ORDER BY vs.last_activity_at DESC
-    `);
-
-    res.json(activeVisitors);
-  } catch (error) {
-    console.error('Active visitors error:', error);
-    res.status(500).json({ error: 'Aktif ziyaretçiler alınırken hata oluştu' });
-  }
-});
-
-// Update visitor activity (heartbeat)
-app.post('/api/analytics/heartbeat', async (req, res) => {
-  try {
-    const { session_id, current_page, page_title } = req.body;
-
-    if (!session_id) {
-      return res.status(400).json({ error: 'session_id gerekli' });
-    }
-
-    // Update last activity time
-    await db.execute(
-      'UPDATE visitor_sessions SET last_activity_at = CURRENT_TIMESTAMP WHERE session_id = ?',
-      [session_id]
-    );
-
-    // Update current page if provided
-    if (current_page) {
-      await db.execute(`
-        INSERT INTO page_views (session_id, page_path, page_title, viewed_at)
-        VALUES (?, ?, ?, NOW())
-        ON DUPLICATE KEY UPDATE 
-          page_title = VALUES(page_title),
-          viewed_at = NOW()
-      `, [session_id, current_page, page_title || '']);
-    }
-
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Heartbeat error:', error);
-    res.status(500).json({ error: 'Heartbeat güncellenirken hata oluştu' });
-  }
-});
-
-// Get visitor details by session
-app.get('/api/analytics/visitor/:sessionId', async (req, res) => {
-  try {
-    const { sessionId } = req.params;
-
-    const [visitor] = await db.execute(`
-      SELECT 
-        vs.*,
-        COUNT(DISTINCT pv.page_path) as unique_pages_visited,
-        GROUP_CONCAT(DISTINCT pv.page_path ORDER BY pv.viewed_at DESC SEPARATOR '||') as page_journey
-      FROM visitor_sessions vs
-      LEFT JOIN page_views pv ON vs.session_id = pv.session_id
-      WHERE vs.session_id = ?
-      GROUP BY vs.id
-    `, [sessionId]);
-
-    if (visitor.length === 0) {
-      return res.status(404).json({ error: 'Ziyaretçi bulunamadı' });
-    }
-
-    // Parse page journey
-    if (visitor[0].page_journey) {
-      visitor[0].page_journey = visitor[0].page_journey.split('||');
-    } else {
-      visitor[0].page_journey = [];
-    }
-
-    res.json(visitor[0]);
-  } catch (error) {
-    console.error('Visitor details error:', error);
-    res.status(500).json({ error: 'Ziyaretçi detayları alınırken hata oluştu' });
-  }
-});
-
-// Get real-time statistics for dashboard
-app.get('/api/analytics/realtime-stats', async (req, res) => {
-  try {
-    // Active visitors (last 5 minutes)
-    const [activeCount] = await db.execute(`
-      SELECT COUNT(DISTINCT session_id) as active_visitors
-      FROM visitor_sessions 
-      WHERE last_activity_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)
-    `);
-
-    // Today's unique visitors
-    const [todayUnique] = await db.execute(`
-      SELECT COUNT(DISTINCT visitor_fingerprint) as todays_unique
-      FROM visitor_sessions 
-      WHERE DATE(created_at) = CURDATE()
-    `);
-
-    // Current page views (last 30 minutes)
-    const [currentPageViews] = await db.execute(`
-      SELECT page_path, page_title, COUNT(*) as views
-      FROM page_views 
-      WHERE viewed_at > DATE_SUB(NOW(), INTERVAL 30 MINUTE)
-      GROUP BY page_path, page_title
-      ORDER BY views DESC
-      LIMIT 10
-    `);
-
-    // Top referrers today
-    const [topReferrers] = await db.execute(`
-      SELECT referrer, COUNT(*) as count
-      FROM visitor_sessions 
-      WHERE DATE(created_at) = CURDATE() AND referrer IS NOT NULL AND referrer != ''
-      GROUP BY referrer
-      ORDER BY count DESC
-      LIMIT 5
-    `);
-
-    res.json({
-      active_visitors: activeCount[0].active_visitors,
-      todays_unique_visitors: todayUnique[0].todays_unique,
-      current_popular_pages: currentPageViews,
-      top_referrers: topReferrers,
-      last_updated: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Realtime stats error:', error);
-    res.status(500).json({ error: 'Gerçek zamanlı istatistikler alınırken hata oluştu' });
-  }
-});
-
-// Get visitor geographic distribution
-app.get('/api/analytics/geographic-distribution', async (req, res) => {
-  try {
-    const [countries] = await db.execute(`
-      SELECT 
-        country,
-        city,
-        COUNT(DISTINCT visitor_fingerprint) as unique_visitors,
-        COUNT(*) as total_sessions
-      FROM visitor_sessions 
-      WHERE created_at > DATE_SUB(NOW(), INTERVAL 7 DAY)
-        AND country IS NOT NULL AND country != ''
-      GROUP BY country, city
-      ORDER BY unique_visitors DESC
-      LIMIT 20
-    `);
-
-    res.json(countries);
-  } catch (error) {
-    console.error('Geographic distribution error:', error);
-    res.status(500).json({ error: 'Coğrafi dağılım alınırken hata oluştu' });
-  }
-});
-
-// =====================================
-// REAL-TIME ACTIVE VISITORS API
-// =====================================
-
-// Start visitor session (Real-time tracking)
-app.post('/api/analytics/realtime/start-session', async (req, res) => {
-  try {
-    const {
-      session_id,
-      visitor_fingerprint,
-      user_agent,
-      device_type,
-      browser,
-      operating_system,
-      country,
-      city,
-      current_page,
-      page_title,
-      referrer,
-      utm_source,
-      utm_medium,
-      utm_campaign
-    } = req.body;
-
-    if (!session_id) {
-      return res.status(400).json({ error: 'session_id gerekli' });
-    }
-
-    const ip_address = getClientIP(req);
-    
-    // Check if this is a returning visitor by fingerprint
-    let isNewVisitor = true;
-    let isReturnVisitor = false;
-    
-    if (visitor_fingerprint) {
-      const [existingVisitor] = await db.execute(
-        'SELECT id FROM active_visitors_realtime WHERE visitor_fingerprint = ? AND first_visit_time < DATE_SUB(NOW(), INTERVAL 1 HOUR)',
-        [visitor_fingerprint]
-      );
-      
-      if (existingVisitor.length > 0) {
-        isNewVisitor = false;
-        isReturnVisitor = true;
-      }
-    }
-
-    // Insert or update active visitor
-    await db.execute(`
-      INSERT INTO active_visitors_realtime (
-        session_id, visitor_fingerprint, ip_address, user_agent,
-        device_type, browser, operating_system, country, city,
-        current_page, current_page_title, entry_page,
-        is_new_visitor, is_return_visitor, referrer,
-        utm_source, utm_medium, utm_campaign,
-        session_start_time, last_activity_time, last_heartbeat
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), NOW())
-      ON DUPLICATE KEY UPDATE
-        current_page = VALUES(current_page),
-        current_page_title = VALUES(current_page_title),
-        last_activity_time = NOW(),
-        last_heartbeat = NOW(),
-        heartbeat_count = heartbeat_count + 1,
-        is_active = TRUE
-    `, [
-      session_id,
-      visitor_fingerprint || null,
-      ip_address || null,
-      user_agent || null,
-      device_type || 'desktop',
-      browser || null,
-      operating_system || null,
-      country || null,
-      city || null,
-      current_page || '/',
-      page_title || null,
-      current_page || '/', // entry_page
-      isNewVisitor,
-      isReturnVisitor,
-      referrer || null,
-      utm_source || null,
-      utm_medium || null,
-      utm_campaign || null
-    ]);
-
-    // Track initial page view
-    await db.execute(`
-      INSERT INTO realtime_page_views (
-        session_id, page_path, page_title, referrer, entry_time
-      ) VALUES (?, ?, ?, ?, NOW())
-      ON DUPLICATE KEY UPDATE
-        last_update_time = NOW()
-    `, [session_id, current_page || '/', page_title || null, referrer || null]);
-
-    res.json({ 
-      success: true, 
-      session_id,
-      is_new_visitor: isNewVisitor,
-      is_return_visitor: isReturnVisitor
-    });
-  } catch (error) {
-    console.error('Start session error:', error);
-    res.status(500).json({ error: 'Oturum başlatılırken hata oluştu' });
-  }
-});
-
-// Update visitor heartbeat (5 saniyede bir çağrılır)
-app.post('/api/analytics/realtime/heartbeat', async (req, res) => {
-  try {
-    const { 
-      session_id, 
-      current_page, 
-      page_title, 
-      time_on_page,
-      scroll_percentage,
-      clicks_count,
-      mouse_movements 
-    } = req.body;
-
-    if (!session_id) {
-      return res.status(400).json({ error: 'session_id gerekli' });
-    }
-
-    // Update visitor activity
-    const [result] = await db.execute(`
-      UPDATE active_visitors_realtime 
-      SET 
-        current_page = COALESCE(?, current_page),
-        current_page_title = COALESCE(?, current_page_title),
-        last_activity_time = NOW(),
-        last_heartbeat = NOW(),
-        heartbeat_count = heartbeat_count + 1,
-        session_duration = TIMESTAMPDIFF(SECOND, session_start_time, NOW()),
-        total_time_on_site = total_time_on_site + 5,
-        is_active = TRUE
-      WHERE session_id = ?
-    `, [current_page, page_title, session_id]);
-
-    // Update current page view
-    if (current_page) {
-      await db.execute(`
-        UPDATE realtime_page_views 
-        SET 
-          last_update_time = NOW(),
-          time_on_page = COALESCE(?, time_on_page),
-          scroll_percentage = GREATEST(COALESCE(?, 0), scroll_percentage),
-          clicks_count = clicks_count + COALESCE(?, 0),
-          mouse_movements = mouse_movements + COALESCE(?, 0)
-        WHERE session_id = ? AND page_path = ?
-        ORDER BY entry_time DESC LIMIT 1
-      `, [time_on_page, scroll_percentage, clicks_count, mouse_movements, session_id, current_page]);
-    }
-
-    res.json({ success: true, heartbeat_received: true });
-  } catch (error) {
-    console.error('Heartbeat error:', error);
-    res.status(500).json({ error: 'Heartbeat güncellenirken hata oluştu' });
-  }
-});
-
-// Track page change
-app.post('/api/analytics/realtime/page-change', async (req, res) => {
-  try {
-    const { 
-      session_id, 
-      previous_page,
-      new_page, 
-      page_title, 
-      time_on_previous_page 
-    } = req.body;
-
-    if (!session_id || !new_page) {
-      return res.status(400).json({ error: 'session_id ve new_page gerekli' });
-    }
-
-    // Mark previous page as exit page
-    if (previous_page) {
-      await db.execute(`
-        UPDATE realtime_page_views 
-        SET 
-          is_exit_page = TRUE,
-          exit_time = NOW(),
-          time_on_page = COALESCE(?, time_on_page)
-        WHERE session_id = ? AND page_path = ?
-        ORDER BY entry_time DESC LIMIT 1
-      `, [time_on_previous_page, session_id, previous_page]);
-    }
-
-    // Update visitor current page
-    await db.execute(`
-      UPDATE active_visitors_realtime 
-      SET 
-        previous_page = current_page,
-        current_page = ?,
-        current_page_title = ?,
-        last_activity_time = NOW(),
-        total_page_views = total_page_views + 1
-      WHERE session_id = ?
-    `, [new_page, page_title, session_id]);
-
-    // Add new page view
-    await db.execute(`
-      INSERT INTO realtime_page_views (
-        session_id, page_path, page_title, entry_time
-      ) VALUES (?, ?, ?, NOW())
-    `, [session_id, new_page, page_title || null]);
-
-    res.json({ success: true, page_changed: true });
-  } catch (error) {
-    console.error('Page change error:', error);
-    res.status(500).json({ error: 'Sayfa değişimi kaydedilirken hata oluştu' });
-  }
-});
-
-// End visitor session
-app.post('/api/analytics/realtime/end-session', async (req, res) => {
-  try {
-    const { session_id, final_page, time_on_final_page } = req.body;
-
-    if (!session_id) {
-      return res.status(400).json({ error: 'session_id gerekli' });
-    }
-
-    // Mark visitor as inactive
-    await db.execute(`
-      UPDATE active_visitors_realtime 
-      SET 
-        is_active = FALSE,
-        session_duration = TIMESTAMPDIFF(SECOND, session_start_time, NOW())
-      WHERE session_id = ?
-    `, [session_id]);
-
-    // Mark final page as exit page
-    if (final_page) {
-      await db.execute(`
-        UPDATE realtime_page_views 
-        SET 
-          is_exit_page = TRUE,
-          exit_time = NOW(),
-          time_on_page = COALESCE(?, time_on_page)
-        WHERE session_id = ? AND page_path = ?
-        ORDER BY entry_time DESC LIMIT 1
-      `, [time_on_final_page, session_id, final_page]);
-    }
-
-    res.json({ success: true, session_ended: true });
-  } catch (error) {
-    console.error('End session error:', error);
-    res.status(500).json({ error: 'Oturum sonlandırılırken hata oluştu' });
-  }
-});
-
-// Get real-time active visitors
-app.get('/api/analytics/realtime/active-visitors', async (req, res) => {
-  try {
-    const [activeVisitors] = await db.execute(`
-      SELECT 
-        av.session_id,
-        av.visitor_fingerprint,
-        av.ip_address,
-        av.device_type,
-        av.browser,
-        av.operating_system,
-        av.country,
-        av.city,
-        av.current_page,
-        av.current_page_title,
-        av.is_new_visitor,
-        av.is_return_visitor,
-        av.session_start_time as first_visit,
-        av.last_activity_time as last_activity_at,
-        av.session_duration,
-        av.total_page_views,
-        av.heartbeat_count,
-        av.referrer,
-        TIMESTAMPDIFF(SECOND, av.last_heartbeat, NOW()) as seconds_since_heartbeat
-      FROM active_visitors_realtime av
-      WHERE av.is_active = TRUE 
-        AND av.last_heartbeat > DATE_SUB(NOW(), INTERVAL 2 MINUTE)
-      ORDER BY av.last_activity_time DESC
-    `);
-
-    res.json({
-      active_visitors: activeVisitors,
-      total_active: activeVisitors.length,
-      last_updated: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Active visitors error:', error);
-    res.status(500).json({ error: 'Aktif ziyaretçiler alınırken hata oluştu' });
-  }
-});
-
-// Get real-time statistics
-app.get('/api/analytics/realtime/stats', async (req, res) => {
-  try {
-    // Active visitors count
-    const [activeCount] = await db.execute(`
-      SELECT COUNT(*) as count 
-      FROM active_visitors_realtime 
-      WHERE is_active = TRUE AND last_heartbeat > DATE_SUB(NOW(), INTERVAL 2 MINUTE)
-    `);
-
-    // New vs returning visitors
-    const [visitorTypes] = await db.execute(`
-      SELECT 
-        SUM(CASE WHEN is_new_visitor = TRUE THEN 1 ELSE 0 END) as new_visitors,
-        SUM(CASE WHEN is_return_visitor = TRUE THEN 1 ELSE 0 END) as return_visitors
-      FROM active_visitors_realtime 
-      WHERE is_active = TRUE AND last_heartbeat > DATE_SUB(NOW(), INTERVAL 2 MINUTE)
-    `);
-
-    // Device breakdown
-    const [deviceStats] = await db.execute(`
-      SELECT 
-        device_type,
-        COUNT(*) as count
-      FROM active_visitors_realtime 
-      WHERE is_active = TRUE AND last_heartbeat > DATE_SUB(NOW(), INTERVAL 2 MINUTE)
-      GROUP BY device_type
-    `);
-
-    // Current popular pages
-    const [popularPages] = await db.execute(`
-      SELECT 
-        current_page,
-        current_page_title,
-        COUNT(*) as visitors
-      FROM active_visitors_realtime 
-      WHERE is_active = TRUE AND last_heartbeat > DATE_SUB(NOW(), INTERVAL 2 MINUTE)
-      GROUP BY current_page, current_page_title
-      ORDER BY visitors DESC
-      LIMIT 10
-    `);
-
-    // Geographic distribution
-    const [geoStats] = await db.execute(`
-      SELECT 
-        country,
-        city,
-        COUNT(*) as visitors
-      FROM active_visitors_realtime 
-      WHERE is_active = TRUE 
-        AND last_heartbeat > DATE_SUB(NOW(), INTERVAL 2 MINUTE)
-        AND country IS NOT NULL
-      GROUP BY country, city
-      ORDER BY visitors DESC
-      LIMIT 10
-    `);
-
-    const deviceBreakdown = {};
-    deviceStats.forEach(stat => {
-      deviceBreakdown[stat.device_type] = stat.count;
-    });
-
-    res.json({
-      total_active_visitors: activeCount[0].count,
-      new_visitors: visitorTypes[0].new_visitors || 0,
-      return_visitors: visitorTypes[0].return_visitors || 0,
-      device_breakdown: deviceBreakdown,
-      popular_pages: popularPages,
-      geographic_distribution: geoStats,
-      last_updated: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Realtime stats error:', error);
-    res.status(500).json({ error: 'Gerçek zamanlı istatistikler alınırken hata oluştu' });
-  }
-});
-
-// Manual cleanup inactive visitors
-app.post('/api/analytics/realtime/cleanup', async (req, res) => {
-  try {
-    await db.execute('CALL CleanupInactiveVisitors()');
-    res.json({ success: true, message: 'Inactive visitors cleaned up' });
-  } catch (error) {
-    console.error('Cleanup error:', error);
-    res.status(500).json({ error: 'Temizlik işlemi sırasında hata oluştu' });
-  }
-});
-
-// Create test active visitors
-app.post('/api/analytics/realtime/create-test-data', async (req, res) => {
-  try {
-    await db.execute('CALL CreateTestActiveVisitors()');
-    res.json({ success: true, message: 'Test active visitors created' });
-  } catch (error) {
-    console.error('Test data creation error:', error);
-    res.status(500).json({ error: 'Test verisi oluşturulurken hata oluştu' });
-  }
-});
-
 app.listen(PORT, () => {
-  // Server started successfully
+  console.log(`Akaydın Tarım sunucusu port ${PORT} üzerinde çalışıyor.`);
+  console.log(`Admin paneli: http://localhost:${PORT}/admin`);
 });

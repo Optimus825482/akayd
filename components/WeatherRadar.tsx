@@ -1,7 +1,14 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
+
+const REFRESH_INTERVAL = 10 * 60 * 1000; // 10 dakika
 
 const WeatherRadar: React.FC = () => {
+  const radarSrc = useMemo(() => {
+    const rounded = Math.floor(Date.now() / REFRESH_INTERVAL) * REFRESH_INTERVAL;
+    return `https://www.mgm.gov.tr/Images_Sys/radar/sak.png?v=${rounded}`;
+  }, []);
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg h-full flex flex-col">
       <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2 flex items-center">
@@ -12,7 +19,7 @@ const WeatherRadar: React.FC = () => {
       </h3>
       <div className="bg-gray-200 rounded-md overflow-hidden flex-grow flex items-center justify-center">
         <img 
-          src={`https://www.mgm.gov.tr/Images_Sys/radar/sak.png?v=${new Date().getTime()}`}
+          src={radarSrc}
           alt="Sakarya Hava Radarı" 
           className="w-full h-auto object-cover"
         />

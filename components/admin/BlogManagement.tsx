@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import type { BlogPost, Notification } from '../../types';
 import { blogAPI } from '../../services/api';
 
+const STATIC_URL = import.meta.env.VITE_STATIC_URL || 'http://localhost:3003';
+const imgUrl = (path: string) => path ? `${STATIC_URL}${path}` : '';
+
 interface BlogManagementProps {
     blogPosts: BlogPost[];
     setBlogPosts: React.Dispatch<React.SetStateAction<BlogPost[]>>;
@@ -22,7 +25,10 @@ const BlogManagement: React.FC<BlogManagementProps> = ({
         title: '',
         content: '',
         excerpt: '',
-        author: ''
+        author: '',
+        seo_title: '',
+        seo_description: '',
+        seo_keywords: ''
     });
     const [blogImage, setBlogImage] = useState<File | null>(null);
     const [isBlogModalOpen, setIsBlogModalOpen] = useState(false);
@@ -36,6 +42,9 @@ const BlogManagement: React.FC<BlogManagementProps> = ({
             formData.append('content', blogForm.content);
             formData.append('excerpt', blogForm.excerpt);
             formData.append('author', blogForm.author);
+            formData.append('seo_title', blogForm.seo_title);
+            formData.append('seo_description', blogForm.seo_description);
+            formData.append('seo_keywords', blogForm.seo_keywords);
 
             if (blogImage) {
                 formData.append('image', blogImage);
@@ -48,9 +57,7 @@ const BlogManagement: React.FC<BlogManagementProps> = ({
                         ? {
                             ...updatedPost,
                             id: updatedPost.id.toString(),
-                            imageUrl: updatedPost.image_url && updatedPost.image_url.startsWith('/uploads/')
-                                ? `http://localhost:3003${updatedPost.image_url}`
-                                : updatedPost.image_url || 'https://picsum.photos/400/250?random=1'
+                            imageUrl: updatedPost.image_url ? imgUrl(updatedPost.image_url) : 'https://picsum.photos/400/250?random=1'
                         }
                         : post
                 ));
@@ -60,9 +67,7 @@ const BlogManagement: React.FC<BlogManagementProps> = ({
                 setBlogPosts(prev => [...prev, {
                     ...newPost,
                     id: newPost.id.toString(),
-                    imageUrl: newPost.image_url && newPost.image_url.startsWith('/uploads/')
-                        ? `http://localhost:3003${newPost.image_url}`
-                        : newPost.image_url || 'https://picsum.photos/400/250?random=1'
+                    imageUrl: newPost.image_url ? imgUrl(newPost.image_url) : 'https://picsum.photos/400/250?random=1'
                 }]);
                 addNotification('success', 'Başarılı!', 'Yeni blog yazısı yayınlandı.');
             }
@@ -82,11 +87,14 @@ const BlogManagement: React.FC<BlogManagementProps> = ({
                 title: post.title,
                 content: post.content || '',
                 excerpt: post.excerpt || '',
-                author: post.author
+                author: post.author,
+                seo_title: (post as any).seo_title || '',
+                seo_description: (post as any).seo_description || '',
+                seo_keywords: (post as any).seo_keywords || ''
             });
         } else {
             setCurrentBlogPost(null);
-            setBlogForm({ title: '', content: '', excerpt: '', author: '' });
+            setBlogForm({ title: '', content: '', excerpt: '', author: '', seo_title: '', seo_description: '', seo_keywords: '' });
         }
         setBlogImage(null);
         setIsBlogModalOpen(true);
@@ -94,7 +102,7 @@ const BlogManagement: React.FC<BlogManagementProps> = ({
 
     const closeBlogModal = () => {
         setCurrentBlogPost(null);
-        setBlogForm({ title: '', content: '', excerpt: '', author: '' });
+        setBlogForm({ title: '', content: '', excerpt: '', author: '', seo_title: '', seo_description: '', seo_keywords: '' });
         setBlogImage(null);
         setIsBlogModalOpen(false);
     };
@@ -350,14 +358,49 @@ const BlogManagement: React.FC<BlogManagementProps> = ({
                                     />
                                 </div>
 
+                                {/* SEO Fields */}
+                                <div className="lg:col-span-2 border-t pt-4 mt-2">
+                                    <h4 className="text-sm font-semibold text-gray-700 mb-3">🔍 SEO Ayarları (Opsiyonel)</h4>
+                                    <div className="grid grid-cols-1 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-600 mb-1">SEO Başlığı</label>
+                                            <input
+                                                type="text"
+                                                placeholder="SEO başlığı (60 karakter)"
+                                                value={blogForm.seo_title}
+                                                onChange={(e) => setBlogForm({ ...blogForm, seo_title: e.target.value })}
+                                                className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                                maxLength={60}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-600 mb-1">SEO Açıklaması</label>
+                                            <textarea
+                                                placeholder="SEO açıklaması (160 karakter)"
+                                                value={blogForm.seo_description}
+                                                onChange={(e) => setBlogForm({ ...blogForm, seo_description: e.target.value })}
+                                                className="w-full border border-gray-300 rounded-lg px-4 py-2 h-16 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                                maxLength={160}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-600 mb-1">SEO Anahtar Kelimeleri</label>
+                                            <input
+                                                type="text"
+                                                placeholder="fındık, tarım, hendek"
+                                                value={blogForm.seo_keywords}
+                                                onChange={(e) => setBlogForm({ ...blogForm, seo_keywords: e.target.value })}
+                                                className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {currentBlogPost && currentBlogPost.imageUrl && (
                                     <div className="lg:col-span-2">
                                         <label className="block text-sm font-medium text-gray-700 mb-2">🖼️ Mevcut Görsel</label>
                                         <img
-                                            src={currentBlogPost.imageUrl.startsWith('/uploads')
-                                                ? `http://localhost:3003${currentBlogPost.imageUrl}`
-                                                : currentBlogPost.imageUrl
-                                            }
+                                            src={imgUrl(currentBlogPost.imageUrl) || currentBlogPost.imageUrl}
                                             alt={currentBlogPost.title}
                                             className="w-full max-w-md h-48 object-cover rounded-lg border"
                                         />

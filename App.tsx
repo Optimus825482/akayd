@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import type { Service, Product, BlogPost, AboutPageContent, ContactPageContent, HeroContent, SEOSettings } from './types';
-import { INITIAL_SERVICES, INITIAL_PRODUCTS, INITIAL_BLOG_POSTS, INITIAL_ABOUT_CONTENT, INITIAL_CONTACT_CONTENT } from './constants';
+import { INITIAL_SERVICES, INITIAL_PRODUCTS, INITIAL_BLOG_POSTS, INITIAL_ABOUT_CONTENT, INITIAL_CONTACT_CONTENT } from './constants'; // constants.tsx
 import { servicesAPI, productsAPI, blogAPI, aboutAPI, contactAPI, heroAPI, seoAPI } from './services/api';
-import { useAnalyticsTracking, showCookieConsentBanner } from './hooks/useAnalyticsTracking';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import CookieConsentBanner from './components/CookieConsentBanner';
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
 import ServicesPage from './pages/ServicesPage';
@@ -15,49 +13,16 @@ import ProductsPage from './pages/ProductsPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import BlogPage from './pages/BlogPage';
 import ContactPage from './pages/ContactPage';
-import AdminDashboard from './pages/AdminDashboard';
 
-// Analytics wrapper component that will be inside Router
-const AnalyticsWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const analytics = useAnalyticsTracking();
-  const location = useLocation();
-  const [showCookieBanner, setShowCookieBanner] = useState(showCookieConsentBanner());
-
-  // Track page view when location changes
-  useEffect(() => {
-    if (analytics.isTrackingEnabled) {
-      analytics.trackPageView();
-    }
-  }, [location.pathname, analytics]);
-
-  // Initialize analytics session when consent is given
-  useEffect(() => {
-    if (analytics.hasConsent()) {
-      analytics.initializeSession();
-    }
-  }, [analytics]);
-
-  const handleAcceptCookies = () => {
-    setShowCookieBanner(false);
-    analytics.initializeSession();
-  };
-
-  const handleDeclineCookies = () => {
-    setShowCookieBanner(false);
-  };
-
-  return (
-    <>
-      {children}
-      {showCookieBanner && (
-        <CookieConsentBanner
-          onAccept={handleAcceptCookies}
-          onDecline={handleDeclineCookies}
-        />
-      )}
-    </>
-  );
+const STATIC_BASE_URL = import.meta.env.VITE_STATIC_URL || 'http://localhost:3003';
+const img = (p: string) => {
+  if (!p) return '';
+  // URL temizleme: baştaki slash'leri kaldır, /akaydin-tarim prefix'ini kaldır, çift slash'ları tek slash yap
+  let cleaned = p.replace(/^\/+/, '').replace(/\/akaydin-tarim\//g, '/').replace(/\/+/g, '/');
+  return `${STATIC_BASE_URL}/${cleaned}`;
 };
+
+const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'));
 
 function App(): React.ReactNode {
   const [services, setServices] = useState<Service[]>(INITIAL_SERVICES);
@@ -68,6 +33,7 @@ function App(): React.ReactNode {
   const [heroContents, setHeroContents] = useState<HeroContent[]>([]);
   const [seoSettings, setSeoSettings] = useState<SEOSettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Verileri API'den yükle
   const loadData = async () => {
@@ -96,13 +62,9 @@ function App(): React.ReactNode {
         category: product.category,
         price: product.price || 0,
         isFeatured: product.is_featured || false,
-        imageUrl: product.image_url && product.image_url.startsWith('/uploads/')
-          ? `http://localhost:3003${product.image_url}`
-          : product.image_url || 'https://picsum.photos/300/200?random=1',
+        imageUrl: product.image_url ? img(product.image_url.startsWith('/uploads/') ? product.image_url : product.image_url) : 'https://picsum.photos/300/200?random=1',
         images: product.images && Array.isArray(product.images)
-          ? product.images.map((img: string) =>
-            img.startsWith('/uploads/') ? `http://localhost:3003${img}` : img
-          )
+          ? product.images.map((imgPath: string) => img(imgPath))
           : []
       })));
 
@@ -115,11 +77,7 @@ function App(): React.ReactNode {
         author: post.author,
         date: new Date(post.created_at || Date.now()).toLocaleDateString('tr-TR'),
         views: post.views || 0,
-        imageUrl: post.image_url
-          ? (post.image_url.startsWith('/uploads/')
-            ? `http://localhost:3003${post.image_url}`
-            : `http://localhost:3003/uploads/${post.image_url}`)
-          : 'https://picsum.photos/400/250?random=1'
+        imageUrl: post.image_url ? img(post.image_url) : 'https://picsum.photos/400/250?random=1'
       })));
 
       if (aboutData) {
@@ -128,10 +86,8 @@ function App(): React.ReactNode {
           content: aboutData.content || '',
           mission: aboutData.mission || INITIAL_ABOUT_CONTENT.mission,
           vision: aboutData.vision || INITIAL_ABOUT_CONTENT.vision,
-          images: aboutData.images ? aboutData.images.map((img: string) =>
-            img.startsWith('/uploads') ? `http://localhost:3003${img}` : img
-          ) : [],
-          image: aboutData.image ? `http://localhost:3003/uploads/${aboutData.image}` : undefined
+          images: aboutData.images ? aboutData.images.map((imgPath: string) => img(imgPath)) : [],
+          image: aboutData.image ? img(`/uploads/${aboutData.image}`) : undefined
         });
       }
 
@@ -156,13 +112,13 @@ function App(): React.ReactNode {
       // Hero verilerini işle
       if (heroData && heroData.length > 0) {
         setHeroContents(heroData.map((hero: any) => ({
-          id: hero.id.toString(),
+          id: hero.id?.toString() || hero.ID?.toString() || String(hero.order_index || 1),
           title: hero.title,
           subtitle: hero.subtitle,
           description: hero.description,
           cta: hero.cta,
           backgroundGradient: hero.background_gradient || 'from-green-600 via-green-700 to-blue-800',
-          backgroundImage: hero.background_image ? `http://localhost:3003/uploads/${hero.background_image}` : '',
+          backgroundImage: hero.background_image ? img(hero.background_image) : '',
           isActive: hero.is_active || true,
           order: hero.order_index || 1
         })));
@@ -175,6 +131,8 @@ function App(): React.ReactNode {
 
       setLoading(false);
     } catch (error) {
+      console.error('Veri yüklenirken hata oluştu:', error);
+      setLoadError('Veriler yüklenemedi. Lütfen sayfayı yenileyin veya daha sonra tekrar deneyin.');
       setLoading(false);
     }
   };
@@ -182,6 +140,24 @@ function App(): React.ReactNode {
   useEffect(() => {
     loadData();
   }, []);
+
+  if (loadError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="text-6xl mb-4">⚠️</div>
+          <div className="text-xl text-red-600 font-semibold mb-2">Bir hata oluştu</div>
+          <div className="text-gray-600 mb-4">{loadError}</div>
+          <button
+            onClick={() => { setLoadError(null); setLoading(true); loadData(); }}
+            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          >
+            Tekrar Dene
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -194,27 +170,28 @@ function App(): React.ReactNode {
   return (
     <HelmetProvider>
       <HashRouter>
-        <AnalyticsWrapper>
           <Routes>
             {/* Admin Route - No Header/Footer */}
             <Route
               path="/admin"
               element={
-                <AdminDashboard
-                  services={services}
-                  setServices={setServices}
-                  products={products}
-                  setProducts={setProducts}
-                  blogPosts={blogPosts}
-                  setBlogPosts={setBlogPosts}
-                  aboutContent={aboutContent}
-                  setAboutContent={setAboutContent}
-                  contactContent={contactContent}
-                  setContactContent={setContactContent}
-                  heroContents={heroContents}
-                  setHeroContents={setHeroContents}
-                  refreshData={loadData}
-                />
+                <React.Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="text-xl text-gray-600">Yükleniyor...</div></div>}>
+                  <AdminDashboard
+                    services={services}
+                    setServices={setServices}
+                    products={products}
+                    setProducts={setProducts}
+                    blogPosts={blogPosts}
+                    setBlogPosts={setBlogPosts}
+                    aboutContent={aboutContent}
+                    setAboutContent={setAboutContent}
+                    contactContent={contactContent}
+                    setContactContent={setContactContent}
+                    heroContents={heroContents}
+                    setHeroContents={setHeroContents}
+                    refreshData={loadData}
+                  />
+                </React.Suspense>
               }
             />
 
@@ -236,8 +213,7 @@ function App(): React.ReactNode {
                 <Footer content={contactContent} />
               </div>
             } />
-          </Routes>
-        </AnalyticsWrapper>
+        </Routes>
       </HashRouter>
     </HelmetProvider>
   );
