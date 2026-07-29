@@ -266,7 +266,7 @@ app.post('/api/services', adminAuth, async (req, res) => {
       [title, description, iconName]
     );
     // İçerik değişti, sitemap'i arka planda yenile
-    generateSitemapFile().catch(() => {});
+    generateSitemap().catch(() => {});
     res.json({ id: result.rows[0].id, title, description, iconName });
   } catch (error) {
     console.error(error);
@@ -282,7 +282,7 @@ app.put('/api/services/:id', adminAuth, async (req, res) => {
       'UPDATE services SET title = $1, description = $2, icon_name = $3 WHERE id = $4',
       [title, description, iconName, id]
     );
-    generateSitemapFile().catch(() => {});
+    generateSitemap().catch(() => {});
     res.json({ id, title, description, iconName });
   } catch (error) {
     console.error(error);
@@ -294,7 +294,7 @@ app.delete('/api/services/:id', adminAuth, async (req, res) => {
   try {
     const { id } = req.params;
     await db.query('DELETE FROM services WHERE id = $1', [id]);
-    generateSitemapFile().catch(() => {});
+    generateSitemap().catch(() => {});
     res.json({ message: 'Hizmet başarıyla silindi' });
   } catch (error) {
     console.error(error);
@@ -340,7 +340,7 @@ app.post('/api/products', adminAuth, upload.array('images', 10), imageOptimizer,
       [name, description, category, imageUrl, imagesJson, isFeatured]
     );
     // Yeni ürün eklendi, sitemap'i arka planda yenile
-    generateSitemapFile().catch(() => {});
+    generateSitemap().catch(() => {});
     res.json({ 
       id: result.rows[0].id, 
       name, 
@@ -416,7 +416,7 @@ app.put('/api/products/:id', adminAuth, upload.array('images', 10), imageOptimiz
       [name, description, category, imageUrl, imagesJson, isFeatured, id]
     );
     // Ürün güncellendi, sitemap'i arka planda yenile
-    generateSitemapFile().catch(() => {});
+    generateSitemap().catch(() => {});
     res.json({ 
       id, 
       name, 
@@ -437,7 +437,7 @@ app.delete('/api/products/:id', adminAuth, async (req, res) => {
     const { id } = req.params;
     await db.query('DELETE FROM products WHERE id = $1', [id]);
     // Ürün silindi, sitemap'i arka planda yenile
-    generateSitemapFile().catch(() => {});
+    generateSitemap().catch(() => {});
     res.json({ message: 'Ürün başarıyla silindi' });
   } catch (error) {
     console.error(error);
@@ -467,7 +467,7 @@ app.post('/api/blog-posts', adminAuth, upload.single('image'), imageOptimizer, a
       [title, excerpt || '', content || '', excerpt || '', author || 'Akaydın Tarım', currentDate, imageUrl, seo_title || null, seo_description || null, seo_keywords || null]
     );
     // Blog yazısı eklendi, sitemap'i arka planda yenile
-    generateSitemapFile().catch(() => {});
+    generateSitemap().catch(() => {});
     res.json({ 
       id: result.rows[0].id, 
       title, 
@@ -512,7 +512,7 @@ app.put('/api/blog-posts/:id', adminAuth, upload.single('image'), imageOptimizer
     );
     
     // Blog yazısı güncellendi, sitemap'i arka planda yenile
-    generateSitemapFile().catch(() => {});
+    generateSitemap().catch(() => {});
     res.json({ 
       id: parseInt(id), 
       title, 
@@ -539,7 +539,7 @@ app.delete('/api/blog-posts/:id', adminAuth, async (req, res) => {
     const { id } = req.params;
     await db.query('DELETE FROM blog_posts WHERE id = $1', [id]);
     // Blog yazısı silindi, sitemap'i arka planda yenile
-    generateSitemapFile().catch(() => {});
+    generateSitemap().catch(() => {});
     res.json({ message: 'Blog yazısı başarıyla silindi' });
   } catch (error) {
     console.error(error);
@@ -1304,8 +1304,11 @@ app.get('/api/seo/analyze', adminAuth, async (req, res) => {
   }
 });
 
+// Sitemap — bellek içi önbellek, diske yazma gerektirmez
+let sitemapCache = null;
+
 // Sitemap oluşturma yardımcı fonksiyonu — CRUD işlemlerinden sonra da çağrılabilir
-async function generateSitemapFile() {
+async function generateSitemap() {
   const [products, blogPosts, seoSettings] = await Promise.all([
     db.query('SELECT id, updated_at FROM products'),
     db.query('SELECT id, updated_at FROM blog_posts'),
@@ -1315,7 +1318,6 @@ async function generateSitemapFile() {
   const baseUrl = (seoSettings.rows[0]?.canonical_url || 'https://www.akaydintarim.com.tr').replace(/\/$/, '');
   const now = new Date().toISOString().split('T')[0];
 
-  // Statik sayfalar - lastmod için en güncel blog/ürün tarihini kullan
   const latestProductDate = products.rows.reduce((max, p) => {
     const d = p.updated_at ? new Date(p.updated_at).toISOString().split('T')[0] : max;
     return d > max ? d : max;
@@ -1335,27 +1337,14 @@ async function generateSitemapFile() {
     { loc: `${baseUrl}/iletisim`, priority: '0.7', changefreq: 'monthly', lastmod: now },
   ];
 
-  // Ürün detay sayfaları — hash kullanmadan temiz URL'ler
   for (const p of products.rows) {
-    urls.push({
-      loc: `${baseUrl}/urun/${p.id}`,
-      priority: '0.6',
-      changefreq: 'monthly',
-      lastmod: p.updated_at ? new Date(p.updated_at).toISOString().split('T')[0] : now,
-    });
+    urls.push({ loc: `${baseUrl}/urun/${p.id}`, priority: '0.6', changefreq: 'monthly', lastmod: p.updated_at ? new Date(p.updated_at).toISOString().split('T')[0] : now });
   }
-
-  // Blog yazısı detay sayfaları
   for (const bp of blogPosts.rows) {
-    urls.push({
-      loc: `${baseUrl}/blog/${bp.id}`,
-      priority: '0.5',
-      changefreq: 'monthly',
-      lastmod: bp.updated_at ? new Date(bp.updated_at).toISOString().split('T')[0] : now,
-    });
+    urls.push({ loc: `${baseUrl}/blog/${bp.id}`, priority: '0.5', changefreq: 'monthly', lastmod: bp.updated_at ? new Date(bp.updated_at).toISOString().split('T')[0] : now });
   }
 
-  const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
+  sitemapCache = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.map(u => `  <url>
     <loc>${u.loc}</loc>${u.lastmod ? `\n    <lastmod>${u.lastmod}</lastmod>` : ''}
@@ -1364,17 +1353,13 @@ ${urls.map(u => `  <url>
   </url>`).join('\n')}
 </urlset>`;
 
-  const sitemapPath = path.join(__dirname, '../public/sitemap.xml');
-  fs.mkdirSync(path.dirname(sitemapPath), { recursive: true });
-  fs.writeFileSync(sitemapPath, sitemapXml);
-
-  return { url_count: urls.length, sitemapPath };
+  return { url_count: urls.length };
 }
 
 // Sitemap oluşturma — Admin panelinden POST ile tetiklenir
 app.post('/api/seo/sitemap', adminAuth, async (req, res) => {
   try {
-    const result = await generateSitemapFile();
+    const result = await generateSitemap();
     res.json({
       url: '/sitemap.xml',
       last_generated: new Date().toISOString(),
@@ -1389,15 +1374,14 @@ app.post('/api/seo/sitemap', adminAuth, async (req, res) => {
 // Sitemap durumunu görüntüleme — Admin panelinden bilgi almak için GET
 app.get('/api/seo/sitemap', adminAuth, async (req, res) => {
   try {
-    const sitemapPath = path.join(__dirname, '../public/sitemap.xml');
-    const exists = fs.existsSync(sitemapPath);
-    const stats = exists ? fs.statSync(sitemapPath) : null;
+    const exists = sitemapCache !== null;
+    const size = exists ? Buffer.byteLength(sitemapCache) : 0;
 
     res.json({
       exists,
       url: '/sitemap.xml',
-      last_modified: stats ? stats.mtime.toISOString() : null,
-      size_bytes: stats ? stats.size : 0,
+      last_modified: exists ? new Date().toISOString() : null,
+      size_bytes: size,
     });
   } catch (error) {
     console.error(error);
@@ -1405,24 +1389,17 @@ app.get('/api/seo/sitemap', adminAuth, async (req, res) => {
   }
 });
 
-// Public sitemap.xml — arama motorları için herkese açık
-app.get('/sitemap.xml', (req, res) => {
-  const sitemapPath = path.join(__dirname, '../public/sitemap.xml');
-  if (fs.existsSync(sitemapPath)) {
+// Public sitemap.xml — arama motorları için herkese açık (bellekten serve)
+app.get('/sitemap.xml', async (req, res) => {
+  if (!sitemapCache) {
+    try { await generateSitemap(); } catch {}
+  }
+  if (sitemapCache) {
     res.setHeader('Content-Type', 'application/xml');
     res.setHeader('X-Robots-Tag', 'noindex');
-    res.sendFile(sitemapPath);
+    res.send(sitemapCache);
   } else {
-    // İlk kez otomatik oluştur
-    generateSitemapFile()
-      .then(() => {
-        res.setHeader('Content-Type', 'application/xml');
-        res.setHeader('X-Robots-Tag', 'noindex');
-        res.sendFile(sitemapPath);
-      })
-      .catch(() => {
-        res.status(404).json({ error: 'Sitemap henüz oluşturulmamış' });
-      });
+    res.status(404).json({ error: 'Sitemap henüz oluşturulamadı' });
   }
 });
 
@@ -1487,7 +1464,7 @@ app.listen(PORT, async () => {
 
   // Sunucu başlangıcında sitemap'i otomatik oluştur
   try {
-    const result = await generateSitemapFile();
+    const result = await generateSitemap();
     console.log(`Sitemap oluşturuldu: ${result.url_count} URL`);
   } catch (err) {
     console.error('Sitemap başlangıçta oluşturulamadı:', err.message);

@@ -33,10 +33,6 @@ COPY docker/init-db.sh /usr/local/bin/init-db.sh
 RUN chmod +x /usr/local/bin/init-db.sh
 
 RUN mkdir -p uploads public && chown -R node:node /app
-
-# Backend başlangıçta uploads'u kalıcı volume için hazırla (silme, sadece yoksa oluştur)
-RUN if [ ! -d /app/uploads ] || [ -z "$(ls -A /app/uploads 2>/dev/null)" ]; then mkdir -p /app/uploads; fi
-
 USER node
 
 EXPOSE 3003

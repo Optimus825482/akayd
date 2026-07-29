@@ -40,7 +40,6 @@ services:
       - PORT=3003
     volumes:
       - /data/akaydin/uploads:/app/uploads
-      - /data/akaydin/public:/app/public
     depends_on:
       postgres:
         condition: service_healthy
