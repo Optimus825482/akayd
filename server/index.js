@@ -360,32 +360,35 @@ app.put('/api/products/:id', adminAuth, upload.array('images', 10), imageOptimiz
     }
     
     let allImages = [];
-    
-    // Eğer keepExistingImages true ise ve yeni görsel yoksa, mevcut görselleri koru
-    if (keepExistingImages === 'true' && uploadedFiles.length === 0) {
-      allImages = currentImages;
-    } else {
-      // Silinen görselleri çıkar
-      let updatedImages = currentImages;
-      if (deletedImages) {
-        const toDelete = JSON.parse(deletedImages);
-        updatedImages = currentImages.filter(img => !toDelete.includes(img));
-        
-        // Fiziksel dosyaları sil
-        toDelete.forEach(imagePath => {
-          if (imagePath.startsWith('/uploads/')) {
-            const fullPath = path.join(__dirname, '..', imagePath);
-            if (fs.existsSync(fullPath)) {
-              fs.unlinkSync(fullPath);
-            }
+
+    // Silinen görselleri işle (her durumda çalışır)
+    const normalizePath = (img) => {
+      const match = img.match(/\/uploads\/.+$/);
+      return match ? match[0] : img;
+    };
+
+    let updatedImages = currentImages;
+    if (deletedImages) {
+      const toDeleteRaw = JSON.parse(deletedImages);
+      const toDelete = toDeleteRaw.map(normalizePath);
+      updatedImages = currentImages.filter(img => !toDelete.includes(normalizePath(img)));
+
+      // Fiziksel dosyaları sil
+      toDelete.forEach(imagePath => {
+        const tryPaths = [imagePath, `/akaydin-tarim${imagePath}`];
+        for (const p of tryPaths) {
+          const fullPath = path.join(__dirname, '..', p);
+          if (fs.existsSync(fullPath)) {
+            fs.unlinkSync(fullPath);
+            break;
           }
-        });
-      }
-      
-      // Yeni yüklenen görselleri ekle
-      const newImages = uploadedFiles.map(file => `/uploads/${file.filename}`);
-      allImages = [...updatedImages, ...newImages];
+        }
+      });
     }
+
+    // Yeni yüklenen görselleri ekle
+    const newImages = uploadedFiles.map(file => `/uploads/${file.filename}`);
+    allImages = [...updatedImages, ...newImages];
     
     // Ana resim (ilk resim)
     const imageUrl = allImages.length > 0 ? allImages[0] : existing.rows[0]?.image_url || '';
@@ -928,21 +931,24 @@ app.post('/api/hero', adminAuth, upload.single('background_image'), imageOptimiz
 app.put('/api/hero/:id', adminAuth, upload.single('background_image'), imageOptimizer, async (req, res) => {
   try {
     const { id } = req.params;
-	    const { title, subtitle, description, cta, background_gradient, is_active, order_index } = req.body;
-    const backgroundImage = req.file ? `/uploads/${req.file.filename}` : null;
+    const { title, subtitle, description, cta, background_gradient, is_active, order_index } = req.body;
+    const newBackgroundImage = req.file ? `/uploads/${req.file.filename}` : null;
     
     let query = 'UPDATE hero_content SET title = $1, subtitle = $2, description = $3, cta = $4, background_gradient = $5, is_active = $6, order_index = $7';
     let values = [title, subtitle, description, cta, background_gradient, toSmallInt(is_active), parseInt(order_index) || 1];
     
-    if (backgroundImage) {
+    if (newBackgroundImage) {
       query += ', background_image = $8';
-      values.push(backgroundImage);
+      values.push(newBackgroundImage);
     }
 
     query += ' WHERE id = $' + (values.length + 1);
     values.push(id);
 
     await db.query(query, values);
+
+    // Güncellenmiş kaydı tekrar oku ki mevcut background_image'ı da dönebilelim
+    const updated = await db.query('SELECT * FROM hero_content WHERE id = $1', [id]);
 
     res.json({ 
       id: parseInt(id), 
@@ -951,7 +957,7 @@ app.put('/api/hero/:id', adminAuth, upload.single('background_image'), imageOpti
       description, 
       cta, 
       background_gradient: background_gradient,
-      background_image: backgroundImage,
+      background_image: updated.rows[0]?.background_image || null,
       is_active: is_active === 'true',
       order_index: parseInt(order_index) || 1
     });
@@ -986,298 +992,6 @@ app.put('/api/hero/order', adminAuth, async (req, res) => {
     res.status(500).json({ error: 'Sıralama güncellenirken hata oluştu' });
   }
 });
-
-// HAZELNUT PRICES API
-app.get('/api/hazelnut-prices', async (req, res) => {
-  try {
-    const rows = await db.query('SELECT * FROM hazelnut_prices ORDER BY created_at DESC LIMIT 1');
-    if (rows.rows.length === 0) {
-      // Varsayılan değerler
-      res.json({
-        id: 1,
-        price: 48.00,
-        daily_change: 0.00,
-        change_percentage: 0.00,
-        source: 'manual',
-        update_mode: 'manual',
-        scraping_enabled: true,
-        notes: '',
-        created_at: new Date(),
-        updated_at: new Date()
-      });
-    } else {
-      res.json(rows.rows[0]);
-    }
-  } catch (error) {
-    console.error('Fındık fiyatları yüklenirken hata:', error);
-    res.status(500).json({ error: 'Fındık fiyatları yüklenirken hata oluştu' });
-  }
-});
-
-// Fiyat geçmişi
-app.get('/api/hazelnut-prices/history', adminAuth, async (req, res) => {
-  try {
-    const rows = await db.query('SELECT * FROM hazelnut_prices ORDER BY created_at DESC LIMIT 50');
-    res.json(rows.rows);
-  } catch (error) {
-    console.error('Fiyat geçmişi yüklenirken hata:', error);
-    res.status(500).json({ error: 'Fiyat geçmişi yüklenirken hata oluştu' });
-  }
-});
-
-// Yeni fiyat kaydı oluştur
-app.post('/api/hazelnut-prices', adminAuth, async (req, res) => {
-  try {
-    const { price, daily_change, change_percentage, source, update_mode, scraping_enabled, notes } = req.body;
-    
-    const result = await db.query(
-      'INSERT INTO hazelnut_prices (price, daily_change, change_percentage, source, update_mode, scraping_enabled, notes) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
-      [price || 0, daily_change || 0, change_percentage || 0, source || 'manual', update_mode || 'manual', toSmallInt(scraping_enabled), notes || '']
-    );
-    
-    res.json({ 
-      id: result.rows[0].id,
-      message: 'Fındık fiyatı kaydedildi',
-      price,
-      daily_change,
-      change_percentage
-    });
-  } catch (error) {
-    console.error('Fındık fiyatı kaydedilirken hata:', error);
-    res.status(500).json({ error: 'Fındık fiyatı kaydedilirken hata oluştu' });
-  }
-});
-
-app.put('/api/hazelnut-prices', adminAuth, async (req, res) => {
-  try {
-    const { price, daily_change, change_percentage, source, update_mode, scraping_enabled, notes } = req.body;
-    
-    // En son kaydı güncelle (update ayarları için)
-    const latest = await db.query('SELECT id FROM hazelnut_prices ORDER BY created_at DESC LIMIT 1');
-    
-    if (latest.rows.length > 0) {
-      await db.query(
-        'UPDATE hazelnut_prices SET update_mode = $1, scraping_enabled = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
-        [update_mode || 'manual', toSmallInt(scraping_enabled), latest.rows[0].id]
-      );
-    }
-    
-    res.json({ message: 'Fındık fiyat ayarları güncellendi' });
-  } catch (error) {
-    console.error('Fındık fiyat ayarları güncellenirken hata:', error);
-    res.status(500).json({ error: 'Fındık fiyat ayarları güncellenirken hata oluştu' });
-  }
-});
-
-// Web scraping endpoint for hazelnut prices
-app.post('/api/hazelnut-prices/scrape', adminAuth, async (req, res) => {
-  try {
-    const scrapePrices = async () => {
-      try {
-        // https://findikfiyati.org.tr/hendek-findik-fiyatlari
-        const response = await axios.get('https://findikfiyati.org.tr/hendek-findik-fiyatlari', {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml',
-            'Accept-Language': 'tr-TR,tr;q=0.9',
-          },
-          timeout: 15000,
-          maxRedirects: 5,
-        });
-        
-        const { load } = await import('cheerio');
-        const $ = load(response.data);
-        let scrapedPrice = null;
-
-        // Yöntem 1: schema.org Product/Offer structured data
-        const jsonLd = $('script[type="application/ld+json"]').html();
-        if (jsonLd) {
-          try {
-            const ld = JSON.parse(jsonLd);
-            if (ld.offers?.price) {
-              scrapedPrice = parseFloat(ld.offers.price);
-            } else if (ld.mainEntity?.offers?.price) {
-              scrapedPrice = parseFloat(ld.mainEntity.offers.price);
-            }
-          } catch {}
-        }
-
-        // Yöntem 2: Sayfadaki "Price: TRY X" pattern'i
-        if (!scrapedPrice || isNaN(scrapedPrice)) {
-          const bodyText = $('body').text();
-          // "Price: TRY 148.5" veya "TRY 148.5" formatı
-          const priceMatch = bodyText.match(/TRY\s*(\d{2,4}(?:[.,]\d{1,2})?)/i);
-          if (priceMatch) {
-            scrapedPrice = parseFloat(priceMatch[1].replace(',', '.'));
-          }
-        }
-
-        // Yöntem 3: Meta description veya title içinde fiyat
-        if (!scrapedPrice || isNaN(scrapedPrice)) {
-          const metaDesc = $('meta[name="description"]').attr('content') || '';
-          const metaMatch = metaDesc.match(/(\d{2,4}(?:[.,]\d{1,2})?)\s*[₺TL]/);
-          if (metaMatch) {
-            scrapedPrice = parseFloat(metaMatch[1].replace(',', '.'));
-          }
-        }
-        
-        if (!scrapedPrice || isNaN(scrapedPrice)) {
-          throw new Error('Geçerli fiyat bulunamadı');
-        }
-        
-        if (scrapedPrice < 50 || scrapedPrice > 500) {
-          throw new Error(`Geçersiz fiyat aralığı: ${scrapedPrice}`);
-        }
-        
-        // Mevcut fiyatları al
-        const current = await db.query('SELECT * FROM hazelnut_prices ORDER BY created_at DESC LIMIT 1');
-        
-        let dailyChange = 0;
-        let changePercentage = 0;
-        
-        if (current.rows.length > 0 && current.rows[0].price) {
-          dailyChange = scrapedPrice - Number(current.rows[0].price);
-          changePercentage = Number(current.rows[0].price) > 0 
-            ? (dailyChange / Number(current.rows[0].price)) * 100 
-            : 0;
-        }
-        
-        let updateMode = 'manual';
-        let scrapingEnabled = 1;
-        
-        if (current.rows.length > 0) {
-          updateMode = current.rows[0].update_mode || 'manual';
-          scrapingEnabled = toSmallInt(current.rows[0].scraping_enabled);
-        }
-        
-        const result = await db.query(
-          'INSERT INTO hazelnut_prices (price, daily_change, change_percentage, source, scraped_price, last_scraped_at, update_mode, scraping_enabled, notes) VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, $6, $7, $8) RETURNING id',
-          [scrapedPrice, dailyChange, changePercentage, 'scraped', scrapedPrice, updateMode, scrapingEnabled, `Otomatik scraping - ${new Date().toLocaleString('tr-TR')}`]
-        );
-        
-        return {
-          success: true,
-          scrapedPrice,
-          dailyChange,
-          changePercentage,
-          timestamp: new Date(),
-          recordId: result.rows[0].id
-        };
-      } catch (error) {
-        console.error('Scraping hatası:', error.message);
-        throw error;
-      }
-    };
-    
-    const result = await scrapePrices();
-    res.json(result);
-  } catch (error) {
-    console.error('Fındık fiyat scraping hatası:', error);
-    res.status(500).json({ 
-      error: 'Fiyat çekme işlemi başarısız oldu',
-      details: error.message 
-    });
-  }
-});
-
-// Otomatik mod durumunda scraped price'ı serbest_price olarak güncelle
-app.post('/api/hazelnut-prices/apply-scraped', adminAuth, async (req, res) => {
-  try {
-    const current = await db.query('SELECT * FROM hazelnut_prices ORDER BY created_at DESC LIMIT 1');
-    
-    if (current.rows.length > 0 && current.rows[0].scraped_price && current.rows[0].update_mode === 'automatic') {
-      const scrapedPrice = current.rows[0].scraped_price;
-      
-      // Yeni kayıt oluştur
-      const result = await db.query(
-        'INSERT INTO hazelnut_prices (price, daily_change, change_percentage, source, update_mode, scraping_enabled, notes) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
-        [scrapedPrice, current.rows[0].daily_change || 0, current.rows[0].change_percentage || 0, 'scraped', current.rows[0].update_mode, toSmallInt(current.rows[0].scraping_enabled), `Scraped fiyat uygulandı - ${new Date().toLocaleString('tr-TR')}`]
-      );
-      
-      res.json({ 
-        message: 'Scraped fiyat yeni kayıt olarak uygulandı',
-        price: scrapedPrice,
-        recordId: result.rows[0].id
-      });
-    } else {
-      res.json({ message: 'Uygulanacak scraped fiyat bulunamadı veya manuel mod aktif' });
-    }
-  } catch (error) {
-    console.error('Scraped fiyat uygulama hatası:', error);
-    res.status(500).json({ error: 'Scraped fiyat uygulanırken hata oluştu' });
-  }
-});
-
-// Otomatik fiyat scraping - 4 saatte bir çalışır
-const autoScrapeJob = cron.schedule('0 */4 * * *', async () => {
-  try {
-    // Önce scraping enabled ve automatic mode kontrolü yap
-    const settings = await db.query('SELECT * FROM hazelnut_prices ORDER BY updated_at DESC LIMIT 1');
-    
-    if (settings.rows.length > 0 && settings.rows[0].scraping_enabled && settings.rows[0].update_mode === 'automatic') {
-      // Scraping yap
-      const response = await axios.get('https://findikfiyati.org.tr/hendek-findik-fiyatlari', {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml',
-          'Accept-Language': 'tr-TR,tr;q=0.9',
-        },
-        timeout: 15000
-      });
-      
-      // Fiyat çıkarma (yeni site: findikfiyati.org.tr)
-      const { load } = await import('cheerio');
-      const $ = load(response.data);
-      let scrapedPrice = null;
-      
-      // Schema.org structured data
-      const jsonLd = $('script[type="application/ld+json"]').html();
-      if (jsonLd) {
-        try {
-          const ld = JSON.parse(jsonLd);
-          if (ld.offers?.price) scrapedPrice = parseFloat(ld.offers.price);
-          else if (ld.mainEntity?.offers?.price) scrapedPrice = parseFloat(ld.mainEntity.offers.price);
-        } catch {}
-      }
-      
-      // "TRY X" pattern
-      if (!scrapedPrice || isNaN(scrapedPrice)) {
-        const bodyText = $('body').text();
-        const priceMatch = bodyText.match(/TRY\s*(\d{2,4}(?:[.,]\d{1,2})?)/i);
-        if (priceMatch) scrapedPrice = parseFloat(priceMatch[1].replace(',', '.'));
-      }
-      
-      if (scrapedPrice && !isNaN(scrapedPrice) && scrapedPrice >= 50 && scrapedPrice <= 500) {
-        // Scraped price'ı güncelle
-        await db.query(
-          'UPDATE hazelnut_prices SET scraped_price = $1, last_scraped_at = CURRENT_TIMESTAMP WHERE id = $2',
-          [scrapedPrice, settings.rows[0].id]
-        );
-        
-        // Otomatik mod ise price'ı da güncelle
-        const currentPrice = Number(settings.rows[0].price) || 0;
-        const dailyChange = scrapedPrice - currentPrice;
-        const changePercentage = currentPrice > 0 ? (dailyChange / currentPrice) * 100 : 0;
-        
-        await db.query(
-          'UPDATE hazelnut_prices SET scraped_price = $1, daily_change = $2, change_percentage = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4',
-          [scrapedPrice, dailyChange, changePercentage, settings.rows[0].id]
-        );
-        
-        console.log(`Otomatik fiyat güncellendi: ${scrapedPrice} TL`);
-      }
-    } else {
-      // Settings not suitable for automatic scraping
-    }
-  } catch (error) {
-    // Automatic scraping failed
-  }
-}, {
-  timezone: 'Europe/Istanbul'
-});
-
-// Server başlatıldığında cron job'ı başlat
-autoScrapeJob.start();
 
 // SEO API ENDPOINTS
 // =================

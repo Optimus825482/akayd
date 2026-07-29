@@ -26,28 +26,9 @@ const AboutManagement: React.FC<AboutManagementProps> = ({
         setAboutForm(aboutContent);
     }, [aboutContent]);
 
-    // About resim silme fonksiyonu
-    const handleAboutImageDelete = async (imagePath: string) => {
-        try {
-            setLoading(true);
-
-            // Backend'den resmi sil
-            const response = await aboutAPI.deleteImage(imagePath);
-
-            // Backend'den dönen güncel image listesini kullan
-            if (response.images) {
-                const updatedAboutContent = { ...aboutContent, images: response.images };
-                setAboutContent(updatedAboutContent);
-                setAboutForm(updatedAboutContent);
-            }
-
-            addNotification('success', 'Başarılı!', 'Resim silindi.');
-        } catch (error) {
-            console.error('Resim silinirken hata:', error);
-            addNotification('error', 'Hata!', 'Resim silinirken hata oluştu.');
-        } finally {
-            setLoading(false);
-        }
+    // About resim silme fonksiyonu — batch mod: kaydet butonuna kadar beklet
+    const handleAboutImageDelete = (imagePath: string) => {
+        setDeletedImages(d => [...d, imagePath]);
     };
 
     const handleAboutSubmit = async (e: React.FormEvent) => {
@@ -160,7 +141,7 @@ const AboutManagement: React.FC<AboutManagementProps> = ({
                             <label className="block text-sm font-medium text-gray-700 mb-2">📷 Mevcut Görseller</label>
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                 {aboutContent.images.map((image, index) => (
-                                    <div key={index} className="relative group">
+                                    <div key={index} className={`relative group ${deletedImages.includes(image) ? 'opacity-30' : ''}`}>
                                         <div className="w-full h-24 rounded-lg overflow-hidden">
                                             <img
                                                 src={imgUrl(image) || image}
@@ -168,16 +149,28 @@ const AboutManagement: React.FC<AboutManagementProps> = ({
                                                 className="w-full h-full object-cover border border-gray-300 group-hover:opacity-75 transition-opacity"
                                             />
                                         </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleAboutImageDelete(image)}
-                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors shadow-lg"
-                                        >
-                                            ✕
-                                        </button>
+                                        {!deletedImages.includes(image) && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleAboutImageDelete(image)}
+                                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors shadow-lg"
+                                            >
+                                                ✕
+                                            </button>
+                                        )}
+                                        {deletedImages.includes(image) && (
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <span className="bg-red-500 text-white text-xs px-2 py-1 rounded">Silinecek</span>
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>
+                            {deletedImages.length > 0 && (
+                                <p className="text-xs text-amber-600 mt-2">
+                                    {deletedImages.length} görsel silinecek. Kaydet'e tıklayarak kalıcı hale getirin.
+                                </p>
+                            )}
                         </div>
                     )}
 

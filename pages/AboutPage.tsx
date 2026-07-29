@@ -1,291 +1,234 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import type { AboutPageContent, SEOSettings, PageSEO } from '../types';
 import SEOHead from '../components/SEOHead';
 import { seoAPI } from '../services/api';
 
-interface AboutPageProps {
-  content: AboutPageContent;
-  seoSettings?: SEOSettings | null;
-}
+interface AboutPageProps { content: AboutPageContent; seoSettings?: SEOSettings | null; }
 
 const AboutPage: React.FC<AboutPageProps> = ({ content, seoSettings }) => {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [pageSEO, setPageSEO] = useState<PageSEO | null>(null);
+    const [imgIdx, setImgIdx] = useState(0);
+    const [pageSEO, setPageSEO] = useState<PageSEO | null>(null);
+    const [isVisible, setIsVisible] = useState(false);
 
-  // SEO verilerini yükle
-  useEffect(() => {
-    const loadPageSEO = async () => {
-      try {
-        const data = await seoAPI.getPageSEO('/hakkimizda');
-        setPageSEO(data);
-      } catch (error) {
-        // SEO verileri yüklenemedi
-      }
-    };
-    loadPageSEO();
-  }, []);
+    useEffect(() => { seoAPI.getPageSEO('/hakkimizda').then(setPageSEO).catch(()=>{}); }, []);
 
-  // Görseller varsa slider otomatik geçişi
-  useEffect(() => {
-    if (content.images && content.images.length > 1) {
-      const interval = setInterval(() => {
-        setCurrentImageIndex((prev) =>
-          prev === content.images!.length - 1 ? 0 : prev + 1
-        );
-      }, 4000); // 4 saniyede bir değiş
+    // Intersection Observer for fade-in
+    useEffect(() => {
+        const el = document.getElementById('about-content-section');
+        if (!el) return;
+        const obs = new IntersectionObserver(([entry]) => {
+            if (entry.isIntersecting) { setIsVisible(true); obs.disconnect(); }
+        }, { threshold: 0.15 });
+        obs.observe(el);
+        return () => obs.disconnect();
+    }, []);
 
-      return () => clearInterval(interval);
-    }
-  }, [content.images]);
+    // Görsel slider otomatik geçiş
+    const imgs = content.images?.length ? content.images : ['https://picsum.photos/800/600?random=30'];
+    useEffect(() => {
+        if (imgs.length < 2) return;
+        const t = setInterval(() => setImgIdx(p => (p+1) % imgs.length), 4000);
+        return () => clearInterval(t);
+    }, [imgs.length]);
 
-  // Görseller için fallback
-  const images = content.images && content.images.length > 0
-    ? content.images
-    : ['https://picsum.photos/800/600?random=30'];
+    const nextImg = useCallback(() => setImgIdx(p => p === imgs.length-1 ? 0 : p+1), [imgs.length]);
+    const prevImg = useCallback(() => setImgIdx(p => p === 0 ? imgs.length-1 : p-1), [imgs.length]);
 
-  return (
-    <>
-      <SEOHead
-        seoSettings={seoSettings || undefined}
-        pageSEO={pageSEO || undefined}
-        pageTitle="Hakkımızda"
-        pageDescription="Akaydın Tarım olarak modern teknolojilerle kaliteli fındık üretimi yapıyoruz. Misyonumuz, vizyonumuz ve değerlerimizi keşfedin."
-        pageKeywords="hakkımızda, akaydın tarım, misyon, vizyon, fındık üretimi, tarım, hendek, sakarya"
-      />
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
-        {/* Hero Section */}
-        <section className="relative py-20 lg:py-16 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 overflow-hidden">
-          {/* Background Decorations */}
-          <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-400 to-indigo-400 opacity-20 rounded-full filter blur-3xl transform translate-x-1/3 -translate-y-1/3"></div>
-          <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-purple-400 to-blue-400 opacity-20 rounded-full filter blur-3xl transform -translate-x-1/3 translate-y-1/3"></div>
+    return (<>
+        <SEOHead seoSettings={seoSettings||undefined} pageSEO={pageSEO||undefined}
+            pageTitle="Hakkımızda" pageDescription="Akaydın Tarım'ın misyonu, vizyonu ve değerleri."
+            pageKeywords="hakkımızda, akaydın tarım, misyon, vizyon" />
 
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="text-center text-white">
-
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold ">
-                <span className="block">{content.title || 'Toprağın Gücü'}</span>
-                <span className="block text-yellow-300">Teknolojinin Aklı</span>
-              </h1>
-              <p className="text-xl md:text-2xl text-blue-100 max-w-4xl mx-auto leading-relaxed font-medium">
-                {content.content || 'Akaydın Tarım'}
-              </p>
+        {/* ═══════════ HERO ═══════════ */}
+        <section className="relative py-20 md:py-28 overflow-hidden" style={{background:'linear-gradient(135deg, #0f1f10 0%, #142218 60%, #1a2a1a 100%)'}}>
+            <div className="absolute inset-0 opacity-[0.02]" style={{backgroundImage:'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")'}}></div>
+            <div className="container relative z-10">
+                <p className="text-accent-bg/60 text-xs font-semibold tracking-[0.2em] uppercase mb-4">Hakkımızda</p>
+                <h1 className="text-4xl md:text-6xl font-[family-name:var(--font-display)] font-bold text-white mb-4">
+                    {content.title || 'Toprağın Gücü, Teknolojinin Aklı'}
+                </h1>
+                <p className="text-lg text-white/60 max-w-2xl">
+                    {content.content?.slice(0, 120) || 'Akaydın Tarım — Hendek, Sakarya'}
+                </p>
             </div>
-          </div>
         </section>
 
-        {/* Mission & Vision Section */}
-        <section className="py-5">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid lg:grid-cols-2 gap-16 items-center mb-20">
-              <div className="space-y-8">
-                <div className="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
-                  <div className="flex items-center mb-6">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mr-4">
-                      <span className="text-white text-xl">🎯</span>
-                    </div>
-                    <h3 className="text-2xl font-bold text-gray-900">Misyonumuz</h3>
-                  </div>
-                  <p className="text-gray-600 text-lg leading-relaxed">
-                    {content.mission}
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
-                  <div className="flex items-center mb-6">
-                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center mr-4">
-                      <span className="text-white text-xl">🚀</span>
-                    </div>
-                    <h3 className="text-2xl font-bold text-gray-900">Vizyonumuz</h3>
-                  </div>
-                  <p className="text-gray-600 text-lg leading-relaxed">
-                    {content.vision}
-                  </p>
-                </div>
-              </div>
-
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-200 to-purple-200 rounded-3xl transform rotate-3"></div>
-                <div className="relative bg-white rounded-3xl overflow-hidden shadow-2xl">
-                  {/* Image Slider */}
-                  <div className="relative w-full h-[500px] overflow-hidden">
-                    {images.map((image, index) => (
-                      <img
-                        key={index}
-                        className={`absolute inset-0 w-full h-full object-cover transition-all duration-1000 ${index === currentImageIndex ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'
-                          }`}
-                        src={image}
-                        alt={`Akaydın Tarım ${index + 1}`}
-                      />
-                    ))}
-
-                    {/* Gradient Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-
-                    {/* Slider Controls */}
-                    {images.length > 1 && (
-                      <>
-                        {/* Previous Button */}
-                        <button
-                          onClick={() => setCurrentImageIndex(
-                            currentImageIndex === 0 ? images.length - 1 : currentImageIndex - 1
-                          )}
-                          className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full backdrop-blur-sm transition-all duration-200"
-                        >
-                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                          </svg>
-                        </button>
-
-                        {/* Next Button */}
-                        <button
-                          onClick={() => setCurrentImageIndex(
-                            currentImageIndex === images.length - 1 ? 0 : currentImageIndex + 1
-                          )}
-                          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full backdrop-blur-sm transition-all duration-200"
-                        >
-                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
-                        </button>
-
-                        {/* Dots Indicator */}
-                        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-                          {images.map((_, index) => (
-                            <button
-                              key={index}
-                              onClick={() => setCurrentImageIndex(index)}
-                              className={`w-3 h-3 rounded-full transition-all duration-200 ${index === currentImageIndex
-                                ? 'bg-white'
-                                : 'bg-white/50 hover:bg-white/70'
-                                }`}
-                            />
-                          ))}
+        {/* ═══════════ HAKKIMIZDA YAZI + GÖRSEL SLIDER ═══════════ */}
+        <section id="about-content-section" className="section bg-surface overflow-hidden">
+            <div className="container">
+                <div className={`grid lg:grid-cols-2 gap-12 lg:gap-16 items-center transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+                    {/* ── SOL: Hakkımızda yazısı ── */}
+                    <div className="space-y-6">
+                        <div>
+                            <p className="text-xs font-semibold tracking-[0.2em] uppercase text-accent mb-3">Hikayemiz</p>
+                            <h2 className="text-3xl md:text-4xl font-[family-name:var(--font-display)] font-bold text-ink mb-4">
+                                {content.title || 'Akaydın Tarım'}
+                            </h2>
+                            <div className="w-16 h-1 bg-accent rounded-full mb-6"></div>
                         </div>
-                      </>
-                    )}
-                  </div>
 
-                  {/* Image Info */}
-                  <div className="absolute bottom-6 left-6 text-white">
-                    <h4 className="text-xl font-bold mb-2">Akaydın Tarım </h4>
-                    <p className="text-sm opacity-90">Hendek'te tarımın geleceğini şekillendiriyoruz.</p>
-                  </div>
+                        <div className="text-ink-2 leading-relaxed space-y-4 text-base">
+                            {content.content ? content.content.split('\n').filter(p => p.trim()).map((p, i) => (
+                                <p key={i}>{p}</p>
+                            )) : (
+                                <p>Akaydın Tarım, Hendek/Sakarya bölgesinde fındık üretimi ve tarımsal danışmanlık alanında faaliyet gösteren köklü bir aile işletmesidir.</p>
+                            )}
+                        </div>
+
+                        {/* Mini değerler */}
+                        <div className="flex flex-wrap gap-3 pt-2">
+                            {['🌱 Sürdürülebilirlik', '🤝 Güvenilirlik', '💡 Yenilikçilik', '🏆 Kalite'].map(t => (
+                                <span key={t} className="text-xs font-medium bg-accent-bg text-accent px-3 py-1.5 rounded-full">{t}</span>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* ── SAĞ: Görsel slider (fade-in) ── */}
+                    <div className="relative rounded-2xl overflow-hidden aspect-[4/3] lg:aspect-[3/4] bg-paper-3 shadow-xl group">
+                        {imgs.map((img, i) => (
+                            <img
+                                key={i}
+                                src={img}
+                                alt={`Akaydın Tarım ${i+1}`}
+                                loading="lazy"
+                                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${i === imgIdx ? 'opacity-100' : 'opacity-0'}`}
+                            />
+                        ))}
+                        {/* Gradient overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-ink/30 via-transparent to-transparent pointer-events-none"></div>
+
+                        {imgs.length > 1 && (
+                            <>
+                                <button
+                                    onClick={prevImg}
+                                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/35 text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>
+                                </button>
+                                <button
+                                    onClick={nextImg}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/35 text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
+                                </button>
+                                {/* Dot indicators */}
+                                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                                    {imgs.map((_, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => setImgIdx(i)}
+                                            className={`rounded-full transition-all duration-300 ${i === imgIdx ? 'bg-white w-8 h-2' : 'bg-white/40 w-2 h-2 hover:bg-white/60'}`}
+                                        />
+                                    ))}
+                                </div>
+                            </>
+                        )}
+
+                        {/* Görsel sayacı */}
+                        {imgs.length > 1 && (
+                            <div className="absolute top-4 right-4 bg-ink/60 backdrop-blur-sm text-white text-xs px-2.5 py-1 rounded-full">
+                                {imgIdx + 1} / {imgs.length}
+                            </div>
+                        )}
+                    </div>
                 </div>
-              </div>
             </div>
-          </div>
         </section>
 
-        {/* Values Section */}
-        <section className="py-5 bg-gradient-to-br from-gray-50 to-white">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center pb-5 ">
+        {/* ═══════════ MİSYON + VİZYON — yan yana ═══════════ */}
+        <section className="section bg-paper-2">
+            <div className="container">
+                <div className={`grid md:grid-cols-2 gap-8 transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+                    {/* Misyon */}
+                    <div className="group relative overflow-hidden rounded-2xl bg-surface border border-rule hover:border-accent/40 hover:shadow-lg transition-all duration-300">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-accent origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
+                        <div className="p-8 md:p-10">
+                            <div className="flex items-start gap-5">
+                                <div className="w-14 h-14 shrink-0 rounded-2xl bg-accent-bg flex items-center justify-center group-hover:bg-accent group-hover:text-white transition-all duration-300">
+                                    <span className="text-2xl">🎯</span>
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-[family-name:var(--font-display)] font-bold text-ink mb-3">Misyon</h3>
+                                    <p className="text-ink-2 leading-relaxed">{content.mission}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                Her kararımıza ve hizmetimize rehberlik eden temel<span className="text-blue-600"> değerlerimiz</span>
-              </h2>
-
+                    {/* Vizyon */}
+                    <div className="group relative overflow-hidden rounded-2xl bg-surface border border-rule hover:border-sky/40 hover:shadow-lg transition-all duration-300">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-sky origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
+                        <div className="p-8 md:p-10">
+                            <div className="flex items-start gap-5">
+                                <div className="w-14 h-14 shrink-0 rounded-2xl bg-sky-bg flex items-center justify-center group-hover:bg-sky group-hover:text-white transition-all duration-300">
+                                    <span className="text-2xl">🚀</span>
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-[family-name:var(--font-display)] font-bold text-ink mb-3">Vizyon</h3>
+                                    <p className="text-ink-2 leading-relaxed">{content.vision}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-              <div className="group bg-white p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-105 border-t-4 border-blue-500">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <span className="text-2xl text-white">🏆</span>
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 text-center mb-4">Kalite</h3>
-                <p className="text-gray-600 text-center leading-relaxed">
-                  Sunduğumuz her ürün ve hizmette en yüksek kalite standartlarını hedefleriz.
-                </p>
-              </div>
-
-              <div className="group bg-white p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-105 border-t-4 border-green-500">
-                <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <span className="text-2xl text-white">🤝</span>
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 text-center mb-4">Güven</h3>
-                <p className="text-gray-600 text-center leading-relaxed">
-                  Çiftçilerimiz ve iş ortaklarımızla şeffaf ve güvene dayalı ilişkiler kurarız.
-                </p>
-              </div>
-
-              <div className="group bg-white p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-105 border-t-4 border-purple-500">
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <span className="text-2xl text-white">💡</span>
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 text-center mb-4">Yenilikçilik</h3>
-                <p className="text-gray-600 text-center leading-relaxed">
-                  Sektördeki en son gelişmeleri takip eder ve sürekli olarak kendimizi yenileriz.
-                </p>
-              </div>
-            </div>
-
-            {/* Stats Section */}
-            <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-3xl p-8 md:p-12">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-white">
-                <div>
-                  <div className="text-3xl md:text-4xl font-bold mb-2">15+</div>
-                  <div className="text-blue-100">Yıllık Deneyim</div>
-                </div>
-                <div>
-                  <div className="text-3xl md:text-4xl font-bold mb-2">500+</div>
-                  <div className="text-blue-100">Mutlu Müşteri</div>
-                </div>
-                <div>
-                  <div className="text-3xl md:text-4xl font-bold mb-2">50+</div>
-                  <div className="text-blue-100">Farklı Ürün</div>
-                </div>
-                <div>
-                  <div className="text-3xl md:text-4xl font-bold mb-2">7/24</div>
-                  <div className="text-blue-100">Destek Hizmeti</div>
-                </div>
-              </div>
-            </div>
-          </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="py-20">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="bg-gradient-to-r from-indigo-500 to-purple-500 rounded-3xl p-8 md:p-12 shadow-2xl text-center">
-              <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">
-                Bizimle Çalışmaya Hazır mısınız?
-              </h3>
-              <p className="text-indigo-100 text-lg mb-8 max-w-2xl mx-auto">
-                Tarımsal projelerinizde size nasıl yardımcı olabileceğimizi konuşalım.
-                Deneyimli ekibimiz sizin için en uygun çözümleri geliştirmeye hazır.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link
-                  to="/iletisim"
-                  className="group bg-white hover:bg-gray-100 text-indigo-600 px-8 py-4 rounded-xl text-lg font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
-                >
-                  <span className="flex items-center justify-center">
-                    <svg className="mr-3 w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                    </svg>
-                    Hemen Konuşalım
-                  </span>
-                </Link>
-                <Link
-                  to="/hizmetlerimiz"
-                  className="group border-2 border-white text-white hover:bg-white hover:text-indigo-600 px-8 py-4 rounded-xl text-lg font-bold transition-all duration-300 transform hover:scale-105"
-                >
-                  <span className="flex items-center justify-center">
-                    <svg className="mr-3 w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                    </svg>
-                    Hizmetlerimizi Gör
-                  </span>
-                </Link>
-              </div>
+        {/* ═══════════ DEĞERLER + İSTATİSTİKLER ═══════════ */}
+        <section className="section bg-surface">
+            <div className="container">
+                <div className="text-center mb-12">
+                    <p className="text-xs font-semibold tracking-[0.2em] uppercase text-accent mb-4">Değerlerimiz</p>
+                    <h2 className="text-3xl md:text-4xl font-[family-name:var(--font-display)] font-bold text-ink">Her kararımıza rehberlik eden ilkeler</h2>
+                </div>
+                <div className="grid md:grid-cols-3 gap-8 mb-16">
+                    {[
+                        {t:'Kalite',d:'En yüksek kalite standartlarını hedefleriz.',c:'border-accent',bg:'bg-accent-bg',i:'🏆'},
+                        {t:'Güven',d:'Şeffaf ve güvene dayalı ilişkiler kurarız.',c:'border-sky',bg:'bg-sky-bg',i:'🛡️'},
+                        {t:'Yenilikçilik',d:'Sektördeki en son gelişmeleri takip ederiz.',c:'border-earth',bg:'bg-earth-bg',i:'💡'},
+                    ].map(v => (
+                        <div key={v.t} className={`group p-8 rounded-2xl bg-paper-2 border-t-4 ${v.c} hover:shadow-lg transition-shadow`}>
+                            <div className={`w-12 h-12 rounded-xl ${v.bg} flex items-center justify-center mb-4 text-2xl group-hover:scale-110 transition-transform`}>{v.i}</div>
+                            <h3 className="text-xl font-[family-name:var(--font-display)] font-bold text-ink mb-2">{v.t}</h3>
+                            <p className="text-ink-2">{v.d}</p>
+                        </div>
+                    ))}
+                </div>
+
+                {/* İstatistik bar */}
+                <div className="rounded-2xl p-8 md:p-12 text-center" style={{background:'linear-gradient(135deg, #1a6532, #0f4a25)'}}>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-white">
+                        {[
+                            {n:'25+',l:'Yıllık Deneyim'},
+                            {n:'500+',l:'Mutlu Üretici'},
+                            {n:'50+',l:'Farklı Ürün'},
+                            {n:'7/24',l:'Destek'},
+                        ].map(s => (
+                            <div key={s.l}>
+                                <div className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-display)] mb-1">{s.n}</div>
+                                <div className="text-white/60 text-sm">{s.l}</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
-          </div>
         </section>
-      </div>
-    </>
-  );
+
+        {/* CTA */}
+        <section className="section bg-surface">
+            <div className="container text-center">
+                <div className="max-w-xl mx-auto p-10 rounded-3xl border-2 border-accent/20" style={{background:'oklch(94% 0.04 148 / 0.3)'}}>
+                    <h2 className="text-2xl md:text-3xl font-[family-name:var(--font-display)] font-bold text-ink mb-4">Bizimle Çalışmaya Hazır mısınız?</h2>
+                    <p className="text-ink-2 mb-8">Deneyimli ekibimiz sizin için en uygun çözümleri geliştirmeye hazır.</p>
+                    <div className="flex flex-wrap justify-center gap-3">
+                        <Link to="/iletisim" className="btn btn-primary btn-lg">Hemen Konuşalım</Link>
+                        <Link to="/hizmetlerimiz" className="btn btn-outline">Hizmetlerimiz</Link>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </>);
 };
 
 export default AboutPage;

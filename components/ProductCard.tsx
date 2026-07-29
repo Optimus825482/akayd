@@ -31,11 +31,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, contactPhone = '9053
     };
 
     return (
-        <div className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl overflow-hidden h-full flex flex-col transform transition-all duration-500 border border-gray-100">
+        <div className="group bg-surface rounded-2xl shadow-lg hover:shadow-2xl overflow-hidden h-full flex flex-col transform transition-all duration-500 border border-rule">
             {/* Ürün detayına giden link - sadece görsel ve içerik alanı */}
             <Link to={`/urun/${product.id}`} className="flex-grow flex flex-col">
                 {/* Görsel alanı - sabit aspect ratio */}
-                <div className="relative w-full aspect-[4/3] overflow-hidden bg-gray-100">
+                <div className="relative w-full aspect-[4/3] overflow-hidden bg-paper-3">
                     <img
                         src={productImages[currentImageIndex]?.startsWith('/uploads')
                             ? `http://localhost:3003${productImages[currentImageIndex]}`
@@ -57,7 +57,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, contactPhone = '9053
                                     e.stopPropagation();
                                     handleImageNavigation('prev');
                                 }}
-                                className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300"
+                                className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-surface/80 hover:bg-surface text-ink p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -69,7 +69,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, contactPhone = '9053
                                     e.stopPropagation();
                                     handleImageNavigation('next');
                                 }}
-                                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300"
+                                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-surface/80 hover:bg-surface text-ink p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -86,8 +86,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, contactPhone = '9053
                                             setCurrentImageIndex(index);
                                         }}
                                         className={`w-2 h-2 rounded-full transition-all duration-200 ${index === currentImageIndex
-                                            ? 'bg-white shadow-lg'
-                                            : 'bg-white/50 hover:bg-white/70'
+                                            ? 'bg-surface shadow-lg'
+                                            : 'bg-surface/50 hover:bg-surface/70'
                                             }`}
                                     />
                                 ))}
@@ -118,12 +118,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, contactPhone = '9053
                     </div>
 
                     {/* Başlık */}
-                    <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors duration-300">
+                    <h3 className="text-xl font-bold text-ink mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors duration-300">
                         {product.name}
                     </h3>
 
                     {/* Açıklama */}
-                    <p className="text-gray-600 text-sm flex-grow leading-relaxed line-clamp-3">
+                    <p className="text-ink-2 text-sm flex-grow leading-relaxed line-clamp-3">
                         {product.description}
                     </p>
                 </div>
@@ -135,7 +135,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, contactPhone = '9053
                     href={`https://wa.me/${contactPhone}?text=Merhaba, ${product.name} ürünü hakkında bilgi almak istiyorum.`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors duration-300 w-full font-medium"
+                    className="flex items-center justify-center bg-accent hover:bg-accent-2 text-white px-4 py-2 rounded-lg transition-colors duration-300 w-full font-medium"
                     onClick={(e) => e.stopPropagation()} // Link'in üzerine tıklama olayını durdur
                 >
                     <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">

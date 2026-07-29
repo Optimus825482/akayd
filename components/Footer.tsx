@@ -1,159 +1,91 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
-import {
-    FaFacebookF,
-    FaInstagram,
-    FaTwitter,
-    FaLinkedinIn,
-    FaYoutube,
-    FaPhone,
-    FaWhatsapp,
-    FaEnvelope,
-    FaMapMarkerAlt
-} from 'react-icons/fa';
+import { FaFacebookF, FaInstagram, FaTwitter, FaLinkedinIn, FaYoutube, FaPhone, FaWhatsapp, FaEnvelope, FaMapMarkerAlt } from 'react-icons/fa';
 import type { ContactPageContent } from '../types';
 
-interface FooterProps {
-    content: ContactPageContent;
-}
+interface FooterProps { content: ContactPageContent; }
 
 const Footer: React.FC<FooterProps> = ({ content }) => {
     const socialLinks = [
-        {
-            name: 'Facebook',
-            icon: FaFacebookF,
-            href: content.facebook_url || '#',
-            color: 'hover:text-blue-500',
-            bgColor: 'hover:bg-blue-500'
-        },
-        {
-            name: 'Instagram',
-            icon: FaInstagram,
-            href: content.instagram_url || '#',
-            color: 'hover:text-pink-500',
-            bgColor: 'hover:bg-pink-500'
-        },
-        {
-            name: 'Twitter',
-            icon: FaTwitter,
-            href: content.twitter_url || '#',
-            color: 'hover:text-blue-400',
-            bgColor: 'hover:bg-blue-400'
-        },
-        {
-            name: 'LinkedIn',
-            icon: FaLinkedinIn,
-            href: content.linkedin_url || '#',
-            color: 'hover:text-blue-600',
-            bgColor: 'hover:bg-blue-600'
-        },
-        {
-            name: 'YouTube',
-            icon: FaYoutube,
-            href: content.youtube_url || '#',
-            color: 'hover:text-red-500',
-            bgColor: 'hover:bg-red-500'
-        },
-    ].filter(social => social.href !== '#'); // Sadece dolu olan linkleri göster
+        { name: 'Facebook', icon: FaFacebookF, href: content.facebook_url, color: 'hover:text-[#1877f2]' },
+        { name: 'Instagram', icon: FaInstagram, href: content.instagram_url, color: 'hover:text-[#e4405f]' },
+        { name: 'Twitter', icon: FaTwitter, href: content.twitter_url, color: 'hover:text-[#1da1f2]' },
+        { name: 'LinkedIn', icon: FaLinkedinIn, href: content.linkedin_url, color: 'hover:text-[#0a66c2]' },
+        { name: 'YouTube', icon: FaYoutube, href: content.youtube_url, color: 'hover:text-[#ff0000]' },
+    ].filter(s => s.href);
 
     return (
-        <footer className="bg-gray-800 text-white">
-            <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                    {/* Company Info */}
-                    <div className="space-y-4">
-                        <Link to="/" className="flex items-center space-x-3">
-                            <img
-                                src="/akaylogo.png"
-                                alt="Akaydın Tarım Logo"
-                                className="w-12 h-12 object-contain"
-                            />
-                            <span className="text-xl font-bold font-serif">Akaydın Tarım</span>
+        <footer className="text-white" style={{background:'linear-gradient(180deg, #0f1f10 0%, #0a150a 100%)'}}>
+            <div className="container py-16 md:py-20">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
+                    {/* Brand */}
+                    <div className="col-span-2 md:col-span-1 space-y-4">
+                        <Link to="/" className="flex items-center gap-3">
+                            <img src="/akaylogo.png" alt="Logo" className="w-11 h-11 object-contain brightness-200" />
+                            <span className="text-xl font-bold font-[family-name:var(--font-display)] text-white">Akaydın Tarım</span>
                         </Link>
-                        <p className="text-gray-400 text-sm">
+                        <p className="text-sm leading-relaxed max-w-52" style={{color:'rgba(255,255,255,0.5)'}}>
                             Fındık ve tarım sektöründe yenilikçi çözümlerle geleceğin tarımını bugünden inşa ediyoruz.
                         </p>
                     </div>
 
-                    {/* Quick Links */}
+                    {/* Quick links */}
                     <div>
-                        <h3 className="text-sm font-semibold text-gray-300 tracking-wider uppercase">Hızlı Erişim</h3>
-                        <ul className="mt-4 space-y-2">
-                            <li><Link to="/hakkimizda" className="text-base text-gray-400 hover:text-white">Hakkımızda</Link></li>
-                            <li><Link to="/hizmetlerimiz" className="text-base text-gray-400 hover:text-white">Hizmetlerimiz</Link></li>
-                            <li><Link to="/urunler" className="text-base text-gray-400 hover:text-white">Ürünler</Link></li>
-                            <li><Link to="/blog" className="text-base text-gray-400 hover:text-white">Blog</Link></li>
+                        <h4 className="text-xs font-semibold tracking-[0.15em] uppercase mb-5" style={{color:'rgba(255,255,255,0.35)'}}>Hızlı Erişim</h4>
+                        <ul className="space-y-3">
+                            {[['/hakkimizda','Hakkımızda'],['/findik-isleme','Fındık İşleme'],['/hizmetlerimiz','Hizmetlerimiz'],['/urunler','Ürünler'],['/blog','Blog']].map(([to,label]) => (
+                                <li key={to}><Link to={to} className="text-sm transition-colors duration-150 hover:text-white" style={{color:'rgba(255,255,255,0.6)'}}>{label}</Link></li>
+                            ))}
                         </ul>
                     </div>
 
                     {/* Contact */}
                     <div>
-                        <h3 className="text-sm font-semibold text-gray-300 tracking-wider uppercase">İletişim</h3>
-                        <ul className="mt-4 space-y-3 text-gray-400 text-sm">
-                            <li className="flex items-start">
-                                <FaMapMarkerAlt className="w-4 h-4 mr-3 mt-1 shrink-0 text-green-400" />
+                        <h4 className="text-xs font-semibold tracking-[0.15em] uppercase mb-5" style={{color:'rgba(255,255,255,0.35)'}}>İletişim</h4>
+                        <ul className="space-y-3 text-sm" style={{color:'rgba(255,255,255,0.6)'}}>
+                            <li className="flex items-start gap-3">
+                                <FaMapMarkerAlt className="w-4 h-4 mt-0.5 shrink-0" style={{color:'#3da35e'}} />
                                 <span>{content.address}</span>
                             </li>
-                            <li className="flex items-center">
-                                <FaPhone className="w-4 h-4 mr-3 shrink-0 text-green-400" />
-                                <a href={`tel:${content.phone}`} className="hover:text-green-400 transition-colors">
-                                    {content.phone}
-                                </a>
+                            <li className="flex items-center gap-3">
+                                <FaPhone className="w-4 h-4 shrink-0" style={{color:'#3da35e'}} />
+                                <a href={`tel:${content.phone}`} className="hover:text-white transition-colors">{content.phone}</a>
                             </li>
                             {content.whatsapp_phone && (
-                                <li className="flex items-center">
-                                    <FaWhatsapp className="w-4 h-4 mr-3 shrink-0 text-green-400" />
-                                    <a
-                                        href={`https://wa.me/${content.whatsapp_phone.replace(/[^\d]/g, '')}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="hover:text-green-400 transition-colors"
-                                    >
-                                        WhatsApp: {content.whatsapp_phone}
-                                    </a>
+                                <li className="flex items-center gap-3">
+                                    <FaWhatsapp className="w-4 h-4 shrink-0" style={{color:'#3da35e'}} />
+                                    <a href={`https://wa.me/${content.whatsapp_phone.replace(/[^\d]/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">WhatsApp</a>
                                 </li>
                             )}
-                            <li className="flex items-center">
-                                <FaEnvelope className="w-4 h-4 mr-3 shrink-0 text-green-400" />
-                                <a href={`mailto:${content.email}`} className="hover:text-green-400 break-all transition-colors">
-                                    {content.email}
-                                </a>
+                            <li className="flex items-center gap-3">
+                                <FaEnvelope className="w-4 h-4 shrink-0" style={{color:'#3da35e'}} />
+                                <a href={`mailto:${content.email}`} className="hover:text-white break-all transition-colors">{content.email}</a>
                             </li>
                         </ul>
                     </div>
 
-                    {/* Social Media */}
+                    {/* Social */}
                     <div>
-                        <h3 className="text-sm font-semibold text-gray-300 tracking-wider uppercase">Bizi Takip Edin</h3>
-                        <div className="flex flex-wrap gap-3 mt-4">
-                            {socialLinks.map((social) => {
-                                const IconComponent = social.icon;
-                                return (
-                                    <a
-                                        key={social.name}
-                                        href={social.href}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className={`w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center text-gray-400 transition-all duration-300 transform hover:scale-110 ${social.bgColor} hover:text-white group`}
-                                        title={social.name}
-                                    >
-                                        <IconComponent className="w-5 h-5" />
+                        <h4 className="text-xs font-semibold tracking-[0.15em] uppercase mb-5" style={{color:'rgba(255,255,255,0.35)'}}>Bizi Takip Edin</h4>
+                        {socialLinks.length > 0 ? (
+                            <div className="flex flex-wrap gap-2.5">
+                                {socialLinks.map(s => (
+                                    <a key={s.name} href={s.href} target="_blank" rel="noopener noreferrer"
+                                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-110 ${s.color}`}
+                                        style={{background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.5)'}}
+                                        title={s.name}>
+                                        <s.icon className="w-4 h-4" />
                                     </a>
-                                );
-                            })}
-                            {socialLinks.length === 0 && (
-                                <div className="text-center p-4 bg-gray-700 rounded-lg">
-                                    <p className="text-gray-500 text-sm mb-2">Sosyal medya hesapları henüz eklenmemiş.</p>
-                                    <p className="text-xs text-gray-600">Admin panelinden sosyal medya hesaplarınızı ekleyebilirsiniz.</p>
-                                </div>
-                            )}
-                        </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-xs" style={{color:'rgba(255,255,255,0.25)'}}>Admin panelinden ekleyin</p>
+                        )}
                     </div>
                 </div>
 
-                <div className="mt-12 border-t border-gray-700 pt-8 text-center">
-                    <p className="text-base text-gray-400">&copy; {new Date().getFullYear()} Akaydın Tarım. Tüm hakları saklıdır.</p>
+                <div className="pt-8 border-t text-center text-xs" style={{borderColor:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.25)'}}>
+                    &copy; {new Date().getFullYear()} Akaydın Tarım. Tüm hakları saklıdır.
                 </div>
             </div>
         </footer>

@@ -1,0 +1,200 @@
+- generic [ref=f16e3]:
+  - generic [ref=f16e4]:
+    - generic [ref=f16e6]:
+      - generic [ref=f16e15]:
+        - img "Akaydın Tarım Logo" [ref=f16e16]
+        - generic [ref=f16e17]: Akaydın Tarım
+      - button "◀" [ref=f16e18] [cursor=pointer]
+    - navigation [ref=f16e19]:
+      - generic [ref=f16e20]:
+        - button "📊 Kontrol Paneli" [ref=f16e21] [cursor=pointer]:
+          - generic [ref=f16e22]: 📊
+          - generic [ref=f16e23]: Kontrol Paneli
+        - button "🎬 Ana Sayfa Hero" [ref=f16e24] [cursor=pointer]:
+          - generic [ref=f16e25]: 🎬
+          - generic [ref=f16e26]: Ana Sayfa Hero
+        - button "🛠️ Hizmetler" [ref=f16e27] [cursor=pointer]:
+          - generic [ref=f16e28]: 🛠️
+          - generic [ref=f16e29]: Hizmetler
+        - button "📦 Ürünler" [ref=f16e30] [cursor=pointer]:
+          - generic [ref=f16e31]: 📦
+          - generic [ref=f16e32]: Ürünler
+        - button "📝 Blog" [active] [ref=f16e33] [cursor=pointer]:
+          - generic [ref=f16e34]: 📝
+          - generic [ref=f16e35]: Blog
+        - button "🌰 Fındık Fiyatları" [ref=f16e36] [cursor=pointer]:
+          - generic [ref=f16e37]: 🌰
+          - generic [ref=f16e38]: Fındık Fiyatları
+        - button "ℹ️ Hakkımızda" [ref=f16e39] [cursor=pointer]:
+          - generic [ref=f16e40]: ℹ️
+          - generic [ref=f16e41]: Hakkımızda
+        - button "📧 İletişim Sayfası" [ref=f16e42] [cursor=pointer]:
+          - generic [ref=f16e43]: 📧
+          - generic [ref=f16e44]: İletişim Sayfası
+        - button "💬 İletişim Mesajları" [ref=f16e45] [cursor=pointer]:
+          - generic [ref=f16e46]: 💬
+          - generic [ref=f16e47]: İletişim Mesajları
+        - button "🔍 SEO Yönetimi" [ref=f16e48] [cursor=pointer]:
+          - generic [ref=f16e49]: 🔍
+          - generic [ref=f16e50]: SEO Yönetimi
+    - button "🚪 Çıkış Yap" [ref=f16e52] [cursor=pointer]:
+      - generic [ref=f16e53]: 🚪
+      - generic [ref=f16e54]: Çıkış Yap
+  - generic [ref=f16e55]:
+    - banner [ref=f16e56]:
+      - generic [ref=f16e57]:
+        - generic [ref=f16e58]:
+          - heading "Blog" [level=1] [ref=f16e59]
+          - paragraph [ref=f16e60]: Blog yazılarınızı yayınlayın
+        - generic [ref=f16e61]: "Son güncelleme: 19:46:31"
+    - main [ref=f16e64]:
+      - generic [ref=f16e65]:
+        - generic [ref=f16e66]:
+          - generic [ref=f16e67]:
+            - heading "📝 Blog Yönetimi" [level=2] [ref=f16e68]
+            - button "➕ Yeni Blog Yazısı" [ref=f16e69] [cursor=pointer]
+          - generic [ref=f16e70]:
+            - generic [ref=f16e72]:
+              - generic [ref=f16e73]: 📝
+              - generic [ref=f16e74]:
+                - generic [ref=f16e75]: "6"
+                - generic [ref=f16e76]: Toplam Yazı
+            - generic [ref=f16e78]:
+              - generic [ref=f16e79]: 👁️
+              - generic [ref=f16e80]:
+                - generic [ref=f16e81]: "4"
+                - generic [ref=f16e82]: Toplam Görüntüleme
+            - generic [ref=f16e84]:
+              - generic [ref=f16e85]: 🕒
+              - generic [ref=f16e86]:
+                - generic [ref=f16e87]: Tarih bilinmiyor
+                - generic [ref=f16e88]: Son Yayın
+        - generic [ref=f16e89]:
+          - heading "Blog Yazıları (6)" [level=3] [ref=f16e90]
+          - generic [ref=f16e91]:
+            - generic [ref=f16e93]:
+              - img "Hendek Bölgesinde Fındık İşleme Avantajları" [ref=f16e95]
+              - generic [ref=f16e96]:
+                - generic [ref=f16e97]:
+                  - heading "Hendek Bölgesinde Fındık İşleme Avantajları" [level=4] [ref=f16e98]
+                  - generic [ref=f16e99]:
+                    - button "✏️ Düzenle" [ref=f16e100] [cursor=pointer]
+                    - button "🗑️ Sil" [ref=f16e101] [cursor=pointer]
+                - paragraph [ref=f16e102]: Hendek bölgesinde fındık işleme avantajları nelerdir? Coğrafi konum, iklim, lojistik ve ekonomik avantajlar. Sakarya Hendek'te fındık sektörü analizi.
+                - generic [ref=f16e103]:
+                  - generic [ref=f16e104]:
+                    - generic [ref=f16e105]: ✍️
+                    - generic [ref=f16e106]: Aydın Ak
+                  - generic [ref=f16e107]:
+                    - generic [ref=f16e108]: 📅
+                    - generic [ref=f16e109]: Tarih bilinmiyor
+                  - text: "0"
+                  - generic [ref=f16e110]:
+                    - generic [ref=f16e111]: 📊
+                    - generic [ref=f16e112]: 11080 karakter
+            - generic [ref=f16e114]:
+              - img "Fındık Kırma Makineleri Nasıl Çalışır? Teknik Rehber" [ref=f16e116]
+              - generic [ref=f16e117]:
+                - generic [ref=f16e118]:
+                  - heading "Fındık Kırma Makineleri Nasıl Çalışır? Teknik Rehber" [level=4] [ref=f16e119]
+                  - generic [ref=f16e120]:
+                    - button "✏️ Düzenle" [ref=f16e121] [cursor=pointer]
+                    - button "🗑️ Sil" [ref=f16e122] [cursor=pointer]
+                - paragraph [ref=f16e123]: Fındık kırma makineleri nasıl çalışır? Teknik özellikler, çalışma prensibi, makine türleri ve bakım rehberi. Profesyonel fındık kırma ekipmanları hakkında detaylı bilgi.
+                - generic [ref=f16e124]:
+                  - generic [ref=f16e125]:
+                    - generic [ref=f16e126]: ✍️
+                    - generic [ref=f16e127]: Aydın Ak
+                  - generic [ref=f16e128]:
+                    - generic [ref=f16e129]: 📅
+                    - generic [ref=f16e130]: Tarih bilinmiyor
+                  - text: "0"
+                  - generic [ref=f16e131]:
+                    - generic [ref=f16e132]: 📊
+                    - generic [ref=f16e133]: 8948 karakter
+            - generic [ref=f16e135]:
+              - img "Fındık İşleme Nedir? Detaylı Rehber" [ref=f16e137]
+              - generic [ref=f16e138]:
+                - generic [ref=f16e139]:
+                  - heading "Fındık İşleme Nedir? Detaylı Rehber" [level=4] [ref=f16e140]
+                  - generic [ref=f16e141]:
+                    - button "✏️ Düzenle" [ref=f16e142] [cursor=pointer]
+                    - button "🗑️ Sil" [ref=f16e143] [cursor=pointer]
+                - paragraph [ref=f16e144]: Fındık işleme süreci nedir, nasıl yapılır? Hasat, kurutma, kırma, kavurma ve paketleme aşamalarıyla detaylı fındık işleme rehberi. Hendek'te profesyonel fındık işleme hizmetleri.
+                - generic [ref=f16e145]:
+                  - generic [ref=f16e146]:
+                    - generic [ref=f16e147]: ✍️
+                    - generic [ref=f16e148]: Aydın Ak
+                  - generic [ref=f16e149]:
+                    - generic [ref=f16e150]: 📅
+                    - generic [ref=f16e151]: Tarih bilinmiyor
+                  - generic [ref=f16e152]:
+                    - generic [ref=f16e153]: 👁️
+                    - generic [ref=f16e154]: 1 görüntüleme
+                  - generic [ref=f16e155]:
+                    - generic [ref=f16e156]: 📊
+                    - generic [ref=f16e157]: 6852 karakter
+            - generic [ref=f16e159]:
+              - img "✂️ Fındık Üretiminde Budamanın Önemi" [ref=f16e161]
+              - generic [ref=f16e162]:
+                - generic [ref=f16e163]:
+                  - heading "✂️ Fındık Üretiminde Budamanın Önemi" [level=4] [ref=f16e164]
+                  - generic [ref=f16e165]:
+                    - button "✏️ Düzenle" [ref=f16e166] [cursor=pointer]
+                    - button "🗑️ Sil" [ref=f16e167] [cursor=pointer]
+                - paragraph [ref=f16e168]: Bir fındık bahçesinin verimi, budama bilgisiyle doğru orantılıdır.
+                - generic [ref=f16e169]:
+                  - generic [ref=f16e170]:
+                    - generic [ref=f16e171]: ✍️
+                    - generic [ref=f16e172]: Aydın Ak
+                  - generic [ref=f16e173]:
+                    - generic [ref=f16e174]: 📅
+                    - generic [ref=f16e175]: Tarih bilinmiyor
+                  - text: "0"
+                  - generic [ref=f16e176]:
+                    - generic [ref=f16e177]: 📊
+                    - generic [ref=f16e178]: 1955 karakter
+            - generic [ref=f16e180]:
+              - 'img "🌿 Toprağa Saygı, Geleceğe Yatırım: Organomineral Gübre ile Verimli Bir Yolculuk" [ref=f16e182]'
+              - generic [ref=f16e183]:
+                - generic [ref=f16e184]:
+                  - 'heading "🌿 Toprağa Saygı, Geleceğe Yatırım: Organomineral Gübre ile Verimli Bir Yolculuk" [level=4] [ref=f16e185]'
+                  - generic [ref=f16e186]:
+                    - button "✏️ Düzenle" [ref=f16e187] [cursor=pointer]
+                    - button "🗑️ Sil" [ref=f16e188] [cursor=pointer]
+                - paragraph [ref=f16e189]: Zamanla gördüm ki, verimli bir tarımın sırrı yalnızca iyi tohumda ya da güçlü bir bitkide değil; sağlıklı toprakta yatıyor.
+                - generic [ref=f16e190]:
+                  - generic [ref=f16e191]:
+                    - generic [ref=f16e192]: ✍️
+                    - generic [ref=f16e193]: Aydın AK
+                  - generic [ref=f16e194]:
+                    - generic [ref=f16e195]: 📅
+                    - generic [ref=f16e196]: Tarih bilinmiyor
+                  - generic [ref=f16e197]:
+                    - generic [ref=f16e198]: 👁️
+                    - generic [ref=f16e199]: 2 görüntüleme
+                  - generic [ref=f16e200]:
+                    - generic [ref=f16e201]: 📊
+                    - generic [ref=f16e202]: 1888 karakter
+            - generic [ref=f16e204]:
+              - 'img "Fındığın Sağlık Faydaları: Her Gün Bir Avuç Fındık" [ref=f16e206]'
+              - generic [ref=f16e207]:
+                - generic [ref=f16e208]:
+                  - 'heading "Fındığın Sağlık Faydaları: Her Gün Bir Avuç Fındık" [level=4] [ref=f16e209]'
+                  - generic [ref=f16e210]:
+                    - button "✏️ Düzenle" [ref=f16e211] [cursor=pointer]
+                    - button "🗑️ Sil" [ref=f16e212] [cursor=pointer]
+                - paragraph [ref=f16e213]: Fındık, protein, lif ve sağlıklı yağlar açısından zengin bir besin kaynağıdır
+                - generic [ref=f16e214]:
+                  - generic [ref=f16e215]:
+                    - generic [ref=f16e216]: ✍️
+                    - generic [ref=f16e217]: Erkan ERDEM
+                  - generic [ref=f16e218]:
+                    - generic [ref=f16e219]: 📅
+                    - generic [ref=f16e220]: Tarih bilinmiyor
+                  - generic [ref=f16e221]:
+                    - generic [ref=f16e222]: 👁️
+                    - generic [ref=f16e223]: 1 görüntüleme
+                  - generic [ref=f16e224]:
+                    - generic [ref=f16e225]: 📊
+                    - generic [ref=f16e226]: 723 karakter

@@ -1,9 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { BlogPost, Notification } from '../../types';
 import { blogAPI } from '../../services/api';
 
 const STATIC_URL = import.meta.env.VITE_STATIC_URL || 'http://localhost:3003';
 const imgUrl = (path: string) => path ? `${STATIC_URL}${path}` : '';
+
+// ── SEO otomatik doldurma yardımcıları ──
+
+/** HTML etiketlerini temizle */
+const stripHtml = (html: string): string => {
+    if (!html) return '';
+    return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+};
+
+/** Metinden anahtar kelime çıkar (2-4 kelimelik anlamlı öbekler) */
+const extractKeywords = (title: string, content: string): string[] => {
+    const text = `${title} ${stripHtml(content)}`.toLowerCase();
+    // Türkçe stop words + genel
+    const stops = new Set(['ve','veya','ile','için','bir','bu','da','de','ki','ise','ama','fakat','çok','daha','olarak','gibi','kadar','sonra','önce','her','şu','o','ne','nasıl','nerede','hangi','kim','neden']);
+    const words = text.split(/[\s,.;:!?()\[\]{}"'\n\r\t]+/).filter(w => w.length > 2 && !stops.has(w));
+    const freq: Record<string, number> = {};
+    words.forEach(w => { freq[w] = (freq[w] || 0) + 1; });
+    return Object.entries(freq)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8)
+        .map(([w]) => w);
+};
 
 interface BlogManagementProps {
     blogPosts: BlogPost[];
@@ -32,6 +54,46 @@ const BlogManagement: React.FC<BlogManagementProps> = ({
     });
     const [blogImage, setBlogImage] = useState<File | null>(null);
     const [isBlogModalOpen, setIsBlogModalOpen] = useState(false);
+    // SEO alanlarına manuel müdahale edildi mi?
+    const seoTouched = useRef({ title: false, desc: false, keywords: false });
+
+    // ── SEO otomatik doldurma ──
+    const autoFillSEO = useCallback(() => {
+        const updates: Partial<typeof blogForm> = {};
+
+        if (!seoTouched.current.title && blogForm.title) {
+            const cleanTitle = stripHtml(blogForm.title);
+            const seoTitle = cleanTitle.length > 55 ? cleanTitle.slice(0, 55) + '...' : cleanTitle;
+            updates.seo_title = `${seoTitle} | Akaydın Tarım`;
+        }
+
+        if (!seoTouched.current.desc) {
+            const source = blogForm.excerpt || stripHtml(blogForm.content);
+            const desc = source.slice(0, 155).trim();
+            updates.seo_description = desc.length < source.length ? desc + '...' : desc;
+        }
+
+        if (!seoTouched.current.keywords && blogForm.title) {
+            const keywords = extractKeywords(blogForm.title, blogForm.content);
+            updates.seo_keywords = keywords.join(', ');
+        }
+
+        if (Object.keys(updates).length > 0) {
+            setBlogForm(f => ({ ...f, ...updates }));
+        }
+    }, [blogForm.title, blogForm.content, blogForm.excerpt]);
+
+    useEffect(() => {
+        if (isBlogModalOpen) {
+            const timer = setTimeout(autoFillSEO, 600);
+            return () => clearTimeout(timer);
+        }
+    }, [blogForm.title, blogForm.content, blogForm.excerpt, isBlogModalOpen]);
+
+    // Modal her açıldığında touched flag'leri sıfırla
+    const resetSEOTouched = () => {
+        seoTouched.current = { title: false, desc: false, keywords: false };
+    };
 
     const handleBlogSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -81,6 +143,7 @@ const BlogManagement: React.FC<BlogManagementProps> = ({
     };
 
     const openBlogModal = (post?: BlogPost) => {
+        resetSEOTouched();
         if (post) {
             setCurrentBlogPost(post);
             setBlogForm({
@@ -88,10 +151,14 @@ const BlogManagement: React.FC<BlogManagementProps> = ({
                 content: post.content || '',
                 excerpt: post.excerpt || '',
                 author: post.author,
-                seo_title: (post as any).seo_title || '',
-                seo_description: (post as any).seo_description || '',
-                seo_keywords: (post as any).seo_keywords || ''
+                seo_title: post.seo_title || '',
+                seo_description: post.seo_description || '',
+                seo_keywords: post.seo_keywords || ''
             });
+            // Mevcut SEO değerleri varsa touched say
+            if (post.seo_title) seoTouched.current.title = true;
+            if (post.seo_description) seoTouched.current.desc = true;
+            if (post.seo_keywords) seoTouched.current.keywords = true;
         } else {
             setCurrentBlogPost(null);
             setBlogForm({ title: '', content: '', excerpt: '', author: '', seo_title: '', seo_description: '', seo_keywords: '' });
@@ -101,6 +168,7 @@ const BlogManagement: React.FC<BlogManagementProps> = ({
     };
 
     const closeBlogModal = () => {
+        resetSEOTouched();
         setCurrentBlogPost(null);
         setBlogForm({ title: '', content: '', excerpt: '', author: '', seo_title: '', seo_description: '', seo_keywords: '' });
         setBlogImage(null);
@@ -360,36 +428,61 @@ const BlogManagement: React.FC<BlogManagementProps> = ({
 
                                 {/* SEO Fields */}
                                 <div className="lg:col-span-2 border-t pt-4 mt-2">
-                                    <h4 className="text-sm font-semibold text-gray-700 mb-3">🔍 SEO Ayarları (Opsiyonel)</h4>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                                            🔍 SEO Ayarları
+                                            <span className="text-[10px] font-normal bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Otomatik Doldurulur</span>
+                                        </h4>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                seoTouched.current = { title: false, desc: false, keywords: false };
+                                                autoFillSEO();
+                                            }}
+                                            className="text-xs text-accent hover:text-accent-2 underline"
+                                            title="SEO alanlarını başlık ve içerikten otomatik doldur"
+                                        >
+                                            🔄 Yeniden Oluştur
+                                        </button>
+                                    </div>
                                     <div className="grid grid-cols-1 gap-4">
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-600 mb-1">SEO Başlığı</label>
+                                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                                                SEO Başlığı
+                                                {!seoTouched.current.title && blogForm.seo_title && <span className="text-green-500 ml-1 text-[10px]">(oto)</span>}
+                                            </label>
                                             <input
                                                 type="text"
                                                 placeholder="SEO başlığı (60 karakter)"
                                                 value={blogForm.seo_title}
-                                                onChange={(e) => setBlogForm({ ...blogForm, seo_title: e.target.value })}
+                                                onChange={(e) => { seoTouched.current.title = true; setBlogForm({ ...blogForm, seo_title: e.target.value }); }}
                                                 className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                                 maxLength={60}
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-600 mb-1">SEO Açıklaması</label>
+                                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                                                SEO Açıklaması
+                                                {!seoTouched.current.desc && blogForm.seo_description && <span className="text-green-500 ml-1 text-[10px]">(oto)</span>}
+                                            </label>
                                             <textarea
                                                 placeholder="SEO açıklaması (160 karakter)"
                                                 value={blogForm.seo_description}
-                                                onChange={(e) => setBlogForm({ ...blogForm, seo_description: e.target.value })}
+                                                onChange={(e) => { seoTouched.current.desc = true; setBlogForm({ ...blogForm, seo_description: e.target.value }); }}
                                                 className="w-full border border-gray-300 rounded-lg px-4 py-2 h-16 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                                 maxLength={160}
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-600 mb-1">SEO Anahtar Kelimeleri</label>
+                                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                                                SEO Anahtar Kelimeleri
+                                                {!seoTouched.current.keywords && blogForm.seo_keywords && <span className="text-green-500 ml-1 text-[10px]">(oto)</span>}
+                                            </label>
                                             <input
                                                 type="text"
                                                 placeholder="fındık, tarım, hendek"
                                                 value={blogForm.seo_keywords}
-                                                onChange={(e) => setBlogForm({ ...blogForm, seo_keywords: e.target.value })}
+                                                onChange={(e) => { seoTouched.current.keywords = true; setBlogForm({ ...blogForm, seo_keywords: e.target.value }); }}
                                                 className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                             />
                                         </div>

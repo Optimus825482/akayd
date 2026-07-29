@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS hazelnut_prices (
   price NUMERIC(10,2) NOT NULL DEFAULT 0,
   daily_change NUMERIC(10,2) DEFAULT 0.00,
   change_percentage NUMERIC(5,2) DEFAULT 0.00,
-  source VARCHAR(20) DEFAULT 'manual',
+  source VARCHAR(100) DEFAULT 'manual',
   scraped_price NUMERIC(10,2) DEFAULT NULL,
   last_scraped_at TIMESTAMP DEFAULT NULL,
   update_mode VARCHAR(20) DEFAULT 'manual',

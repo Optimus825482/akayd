@@ -1,0 +1,93 @@
+- generic [ref=f6e3]:
+  - generic [ref=f6e4]:
+    - generic [ref=f6e6]:
+      - generic [ref=f6e7]:
+        - img "Akaydın Tarım Logo" [ref=f6e8]
+        - generic [ref=f6e9]: Akaydın Tarım
+      - button "◀" [ref=f6e10] [cursor=pointer]
+    - navigation [ref=f6e11]:
+      - generic [ref=f6e12]:
+        - button "📊 Kontrol Paneli" [ref=f6e13] [cursor=pointer]:
+          - generic [ref=f6e14]: 📊
+          - generic [ref=f6e15]: Kontrol Paneli
+        - button "🎬 Ana Sayfa Hero" [ref=f6e16] [cursor=pointer]:
+          - generic [ref=f6e17]: 🎬
+          - generic [ref=f6e18]: Ana Sayfa Hero
+        - button "🛠️ Hizmetler" [ref=f6e19] [cursor=pointer]:
+          - generic [ref=f6e20]: 🛠️
+          - generic [ref=f6e21]: Hizmetler
+        - button "📦 Ürünler" [ref=f6e22] [cursor=pointer]:
+          - generic [ref=f6e23]: 📦
+          - generic [ref=f6e24]: Ürünler
+        - button "📝 Blog" [ref=f6e25] [cursor=pointer]:
+          - generic [ref=f6e26]: 📝
+          - generic [ref=f6e27]: Blog
+        - button "🌰 Fındık Fiyatları" [ref=f6e28] [cursor=pointer]:
+          - generic [ref=f6e29]: 🌰
+          - generic [ref=f6e30]: Fındık Fiyatları
+        - button "ℹ️ Hakkımızda" [ref=f6e31] [cursor=pointer]:
+          - generic [ref=f6e32]: ℹ️
+          - generic [ref=f6e33]: Hakkımızda
+        - button "📧 İletişim Sayfası" [ref=f6e34] [cursor=pointer]:
+          - generic [ref=f6e35]: 📧
+          - generic [ref=f6e36]: İletişim Sayfası
+        - button "💬 İletişim Mesajları" [ref=f6e37] [cursor=pointer]:
+          - generic [ref=f6e38]: 💬
+          - generic [ref=f6e39]: İletişim Mesajları
+        - button "🔍 SEO Yönetimi" [ref=f6e40] [cursor=pointer]:
+          - generic [ref=f6e41]: 🔍
+          - generic [ref=f6e42]: SEO Yönetimi
+    - button "🚪 Çıkış Yap" [ref=f6e44] [cursor=pointer]:
+      - generic [ref=f6e45]: 🚪
+      - generic [ref=f6e46]: Çıkış Yap
+  - generic [ref=f6e47]:
+    - banner [ref=f6e48]:
+      - generic [ref=f6e49]:
+        - generic [ref=f6e50]:
+          - heading "Kontrol Paneli" [level=1] [ref=f6e51]
+          - paragraph [ref=f6e52]: Sistem durumunuz ve genel istatistikler
+        - generic [ref=f6e53]: "Son güncelleme: 18:42:45"
+    - main [ref=f6e56]:
+      - generic [ref=f6e57]:
+        - generic [ref=f6e59]:
+          - heading "🌱 Akaydın Tarım Admin Paneli" [level=1] [ref=f6e60]
+          - paragraph [ref=f6e61]: Hoş geldiniz! Sistem durumunuz ve istatistikleriniz aşağıda görüntüleniyor.
+        - generic [ref=f6e62]:
+          - generic [ref=f6e64]:
+            - generic [ref=f6e65]: 🛠️
+            - generic [ref=f6e66]:
+              - paragraph [ref=f6e67]: Hizmetler
+              - paragraph [ref=f6e68]: "3"
+          - generic [ref=f6e70]:
+            - generic [ref=f6e71]: 📦
+            - generic [ref=f6e72]:
+              - paragraph [ref=f6e73]: Ürünler
+              - paragraph [ref=f6e74]: "4"
+          - generic [ref=f6e76]:
+            - generic [ref=f6e77]: 📝
+            - generic [ref=f6e78]:
+              - paragraph [ref=f6e79]: Blog Yazıları
+              - paragraph [ref=f6e80]: "6"
+          - generic [ref=f6e82]:
+            - generic [ref=f6e83]: ⭐
+            - generic [ref=f6e84]:
+              - paragraph [ref=f6e85]: Öne Çıkan Ürünler
+              - paragraph [ref=f6e86]: "4"
+        - generic [ref=f6e87]:
+          - heading "📝 Son Blog Yazıları" [level=2] [ref=f6e88]
+          - generic [ref=f6e89]:
+            - generic [ref=f6e90]:
+              - generic [ref=f6e91]:
+                - paragraph [ref=f6e92]: Hendek Bölgesinde Fındık İşleme Avantajları
+                - paragraph [ref=f6e93]: 31.10.2025 • Aydın Ak
+              - generic [ref=f6e94]: 0 görüntülenme
+            - generic [ref=f6e95]:
+              - generic [ref=f6e96]:
+                - paragraph [ref=f6e97]: Fındık Kırma Makineleri Nasıl Çalışır? Teknik Rehber
+                - paragraph [ref=f6e98]: 31.10.2025 • Aydın Ak
+              - generic [ref=f6e99]: 0 görüntülenme
+            - generic [ref=f6e100]:
+              - generic [ref=f6e101]:
+                - paragraph [ref=f6e102]: Fındık İşleme Nedir? Detaylı Rehber
+                - paragraph [ref=f6e103]: 31.10.2025 • Aydın Ak
+              - generic [ref=f6e104]: 1 görüntülenme

@@ -34,6 +34,9 @@ export interface BlogPost {
   date: string;
   author: string;
   views?: number;
+  seo_title?: string;
+  seo_description?: string;
+  seo_keywords?: string;
 }
 
 export interface BlogStats {
@@ -110,20 +113,6 @@ export interface Notification {
 }
 
 // Hazelnut Prices types
-export interface HazelnutPrices {
-  id: number;
-  price: number;
-  daily_change: number;
-  change_percentage: number;
-  source: "manual" | "scraped";
-  scraped_price?: number;
-  last_scraped_at?: string;
-  update_mode?: "manual" | "automatic";
-  scraping_enabled?: boolean;
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-}
 
 // SEO Settings Interface
 export interface SEOSettings {

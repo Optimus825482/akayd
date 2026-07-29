@@ -1,191 +1,122 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-/* Mobile Header Animations */
-@keyframes fadeInRight {
-    from {
-        opacity: 0;
-        transform: translateX(30px);
-    }
 
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+/* ============================================================
+   TOKEN SYSTEM — Hallmark Custom · vibe: "toprak, yeşil, güvenilir tarım"
+   paper: oklch(97% 0.01 98) · accent: oklch(55% 0.18 142) leaf-green
+   display: Roboto Slab · body: Inter
+   pre-emit: P4 H5 E4 S4 R4 V4
+   ============================================================ */
+:root {
+  --color-paper: oklch(97% 0.01 98);
+  --color-paper-2: oklch(94% 0.01 98);
+  --color-paper-3: oklch(88% 0.01 98);
+  --color-ink: oklch(12% 0.02 130);
+  --color-ink-2: oklch(24% 0.02 130);
+  --color-ink-3: oklch(42% 0.02 130);
+  --color-accent: oklch(40% 0.16 148);
+  --color-accent-2: oklch(48% 0.15 148);
+  --color-accent-bg: oklch(94% 0.04 148);
+  --color-earth: oklch(50% 0.12 85);
+  --color-earth-bg: oklch(94% 0.03 85);
+  --color-sky: oklch(45% 0.16 260);
+  --color-sky-bg: oklch(94% 0.03 260);
+  --color-surface: oklch(100% 0 0);
+  --color-rule: oklch(85% 0.01 120);
+  --color-focus: oklch(55% 0.18 142);
 }
 
-@keyframes slideInFromRight {
-    from {
-        opacity: 0;
-        transform: translateX(100%);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-@keyframes ticker {
-    0% {
-        transform: translateX(100%);
-    }
-
-    100% {
-        transform: translateX(-100%);
-    }
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
-}
-
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.animate-fade-in-right {
-    animation: fadeInRight 0.6s ease-out;
-}
-
-.animate-slide-in-right {
-    animation: slideInFromRight 0.8s ease-out;
-}
-
-.animate-ticker {
-    animation: ticker 20s linear infinite;
-}
-
-.animate-fade-in {
-    animation: fadeIn 0.8s ease-out;
-}
-
-.delay-100 {
-    animation-delay: 0.1s;
-}
-
-.delay-200 {
-    animation-delay: 0.2s;
-}
-
-.delay-300 {
-    animation-delay: 0.3s;
-}
-
-/* Aspect Ratio Utilities */
-.aspect-w-16 {
-    position: relative;
-    padding-bottom: calc(9 / 16 * 100%);
-}
-
-.aspect-h-9 {
-    position: absolute;
-    height: 100%;
-    width: 100%;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-}
-
-/* Aspect ratio utilities */
-.aspect-square {
-    aspect-ratio: 1 / 1;
-}
-
-.aspect-\[4\/3\] {
-    aspect-ratio: 4 / 3;
-}
-
-.aspect-\[3\/2\] {
-    aspect-ratio: 3 / 2;
-}
-
-.aspect-\[16\/9\] {
-    aspect-ratio: 16 / 9;
-}
-
-/* Base styles */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: 'Poppins', sans-serif;
-    line-height: 1.6;
-    color: #333;
-}
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-    font-family: 'Roboto Slab', serif;
-    line-height: 1.2;
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-    width: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: #f1f1f1;
-}
-
-::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
-}
-
-/* Smooth transitions - only for interactive elements */
-a, button, .transition-colors, .transition-transform, .transition-all, .transition-opacity {
-    transition-duration: 0.2s;
-    transition-timing-function: ease;
-}
-
-/* Focus states for accessibility */
-button:focus,
-input:focus,
-textarea:focus,
-select:focus {
-    outline: 2px solid #16a34a;
+/* ============================================================
+   BASE
+   ============================================================ */
+@layer base {
+  html {
+    overflow-x: clip;
+    scroll-behavior: smooth;
+  }
+  body {
+    overflow-x: clip;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--color-ink);
+    background: var(--color-paper);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Roboto Slab', Georgia, serif;
+    font-weight: 700;
+    font-style: normal;
+    line-height: 1.15;
+    color: var(--color-ink);
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+    min-width: 0;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
     outline-offset: 2px;
+  }
+  :focus:not(:focus-visible) { outline: none; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--color-paper-2); }
+  ::-webkit-scrollbar-thumb { background: var(--color-ink-3); border-radius: 3px; }
 }
 
-/* Line clamp utilities */
-.line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+/* ============================================================
+   COMPONENTS
+   ============================================================ */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 whitespace-nowrap;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary {
+    @apply bg-accent text-white;
+    background-color: var(--color-accent);
+  }
+  .btn-primary:hover {
+    background-color: var(--color-accent-2);
+    box-shadow: 0 4px 12px oklch(0% 0 0 / 0.08);
+  }
+  .btn-outline {
+    @apply border-2 border-rule text-ink;
+  }
+  .btn-outline:hover {
+    @apply border-accent text-accent;
+    background-color: var(--color-accent-bg);
+  }
+  .btn-lg { @apply px-7 py-3.5 text-base rounded-2xl; }
+  .card {
+    @apply bg-surface border border-rule rounded-2xl overflow-hidden;
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+  }
+  .card:hover {
+    box-shadow: 0 8px 30px oklch(0% 0 0 / 0.08);
+    transform: translateY(-2px);
+  }
+  .section { @apply py-20 md:py-28; }
+  .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 }
 
-.line-clamp-3 {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  html { scroll-behavior: auto; }
 }

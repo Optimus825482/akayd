@@ -9,7 +9,7 @@ interface BlogPostCardProps {
 
 const BlogPostCard: React.FC<BlogPostCardProps> = ({ post, onReadMore }) => {
     return (
-        <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group border border-gray-100">
+        <div className="bg-surface rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group border border-rule">
             {/* Image Container */}
             <div className="relative overflow-hidden">
                 <img
@@ -23,7 +23,7 @@ const BlogPostCard: React.FC<BlogPostCardProps> = ({ post, onReadMore }) => {
             {/* Content */}
             <div className="p-6">
                 {/* Meta Info */}
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                <div className="flex items-center justify-between text-sm text-ink-3 mb-4">
                     <div className="flex items-center space-x-4">
                         <span className="flex items-center">
                             <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -50,19 +50,19 @@ const BlogPostCard: React.FC<BlogPostCardProps> = ({ post, onReadMore }) => {
                 </div>
 
                 {/* Title */}
-                <h3 className="text-xl font-bold text-gray-900 mb-3 leading-tight group-hover:text-green-600 transition-colors duration-200">
+                <h3 className="text-xl font-bold text-ink mb-3 leading-tight group-hover:text-accent transition-colors duration-200">
                     {post.title}
                 </h3>
 
                 {/* Summary */}
-                <p className="text-gray-600 text-sm mb-4 leading-relaxed line-clamp-3">
+                <p className="text-ink-2 text-sm mb-4 leading-relaxed line-clamp-3">
                     {post.summary}
                 </p>
 
                 {/* Read More Button */}
                 <button
                     onClick={onReadMore}
-                    className="inline-flex items-center text-green-600 hover:text-green-700 font-medium transition-colors group-hover:translate-x-1 transform duration-200"
+                    className="inline-flex items-center text-accent hover:text-accent font-medium transition-colors group-hover:translate-x-1 transform duration-200"
                 >
                     Devamını Oku
                     <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

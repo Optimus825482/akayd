@@ -180,45 +180,6 @@ export const contactMessagesAPI = {
     }),
 };
 
-// FINDIK FİYATLARI API
-export const hazelnutPricesAPI = {
-  get: () => apiCall("/hazelnut-prices"),
-  getHistory: () => apiCall("/hazelnut-prices/history"),
-  create: (priceData: {
-    price: number;
-    daily_change: number;
-    change_percentage: number;
-    source: "manual" | "scraped";
-    update_mode?: "manual" | "automatic";
-    scraping_enabled?: boolean;
-    notes?: string;
-  }) =>
-    apiCall("/hazelnut-prices", {
-      method: "POST",
-      body: JSON.stringify(priceData),
-    }),
-  update: (priceData: {
-    price: number;
-    daily_change: number;
-    change_percentage: number;
-    source: "manual" | "scraped";
-    update_mode?: "manual" | "automatic";
-    scraping_enabled?: boolean;
-    notes?: string;
-  }) =>
-    apiCall("/hazelnut-prices", {
-      method: "PUT",
-      body: JSON.stringify(priceData),
-    }),
-  scrape: () =>
-    apiCall("/hazelnut-prices/scrape", {
-      method: "POST",
-    }),
-  applyScraped: () =>
-    apiCall("/hazelnut-prices/apply-scraped", {
-      method: "POST",
-    }),
-};
 
 // SEO API
 export const seoAPI = {
@@ -277,6 +238,5 @@ export default {
   contactAPI,
   heroAPI,
   contactMessagesAPI,
-  hazelnutPricesAPI,
   seoAPI,
 };

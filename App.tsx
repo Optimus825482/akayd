@@ -13,6 +13,7 @@ import ProductsPage from './pages/ProductsPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import BlogPage from './pages/BlogPage';
 import ContactPage from './pages/ContactPage';
+import FindikIslemePage from './pages/FindikIslemePage';
 
 const STATIC_BASE_URL = import.meta.env.VITE_STATIC_URL
   || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3003');
@@ -78,7 +79,10 @@ function App(): React.ReactNode {
         author: post.author,
         date: new Date(post.created_at || Date.now()).toLocaleDateString('tr-TR'),
         views: post.views || 0,
-        imageUrl: post.image_url ? img(post.image_url) : 'https://picsum.photos/400/250?random=1'
+        imageUrl: post.image_url ? img(post.image_url) : 'https://picsum.photos/400/250?random=1',
+        seo_title: post.seo_title || '',
+        seo_description: post.seo_description || '',
+        seo_keywords: post.seo_keywords || ''
       })));
 
       if (aboutData) {
@@ -198,9 +202,9 @@ function App(): React.ReactNode {
 
             {/* Regular Routes - With Header/Footer */}
             <Route path="/*" element={
-              <div className="flex flex-col min-h-screen bg-gray-50 text-gray-700">
+              <div className="flex flex-col min-h-screen bg-paper text-ink">
                 <Header contactContent={contactContent} />
-                <main className="flex-grow pt-5"> {/* Add padding top to avoid content being hidden by sticky header */}
+                <main className="flex-grow">
                   <Routes>
                     <Route path="/" element={<HomePage services={services.slice(0, 3)} products={products.filter(p => p.isFeatured).slice(0, 4)} heroContents={heroContents} contactContent={contactContent} seoSettings={seoSettings} />} />
                     <Route path="/hakkimizda" element={<AboutPage content={aboutContent} seoSettings={seoSettings} />} />
@@ -209,6 +213,7 @@ function App(): React.ReactNode {
                     <Route path="/urun/:id" element={<ProductDetailPage contactContent={contactContent} seoSettings={seoSettings} />} />
                     <Route path="/blog" element={<BlogPage blogPosts={blogPosts} seoSettings={seoSettings} />} />
                     <Route path="/iletisim" element={<ContactPage content={contactContent} seoSettings={seoSettings} />} />
+                    <Route path="/findik-isleme" element={<FindikIslemePage contactContent={contactContent} seoSettings={seoSettings} />} />
                   </Routes>
                 </main>
                 <Footer content={contactContent} />

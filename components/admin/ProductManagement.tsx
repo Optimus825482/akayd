@@ -307,6 +307,31 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
                                 />
                             </div>
 
+                            {/* New Images Preview */}
+                            {productImages.length > 0 && (
+                                <div className="mt-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">🆕 Yeni Seçilen Görseller:</label>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                        {productImages.map((file, index) => (
+                                            <div key={index} className="relative group">
+                                                <img
+                                                    src={URL.createObjectURL(file)}
+                                                    alt={`Yeni görsel ${index + 1}`}
+                                                    className="w-full h-20 object-cover rounded-lg border border-gray-200"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setProductImages(productImages.filter((_, i) => i !== index))}
+                                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors shadow-lg"
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Öne Çıkan Ürün Switch */}
                             <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setProductForm({ ...productForm, isFeatured: !productForm.isFeatured })}>
                                 <div className="relative">

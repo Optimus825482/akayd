@@ -8,7 +8,6 @@ import DashboardOverview from '../components/admin/DashboardOverview';
 import ServiceManagement from '../components/admin/ServiceManagement';
 import ProductManagement from '../components/admin/ProductManagement';
 import BlogManagement from '../components/admin/BlogManagement';
-import HazelnutPricesManagement from '../components/admin/HazelnutPricesManagement';
 import ContactMessagesManagement from '../components/admin/ContactMessagesManagement';
 import ContactPageManagement from '../components/admin/ContactPageManagement';
 import HeroManagement from '../components/admin/HeroManagement';
@@ -128,7 +127,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         { id: 'services', name: 'Hizmetler', icon: '🛠️' },
         { id: 'products', name: 'Ürünler', icon: '📦' },
         { id: 'blog', name: 'Blog', icon: '📝' },
-        { id: 'hazelnut-prices', name: 'Fındık Fiyatları', icon: '🌰' },
         { id: 'about', name: 'Hakkımızda', icon: 'ℹ️' },
         { id: 'contact-page', name: 'İletişim Sayfası', icon: '📧' },
         { id: 'contact-messages', name: 'İletişim Mesajları', icon: '💬' },
@@ -206,7 +204,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 {activeSection === 'services' && 'Hizmetlerinizi yönetin'}
                                 {activeSection === 'products' && 'Ürünlerinizi düzenleyin'}
                                 {activeSection === 'blog' && 'Blog yazılarınızı yayınlayın'}
-                                {activeSection === 'hazelnut-prices' && 'Fındık fiyatlarını güncelleyin'}
                                 {activeSection === 'about' && 'Hakkımızda sayfasını düzenleyin'}
                                 {activeSection === 'hero' && 'Ana sayfa hero bölümünü yönetin'}
                                 {activeSection === 'contact-page' && 'İletişim sayfası bilgilerini güncelleyin'}
@@ -259,12 +256,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             setBlogPosts={setBlogPosts}
                             loading={loading}
                             setLoading={setLoading}
-                            addNotification={addNotification}
-                        />
-                    )}
-
-                    {activeSection === 'hazelnut-prices' && (
-                        <HazelnutPricesManagement
                             addNotification={addNotification}
                         />
                     )}
