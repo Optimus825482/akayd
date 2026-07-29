@@ -1,0 +1,158 @@
+- generic [ref=f35e3]:
+  - banner [ref=f35e4]:
+    - generic [ref=f35e6]:
+      - generic [ref=f35e7]:
+        - generic [ref=f35e8]: +90 (264) 123 45 67
+        - generic [ref=f35e11]: info@akaydintarim.com
+      - generic [ref=f35e14]: Remzi Efendi Cd. No:24 D:b, 54300 Hendek/Sakarya
+    - generic [ref=f35e15]:
+      - link [ref=f35e16] [cursor=pointer]:
+        - /url: "#/"
+        - img "Akaydın Tarım" [ref=f35e17]
+        - generic [ref=f35e18]:
+          - text: Akaydın Tarım
+          - paragraph [ref=f35e19]: Fındık Uzmanı
+      - navigation [ref=f35e20]:
+        - link "Ana Sayfa" [ref=f35e21] [cursor=pointer]:
+          - /url: "#/"
+        - link "Hakkımızda" [ref=f35e22] [cursor=pointer]:
+          - /url: "#/hakkimizda"
+        - link "Fındık İşleme" [ref=f35e23] [cursor=pointer]:
+          - /url: "#/findik-isleme"
+        - link "Hizmetler" [ref=f35e24] [cursor=pointer]:
+          - /url: "#/hizmetlerimiz"
+        - link "Ürünler" [ref=f35e25] [cursor=pointer]:
+          - /url: "#/urunler"
+        - link "Blog" [ref=f35e26] [cursor=pointer]:
+          - /url: "#/blog"
+        - link "İletişim" [ref=f35e27] [cursor=pointer]:
+          - /url: "#/iletisim"
+  - main [ref=f35e28]:
+    - generic [ref=f35e31]:
+      - paragraph [ref=f35e32]: Hakkımızda
+      - heading "Akaydın Tarım" [level=1] [ref=f35e33]
+      - paragraph [ref=f35e34]: AKAYDIN TARIM, 2023 yılında, ömrünü fındık üretimine adamış olan Aydın Ak tarafından kurulmuştur. Kurucumuz Aydın Ak, yılların getirdiği deneyimi ve geleneksel ...
+    - generic [ref=f35e37]:
+      - generic [ref=f35e38]:
+        - generic [ref=f35e39]:
+          - paragraph [ref=f35e40]: Hikayemiz
+          - heading "Akaydın Tarım" [level=2] [ref=f35e41]
+        - generic [ref=f35e43]:
+          - paragraph [ref=f35e44]: AKAYDIN TARIM, 2023 yılında, ömrünü fındık üretimine adamış olan Aydın Ak tarafından kurulmuştur. Kurucumuz Aydın Ak, yılların getirdiği deneyimi ve geleneksel üretim bilgisini, modern tarım teknolojileriyle birleştirerek sektöre yenilikçi bir soluk kazandırmayı hedeflemiştir.
+          - paragraph [ref=f35e45]: Kuruluşundan bu yana “Doğadan Aldığımızı, Doğaya Geri Veriyoruz” ilkesiyle hareket eden AKAYDIN TARIM; üretimde kaliteyi, sürdürülebilirliği ve çevre bilincini merkezine almıştır. Her adımda doğaya saygılı, toprağa dost uygulamalarla ilerleyen firmamız, organomineral gübre, fındık bahçesi danışmanlığı ve tarımsal ürün tedariki alanlarında bölgesel kalkınmaya katkı sağlamaktadır.
+          - paragraph [ref=f35e46]: 2024 yılında Ferrero firması tarafından düzenlenen Budama Yarışması’nda “Altın Makas Ödülü” kazanan Aydın Ak, başarısıyla yalnızca üretimde değil, bilgi ve deneyim paylaşımında da öncü olmuştur. AKAYDIN TARIM bugün, fındık üretiminde verimliliği artıran modern teknikleri bölge çiftçilerine tanıtarak, Sakarya ve çevresinde sürdürülebilir tarımın gelişimine öncülük etmektedir.
+          - paragraph [ref=f35e47]: Toprağın gücüne inanıyoruz. Çünkü biliyoruz ki, sağlıklı toprak güçlü bir geleceğin temelidir.
+          - paragraph [ref=f35e48]: Bu inançla, her geçen gün daha verimli, daha bilinçli ve daha doğa dostu bir tarım anlayışı için çalışıyoruz.
+          - paragraph [ref=f35e49]: 🌱 AKAYDIN TARIM — Toprağınızın Gücünü Keşfedin. 🌿
+        - generic [ref=f35e50]:
+          - generic [ref=f35e51]: 🌱 Sürdürülebilirlik
+          - generic [ref=f35e52]: 🤝 Güvenilirlik
+          - generic [ref=f35e53]: 💡 Yenilikçilik
+          - generic [ref=f35e54]: 🏆 Kalite
+      - generic [ref=f35e55]:
+        - img "Akaydın Tarım 1" [ref=f35e56]
+        - img "Akaydın Tarım 2" [ref=f35e57]
+        - img "Akaydın Tarım 3" [ref=f35e58]
+        - img "Akaydın Tarım 4" [ref=f35e59]
+        - button [ref=f35e60] [cursor=pointer]
+        - button [ref=f35e63] [cursor=pointer]
+        - generic [ref=f35e66]:
+          - button [ref=f35e67] [cursor=pointer]
+          - button [ref=f35e68] [cursor=pointer]
+          - button [ref=f35e69] [cursor=pointer]
+          - button [ref=f35e70] [cursor=pointer]
+        - generic [ref=f35e71]: 1 / 4
+    - generic [ref=f35e74]:
+      - generic [ref=f35e77]:
+        - generic [ref=f35e78]: 🎯
+        - generic [ref=f35e80]:
+          - heading "Misyon" [level=3] [ref=f35e81]
+          - paragraph [ref=f35e82]: Çiftçilerimize en yenilikçi tarım teknolojilerini ve en kaliteli ürünleri sunarak, onların verimliliğini ve gelirini artırmak. Sürdürülebilir tarım uygulamalarını yaygınlaştırarak hem toprağımızı korumak hem de gelecek nesillere daha verimli araziler bırakmak en temel amacımızdır.
+      - generic [ref=f35e85]:
+        - generic [ref=f35e86]: 🚀
+        - generic [ref=f35e88]:
+          - heading "Vizyon" [level=3] [ref=f35e89]
+          - paragraph [ref=f35e90]: Türkiye'nin fındık ve tarım sektöründe, teknoloji kullanımı, danışmanlık hizmetleri ve ürün kalitesiyle referans gösterilen lider bir marka olmak. Tarımda dijital dönüşüme öncülük ederek, sektörü geleceğe taşımak.
+    - generic [ref=f35e92]:
+      - generic [ref=f35e93]:
+        - paragraph [ref=f35e94]: Değerlerimiz
+        - heading "Her kararımıza rehberlik eden ilkeler" [level=2] [ref=f35e95]
+      - generic [ref=f35e96]:
+        - generic [ref=f35e97]:
+          - generic [ref=f35e98]: 🏆
+          - heading "Kalite" [level=3] [ref=f35e99]
+          - paragraph [ref=f35e100]: En yüksek kalite standartlarını hedefleriz.
+        - generic [ref=f35e101]:
+          - generic [ref=f35e102]: 🛡️
+          - heading "Güven" [level=3] [ref=f35e103]
+          - paragraph [ref=f35e104]: Şeffaf ve güvene dayalı ilişkiler kurarız.
+        - generic [ref=f35e105]:
+          - generic [ref=f35e106]: 💡
+          - heading "Yenilikçilik" [level=3] [ref=f35e107]
+          - paragraph [ref=f35e108]: Sektördeki en son gelişmeleri takip ederiz.
+      - generic [ref=f35e110]:
+        - generic [ref=f35e111]:
+          - generic [ref=f35e112]: 25+
+          - generic [ref=f35e113]: Yıllık Deneyim
+        - generic [ref=f35e114]:
+          - generic [ref=f35e115]: 500+
+          - generic [ref=f35e116]: Mutlu Üretici
+        - generic [ref=f35e117]:
+          - generic [ref=f35e118]: 50+
+          - generic [ref=f35e119]: Farklı Ürün
+        - generic [ref=f35e120]:
+          - generic [ref=f35e121]: 7/24
+          - generic [ref=f35e122]: Destek
+    - generic [ref=f35e125]:
+      - heading "Bizimle Çalışmaya Hazır mısınız?" [level=2] [ref=f35e126]
+      - paragraph [ref=f35e127]: Deneyimli ekibimiz sizin için en uygun çözümleri geliştirmeye hazır.
+      - generic [ref=f35e128]:
+        - link "Hemen Konuşalım" [ref=f35e129] [cursor=pointer]:
+          - /url: "#/iletisim"
+        - link "Hizmetlerimiz" [ref=f35e130] [cursor=pointer]:
+          - /url: "#/hizmetlerimiz"
+  - contentinfo [ref=f35e131]:
+    - generic [ref=f35e132]:
+      - generic [ref=f35e133]:
+        - generic [ref=f35e134]:
+          - link "Logo Akaydın Tarım" [ref=f35e135] [cursor=pointer]:
+            - /url: "#/"
+            - img "Logo" [ref=f35e136]
+            - generic [ref=f35e137]: Akaydın Tarım
+          - paragraph [ref=f35e138]: Fındık ve tarım sektöründe yenilikçi çözümlerle geleceğin tarımını bugünden inşa ediyoruz.
+        - generic [ref=f35e139]:
+          - heading "Hızlı Erişim" [level=4] [ref=f35e140]
+          - list [ref=f35e141]:
+            - listitem [ref=f35e142]:
+              - link "Hakkımızda" [ref=f35e143] [cursor=pointer]:
+                - /url: "#/hakkimizda"
+            - listitem [ref=f35e144]:
+              - link "Fındık İşleme" [ref=f35e145] [cursor=pointer]:
+                - /url: "#/findik-isleme"
+            - listitem [ref=f35e146]:
+              - link "Hizmetlerimiz" [ref=f35e147] [cursor=pointer]:
+                - /url: "#/hizmetlerimiz"
+            - listitem [ref=f35e148]:
+              - link "Ürünler" [ref=f35e149] [cursor=pointer]:
+                - /url: "#/urunler"
+            - listitem [ref=f35e150]:
+              - link "Blog" [ref=f35e151] [cursor=pointer]:
+                - /url: "#/blog"
+        - generic [ref=f35e152]:
+          - heading "İletişim" [level=4] [ref=f35e153]
+          - list [ref=f35e154]:
+            - listitem [ref=f35e155]:
+              - generic [ref=f35e158]: Başpınar, Remzi Efendi Cd. No:24 D:b, 54300 Hendek/Sakarya
+            - listitem [ref=f35e159]:
+              - link "+90 (264) 123 45 67" [ref=f35e162] [cursor=pointer]:
+                - /url: tel:+90 (264) 123 45 67
+            - listitem [ref=f35e163]:
+              - link "WhatsApp" [ref=f35e166] [cursor=pointer]:
+                - /url: https://wa.me/905397751517
+            - listitem [ref=f35e167]:
+              - link "info@akaydintarim.com" [ref=f35e170] [cursor=pointer]:
+                - /url: mailto:info@akaydintarim.com
+        - generic [ref=f35e171]:
+          - heading "Bizi Takip Edin" [level=4] [ref=f35e172]
+          - paragraph [ref=f35e173]: Admin panelinden ekleyin
+      - generic [ref=f35e174]: © 2026 Akaydın Tarım. Tüm hakları saklıdır.

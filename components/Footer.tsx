@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaFacebookF, FaInstagram, FaTwitter, FaLinkedinIn, FaYoutube, FaPhone, FaWhatsapp, FaEnvelope, FaMapMarkerAlt } from 'react-icons/fa';
+import { FaFacebookF, FaInstagram, FaTwitter, FaLinkedinIn, FaYoutube, FaPhone, FaWhatsapp, FaMapMarkerAlt } from 'react-icons/fa';
 import type { ContactPageContent } from '../types';
 
 interface FooterProps { content: ContactPageContent; }
@@ -57,10 +57,6 @@ const Footer: React.FC<FooterProps> = ({ content }) => {
                                     <a href={`https://wa.me/${content.whatsapp_phone.replace(/[^\d]/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">WhatsApp</a>
                                 </li>
                             )}
-                            <li className="flex items-center gap-3">
-                                <FaEnvelope className="w-4 h-4 shrink-0" style={{color:'#3da35e'}} />
-                                <a href={`mailto:${content.email}`} className="hover:text-white break-all transition-colors">{content.email}</a>
-                            </li>
                         </ul>
                     </div>
 

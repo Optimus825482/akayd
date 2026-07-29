@@ -1,0 +1,131 @@
+- generic [ref=f37e3]:
+  - banner [ref=f37e4]:
+    - generic [ref=f37e6]:
+      - generic [ref=f37e7]:
+        - generic [ref=f37e8]: +90 (264) 123 45 67
+        - link "WhatsApp" [ref=f37e11] [cursor=pointer]:
+          - /url: https://wa.me/905397751517
+      - generic [ref=f37e14]: Remzi Efendi Cd. No:24 D:b, 54300 Hendek/Sakarya
+    - generic [ref=f37e15]:
+      - link [ref=f37e16] [cursor=pointer]:
+        - /url: "#/"
+        - img "Akaydın Tarım" [ref=f37e17]
+        - generic [ref=f37e18]:
+          - text: Akaydın Tarım
+          - paragraph [ref=f37e19]: Fındık Uzmanı
+      - navigation [ref=f37e20]:
+        - link "Ana Sayfa" [ref=f37e21] [cursor=pointer]:
+          - /url: "#/"
+        - link "Hakkımızda" [ref=f37e22] [cursor=pointer]:
+          - /url: "#/hakkimizda"
+        - link "Fındık İşleme" [ref=f37e23] [cursor=pointer]:
+          - /url: "#/findik-isleme"
+        - link "Hizmetler" [ref=f37e24] [cursor=pointer]:
+          - /url: "#/hizmetlerimiz"
+        - link "Ürünler" [ref=f37e25] [cursor=pointer]:
+          - /url: "#/urunler"
+        - link "Blog" [ref=f37e26] [cursor=pointer]:
+          - /url: "#/blog"
+        - link "İletişim" [ref=f37e27] [cursor=pointer]:
+          - /url: "#/iletisim"
+  - main [ref=f37e28]:
+    - generic [ref=f37e247]:
+      - paragraph [ref=f37e248]: İletişim
+      - heading "Bize ulaşın" [level=1] [ref=f37e249]
+      - paragraph [ref=f37e250]: Sorularınız, önerileriniz veya işbirliği talepleriniz için buradayız.
+    - generic [ref=f37e253]:
+      - generic [ref=f37e255]:
+        - generic [ref=f37e256]:
+          - generic [ref=f37e257]:
+            - generic [ref=f37e258]: Adınız Soyadınız *
+            - textbox "Adınız Soyadınız *" [ref=f37e259]:
+              - /placeholder: Ad Soyad
+          - generic [ref=f37e260]:
+            - generic [ref=f37e261]: E-posta *
+            - textbox "E-posta *" [ref=f37e262]:
+              - /placeholder: ornek@email.com
+        - generic [ref=f37e263]:
+          - generic [ref=f37e264]: Konu
+          - combobox "Konu" [ref=f37e265]:
+            - option "Konu seçin" [selected]
+            - option "Fındık İşleme Hizmeti"
+            - option "Ürün Bilgileri"
+            - option "Hizmet Talebi"
+            - option "Genel Bilgi"
+            - option "Diğer"
+        - generic [ref=f37e266]:
+          - generic [ref=f37e267]: Mesajınız *
+          - textbox "Mesajınız *" [ref=f37e268]:
+            - /placeholder: Mesajınızı yazın...
+        - button "Mesajı Gönder" [ref=f37e269] [cursor=pointer]
+      - generic [ref=f37e270]:
+        - generic [ref=f37e271]:
+          - generic [ref=f37e272]:
+            - generic [ref=f37e273]: 📍
+            - generic [ref=f37e274]:
+              - paragraph [ref=f37e275]: Adres
+              - paragraph [ref=f37e276]: Başpınar, Remzi Efendi Cd. No:24 D:b, 54300 Hendek/Sakarya
+          - generic [ref=f37e277]:
+            - generic [ref=f37e278]: 📞
+            - generic [ref=f37e279]:
+              - paragraph [ref=f37e280]: Telefon
+              - link "+90 (264) 123 45 67" [ref=f37e281] [cursor=pointer]:
+                - /url: tel:+90 (264) 123 45 67
+          - generic [ref=f37e282]:
+            - generic [ref=f37e283]: 📱
+            - generic [ref=f37e284]:
+              - paragraph [ref=f37e285]: WhatsApp Bilgi Hattı
+              - link "905397751517" [ref=f37e286] [cursor=pointer]:
+                - /url: https://wa.me/905397751517
+        - iframe [ref=f37e288]:
+          
+    - generic [ref=f37e291]:
+      - heading "Hemen aramak ister misiniz?" [level=2] [ref=f37e292]
+      - paragraph [ref=f37e293]: Acil sorularınız için direkt telefon hattımız.
+      - generic [ref=f37e294]:
+        - link "📞 +90 (264) 123 45 67" [ref=f37e295] [cursor=pointer]:
+          - /url: tel:+90 (264) 123 45 67
+        - link "WhatsApp" [ref=f37e296] [cursor=pointer]:
+          - /url: https://wa.me/905397751517
+  - contentinfo [ref=f37e203]:
+    - generic [ref=f37e204]:
+      - generic [ref=f37e205]:
+        - generic [ref=f37e206]:
+          - link "Logo Akaydın Tarım" [ref=f37e207] [cursor=pointer]:
+            - /url: "#/"
+            - img "Logo" [ref=f37e208]
+            - generic [ref=f37e209]: Akaydın Tarım
+          - paragraph [ref=f37e210]: Fındık ve tarım sektöründe yenilikçi çözümlerle geleceğin tarımını bugünden inşa ediyoruz.
+        - generic [ref=f37e211]:
+          - heading "Hızlı Erişim" [level=4] [ref=f37e212]
+          - list [ref=f37e213]:
+            - listitem [ref=f37e214]:
+              - link "Hakkımızda" [ref=f37e215] [cursor=pointer]:
+                - /url: "#/hakkimizda"
+            - listitem [ref=f37e216]:
+              - link "Fındık İşleme" [ref=f37e217] [cursor=pointer]:
+                - /url: "#/findik-isleme"
+            - listitem [ref=f37e218]:
+              - link "Hizmetlerimiz" [ref=f37e219] [cursor=pointer]:
+                - /url: "#/hizmetlerimiz"
+            - listitem [ref=f37e220]:
+              - link "Ürünler" [ref=f37e221] [cursor=pointer]:
+                - /url: "#/urunler"
+            - listitem [ref=f37e222]:
+              - link "Blog" [ref=f37e223] [cursor=pointer]:
+                - /url: "#/blog"
+        - generic [ref=f37e224]:
+          - heading "İletişim" [level=4] [ref=f37e225]
+          - list [ref=f37e226]:
+            - listitem [ref=f37e227]:
+              - generic [ref=f37e230]: Başpınar, Remzi Efendi Cd. No:24 D:b, 54300 Hendek/Sakarya
+            - listitem [ref=f37e231]:
+              - link "+90 (264) 123 45 67" [ref=f37e234] [cursor=pointer]:
+                - /url: tel:+90 (264) 123 45 67
+            - listitem [ref=f37e235]:
+              - link "WhatsApp" [ref=f37e238] [cursor=pointer]:
+                - /url: https://wa.me/905397751517
+        - generic [ref=f37e239]:
+          - heading "Bizi Takip Edin" [level=4] [ref=f37e240]
+          - paragraph [ref=f37e241]: Admin panelinden ekleyin
+      - generic [ref=f37e242]: © 2026 Akaydın Tarım. Tüm hakları saklıdır.

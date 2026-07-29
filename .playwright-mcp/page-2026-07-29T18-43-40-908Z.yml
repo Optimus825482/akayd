@@ -1,0 +1,214 @@
+- generic [ref=f37e3]:
+  - banner [ref=f37e4]:
+    - generic [ref=f37e6]:
+      - generic [ref=f37e7]:
+        - generic [ref=f37e8]: +90 (264) 123 45 67
+        - link "WhatsApp" [ref=f37e11] [cursor=pointer]:
+          - /url: https://wa.me/905397751517
+      - generic [ref=f37e14]: Remzi Efendi Cd. No:24 D:b, 54300 Hendek/Sakarya
+    - generic [ref=f37e15]:
+      - link [ref=f37e16] [cursor=pointer]:
+        - /url: "#/"
+        - img "Akaydın Tarım" [ref=f37e17]
+        - generic [ref=f37e18]:
+          - text: Akaydın Tarım
+          - paragraph [ref=f37e19]: Fındık Uzmanı
+      - navigation [ref=f37e20]:
+        - link "Ana Sayfa" [ref=f37e21] [cursor=pointer]:
+          - /url: "#/"
+        - link "Hakkımızda" [ref=f37e22] [cursor=pointer]:
+          - /url: "#/hakkimizda"
+        - link "Fındık İşleme" [ref=f37e23] [cursor=pointer]:
+          - /url: "#/findik-isleme"
+        - link "Hizmetler" [ref=f37e24] [cursor=pointer]:
+          - /url: "#/hizmetlerimiz"
+        - link "Ürünler" [ref=f37e25] [cursor=pointer]:
+          - /url: "#/urunler"
+        - link "Blog" [ref=f37e26] [cursor=pointer]:
+          - /url: "#/blog"
+        - link "İletişim" [ref=f37e27] [cursor=pointer]:
+          - /url: "#/iletisim"
+  - main [ref=f37e28]:
+    - generic [ref=f37e29]:
+      - generic [ref=f37e35]:
+        - paragraph [ref=f37e36]: Akaydın Tarım · Hendek / Sakarya
+        - heading "Fındık Üretiminizi Bir Sonraki Seviyeye Taşıyın" [level=1] [ref=f37e37]:
+          - text: Fındık Üretiminizi
+          - generic [ref=f37e38]: Bir Sonraki Seviyeye Taşıyın
+        - paragraph [ref=f37e39]: Modern tarım teknikleri ve uzman danışmanlık hizmetleriyle verimliliğinizi artırın.
+        - generic [ref=f37e40]:
+          - link "Hemen Başlayın" [ref=f37e41] [cursor=pointer]:
+            - /url: "#/iletisim"
+          - link "Hizmetleri Keşfedin" [ref=f37e44] [cursor=pointer]:
+            - /url: "#/hizmetlerimiz"
+      - generic [ref=f37e45]:
+        - button [ref=f37e46] [cursor=pointer]
+        - button [ref=f37e47] [cursor=pointer]
+    - generic [ref=f37e49]:
+      - generic [ref=f37e50]:
+        - paragraph [ref=f37e51]: Neden Akaydın Tarım
+        - heading "Doğru Ellerde, Doğru Hasat" [level=2] [ref=f37e52]: Doğru Ellerde,Doğru Hasat
+        - paragraph [ref=f37e53]: Modern teknoloji ve nesiller boyu süregelen tarım bilgisiyle fındık üretiminde fark yaratıyoruz.
+      - generic [ref=f37e54]:
+        - generic [ref=f37e55]:
+          - generic [ref=f37e56]: 25+
+          - heading "Yıllık Deneyim" [level=3] [ref=f37e57]
+          - paragraph [ref=f37e58]: Hendek'te nesiller boyu fındık üretimi
+        - generic [ref=f37e59]:
+          - generic [ref=f37e60]: 500+
+          - heading "Mutlu Üretici" [level=3] [ref=f37e61]
+          - paragraph [ref=f37e62]: Bölge çiftçilerine danışmanlık ve hizmet
+        - generic [ref=f37e63]:
+          - generic [ref=f37e64]: 7/24
+          - heading "Kesintisiz Destek" [level=3] [ref=f37e65]
+          - paragraph [ref=f37e66]: Her an yanınızda, tarladan hasada
+    - generic [ref=f37e68]:
+      - generic [ref=f37e69]:
+        - paragraph [ref=f37e70]: Hendek'te İlk Defa
+        - heading "Fındık İşleme Hizmetleri" [level=2] [ref=f37e71]
+        - paragraph [ref=f37e72]: Evleriniz için ayırdığınız fındıklar artık çürümeyecek — profesyonel işleme hattımızla tanışın.
+      - generic [ref=f37e73]:
+        - generic [ref=f37e74]:
+          - generic [ref=f37e75]: 🔨
+          - heading "Kırma" [level=4] [ref=f37e76]
+          - paragraph [ref=f37e77]: Son teknoloji, hasarsız
+          - generic [ref=f37e78]: →
+        - generic [ref=f37e79]:
+          - generic [ref=f37e80]: 🔥
+          - heading "Kavurma" [level=4] [ref=f37e81]
+          - paragraph [ref=f37e82]: Profesyonel lezzet
+          - generic [ref=f37e83]: →
+        - generic [ref=f37e84]:
+          - generic [ref=f37e85]: 📦
+          - heading "Vakumlama" [level=4] [ref=f37e86]
+          - paragraph [ref=f37e87]: Uzun raf ömrü
+          - generic [ref=f37e88]: →
+        - generic [ref=f37e89]:
+          - generic [ref=f37e90]: 🛡️
+          - heading "Koruma" [level=4] [ref=f37e91]
+          - paragraph [ref=f37e92]: Değer kaybı yok
+      - link "Hemen Bilgi Alın" [ref=f37e94] [cursor=pointer]:
+        - /url: "#/iletisim"
+    - generic [ref=f37e96]:
+      - generic [ref=f37e97]:
+        - generic [ref=f37e98]:
+          - paragraph [ref=f37e99]: Hizmetlerimiz
+          - heading "Fındık üretiminin her aşamasında" [level=2] [ref=f37e100]: Fındık üretimininher aşamasında
+        - link "Tüm Hizmetler →" [ref=f37e101] [cursor=pointer]:
+          - /url: "#/hizmetlerimiz"
+      - generic [ref=f37e102]:
+        - generic [ref=f37e103]:
+          - heading "Organomineral Gübre Bayiliği" [level=3] [ref=f37e105]
+          - paragraph [ref=f37e106]: Toprağınızın ihtiyacı olan zengin içerikli, yüksek kaliteli organomineral gübre çeşitlerimizle fındık bahçenizi canlandırın.
+        - generic [ref=f37e107]:
+          - heading "Fındık İşleme Hizmetleri" [level=3] [ref=f37e109]
+          - paragraph [ref=f37e110]: Son teknoloji makinelerimizle fındık kırma, kavurma ve vakumlu paketleme hizmetleri sunuyoruz. Ürününüzün değerini koruyoruz.
+        - generic [ref=f37e111]:
+          - heading "Fındık Üretimi Danışmanlığı" [level=3] [ref=f37e113]
+          - paragraph [ref=f37e114]: Modern tarım teknikleri ve uzman ekibimizle verimliliğinizi artırıyoruz. Toprak analizinden hasat planlamasına kadar yanınızdayız.
+    - generic [ref=f37e116]:
+      - generic [ref=f37e117]:
+        - generic [ref=f37e118]:
+          - paragraph [ref=f37e119]: Ürünlerimiz
+          - heading "Öne çıkan ürünler" [level=2] [ref=f37e120]
+        - link "Tüm Ürünler →" [ref=f37e121] [cursor=pointer]:
+          - /url: "#/urunler"
+      - generic [ref=f37e122]:
+        - generic [ref=f37e123]:
+          - link "Kabuklu Fındık Öne Çıkan Fındık Ürünleri Kabuklu Fındık Taze Kabuklu Fındık" [ref=f37e124] [cursor=pointer]:
+            - /url: "#/urun/20"
+            - generic [ref=f37e125]:
+              - img "Kabuklu Fındık" [ref=f37e126]
+              - generic [ref=f37e128]: Öne Çıkan
+            - generic [ref=f37e132]:
+              - generic [ref=f37e133]: Fındık Ürünleri
+              - heading "Kabuklu Fındık" [level=3] [ref=f37e135]
+              - paragraph [ref=f37e136]: Taze Kabuklu Fındık
+          - link "WhatsApp Sipariş" [ref=f37e138] [cursor=pointer]:
+            - /url: https://wa.me/902641234567?text=Merhaba, Kabuklu Fındık ürünü hakkında bilgi almak istiyorum.
+        - generic [ref=f37e141]:
+          - link "Fındık Ezmesi Öne Çıkan Fındık Ürünleri Fındık Ezmesi Cam kananoz da fındık ezmesi" [ref=f37e142] [cursor=pointer]:
+            - /url: "#/urun/19"
+            - generic [ref=f37e143]:
+              - img "Fındık Ezmesi" [ref=f37e144]
+              - generic [ref=f37e146]: Öne Çıkan
+            - generic [ref=f37e150]:
+              - generic [ref=f37e151]: Fındık Ürünleri
+              - heading "Fındık Ezmesi" [level=3] [ref=f37e153]
+              - paragraph [ref=f37e154]: Cam kananoz da fındık ezmesi
+          - link "WhatsApp Sipariş" [ref=f37e156] [cursor=pointer]:
+            - /url: https://wa.me/902641234567?text=Merhaba, Fındık Ezmesi ürünü hakkında bilgi almak istiyorum.
+        - generic [ref=f37e159]:
+          - link "OrganoMineral Gübre Öne Çıkan Gübreler OrganoMineral Gübre 15 15 15 Organomineral gübre" [ref=f37e160] [cursor=pointer]:
+            - /url: "#/urun/18"
+            - generic [ref=f37e161]:
+              - img "OrganoMineral Gübre" [ref=f37e162]
+              - generic [ref=f37e164]: Öne Çıkan
+            - generic [ref=f37e168]:
+              - generic [ref=f37e169]: Gübreler
+              - heading "OrganoMineral Gübre" [level=3] [ref=f37e171]
+              - paragraph [ref=f37e172]: 15 15 15 Organomineral gübre
+          - link "WhatsApp Sipariş" [ref=f37e174] [cursor=pointer]:
+            - /url: https://wa.me/902641234567?text=Merhaba, OrganoMineral Gübre ürünü hakkında bilgi almak istiyorum.
+        - generic [ref=f37e177]:
+          - link "Kavrulmuş Fındık Öne Çıkan Fındık Ürünleri Kavrulmuş Fındık Kavrulmuş Fındık" [ref=f37e178] [cursor=pointer]:
+            - /url: "#/urun/17"
+            - generic [ref=f37e179]:
+              - img "Kavrulmuş Fındık" [ref=f37e180]
+              - generic [ref=f37e182]: Öne Çıkan
+            - generic [ref=f37e186]:
+              - generic [ref=f37e187]: Fındık Ürünleri
+              - heading "Kavrulmuş Fındık" [level=3] [ref=f37e189]
+              - paragraph [ref=f37e190]: Kavrulmuş Fındık
+          - link "WhatsApp Sipariş" [ref=f37e192] [cursor=pointer]:
+            - /url: https://wa.me/902641234567?text=Merhaba, Kavrulmuş Fındık ürünü hakkında bilgi almak istiyorum.
+    - generic [ref=f37e197]:
+      - heading "Fındık Üretiminde Verimliliğinizi Artırmaya Hazır mısınız?" [level=2] [ref=f37e198]: Fındık ÜretimindeVerimliliğinizi Artırmaya Hazır mısınız?
+      - paragraph [ref=f37e199]: Akaydın Tarım uzmanları, modern tarım çözümleriyle yanınızda.
+      - generic [ref=f37e200]:
+        - link "Hemen İletişime Geçin" [ref=f37e201] [cursor=pointer]:
+          - /url: "#/iletisim"
+        - link "Hizmetleri İnceleyin" [ref=f37e202] [cursor=pointer]:
+          - /url: "#/hizmetlerimiz"
+  - contentinfo [ref=f37e203]:
+    - generic [ref=f37e204]:
+      - generic [ref=f37e205]:
+        - generic [ref=f37e206]:
+          - link "Logo Akaydın Tarım" [ref=f37e207] [cursor=pointer]:
+            - /url: "#/"
+            - img "Logo" [ref=f37e208]
+            - generic [ref=f37e209]: Akaydın Tarım
+          - paragraph [ref=f37e210]: Fındık ve tarım sektöründe yenilikçi çözümlerle geleceğin tarımını bugünden inşa ediyoruz.
+        - generic [ref=f37e211]:
+          - heading "Hızlı Erişim" [level=4] [ref=f37e212]
+          - list [ref=f37e213]:
+            - listitem [ref=f37e214]:
+              - link "Hakkımızda" [ref=f37e215] [cursor=pointer]:
+                - /url: "#/hakkimizda"
+            - listitem [ref=f37e216]:
+              - link "Fındık İşleme" [ref=f37e217] [cursor=pointer]:
+                - /url: "#/findik-isleme"
+            - listitem [ref=f37e218]:
+              - link "Hizmetlerimiz" [ref=f37e219] [cursor=pointer]:
+                - /url: "#/hizmetlerimiz"
+            - listitem [ref=f37e220]:
+              - link "Ürünler" [ref=f37e221] [cursor=pointer]:
+                - /url: "#/urunler"
+            - listitem [ref=f37e222]:
+              - link "Blog" [ref=f37e223] [cursor=pointer]:
+                - /url: "#/blog"
+        - generic [ref=f37e224]:
+          - heading "İletişim" [level=4] [ref=f37e225]
+          - list [ref=f37e226]:
+            - listitem [ref=f37e227]:
+              - generic [ref=f37e230]: Başpınar, Remzi Efendi Cd. No:24 D:b, 54300 Hendek/Sakarya
+            - listitem [ref=f37e231]:
+              - link "+90 (264) 123 45 67" [ref=f37e234] [cursor=pointer]:
+                - /url: tel:+90 (264) 123 45 67
+            - listitem [ref=f37e235]:
+              - link "WhatsApp" [ref=f37e238] [cursor=pointer]:
+                - /url: https://wa.me/905397751517
+        - generic [ref=f37e239]:
+          - heading "Bizi Takip Edin" [level=4] [ref=f37e240]
+          - paragraph [ref=f37e241]: Admin panelinden ekleyin
+      - generic [ref=f37e242]: © 2026 Akaydın Tarım. Tüm hakları saklıdır.

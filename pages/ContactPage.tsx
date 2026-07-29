@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import type { ContactPageContent, SEOSettings, PageSEO } from '../types';
 import SEOHead from '../components/SEOHead';
 import { contactMessagesAPI, seoAPI } from '../services/api';
@@ -16,11 +15,32 @@ const ContactPage: React.FC<ContactPageProps> = ({ content, seoSettings }) => {
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault(); setLoading(true); setError(null);
         const fd = new FormData(e.currentTarget);
+        const name = fd.get('name') as string;
+        const emailVal = fd.get('email') as string;
+        const subject = fd.get('subject') as string || '';
+        const message = fd.get('message') as string;
+
+        // WhatsApp mesajı oluştur
+        const wp = content.whatsapp_phone || content.phone?.replace(/[^\d]/g, '') || '905397751517';
+        const wpMessage = encodeURIComponent(
+            `📩 *Akaydın Tarım İletişim Formu*\n\n` +
+            `👤 *Ad:* ${name}\n` +
+            `📧 *E-posta:* ${emailVal}\n` +
+            (subject ? `📌 *Konu:* ${subject}\n` : '') +
+            `💬 *Mesaj:* ${message}`
+        );
+        const waUrl = `https://wa.me/${wp.replace(/[^\d]/g, '')}?text=${wpMessage}`;
+        
+        // WhatsApp'a yönlendir
+        window.open(waUrl, '_blank');
+        
+        // Aynı zamanda backend'e de kaydet
         try {
-            await contactMessagesAPI.create({ name:fd.get('name') as string, email:fd.get('email') as string, phone:fd.get('phone') as string||undefined, subject:fd.get('subject') as string||undefined, message:fd.get('message') as string });
-            setSubmitted(true); e.currentTarget.reset();
-        } catch { setError('Mesaj gönderilemedi. Lütfen tekrar deneyin.'); }
-        finally { setLoading(false); }
+            await contactMessagesAPI.create({ name, email: emailVal, phone: undefined, subject: subject || undefined, message });
+        } catch { /* backend kaydı başarısız olsa da WhatsApp'a gitti */ }
+        
+        setSubmitted(true); e.currentTarget.reset();
+        setLoading(false);
     };
 
     return (<>
@@ -88,8 +108,7 @@ const ContactPage: React.FC<ContactPageProps> = ({ content, seoSettings }) => {
                             {[
                                 {icon:'📍',label:'Adres',val:content.address},
                                 {icon:'📞',label:'Telefon',val:content.phone,href:`tel:${content.phone}`},
-                                {icon:'📱',label:'WhatsApp',val:content.whatsapp_phone, href:content.whatsapp_phone ? `https://wa.me/${content.whatsapp_phone.replace(/[^\d]/g,'')}` : undefined},
-                                {icon:'✉️',label:'E-posta',val:content.email,href:`mailto:${content.email}`},
+                                {icon:'📱',label:'WhatsApp Bilgi Hattı',val:content.whatsapp_phone, href:content.whatsapp_phone ? `https://wa.me/${content.whatsapp_phone.replace(/[^\d]/g,'')}` : undefined},
                             ].filter(x=>x.val).map((x,i)=>(
                                 <div key={i} className="flex items-start gap-4 p-4 rounded-xl bg-paper-2">
                                     <span className="text-xl shrink-0 mt-0.5">{x.icon}</span>
