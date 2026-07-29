@@ -38,10 +38,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, contactPhone = '9053
                 <div className="relative w-full aspect-[4/3] overflow-hidden bg-paper-3">
                     <img
                         src={productImages[currentImageIndex]?.startsWith('/uploads')
-                            ? `http://localhost:3003${productImages[currentImageIndex]}`
+                            ? `${window.location.origin}${productImages[currentImageIndex]}`
                             : productImages[currentImageIndex]
                         }
                         alt={product.name}
+                        width="400"
+                        height="300"
                         className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110"
                         loading="lazy"
                     />

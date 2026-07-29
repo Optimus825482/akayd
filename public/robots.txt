@@ -3,4 +3,4 @@ Allow: /
 Disallow: /api/
 Disallow: /admin
 
-Sitemap: https://www.akaydintarim.com/sitemap.xml
+Sitemap: https://www.akaydintarim.com.tr/sitemap.xml

@@ -1,0 +1,2 @@
+- Prefers communication in Turkish, especially for detailed technical reports and action plans. Confidence: 0.85
+- Prefers comprehensive batch implementation — when given a list of recommendations, applies all at once rather than incrementally. Confidence: 0.70

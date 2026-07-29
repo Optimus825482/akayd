@@ -34,8 +34,8 @@ const ServicesPage: React.FC<ServicesPageProps> = ({ services, seoSettings }) =>
             pageKeywords="hizmetlerimiz, fındık danışmanlığı, tarım danışmanlığı, fındık üretimi, organomineral gübre, toprak analizi, hendek, sakarya, akaydın tarım"
             structuredData={servicesSchema}
             breadcrumbItems={[
-                { name: 'Ana Sayfa', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/' },
-                { name: 'Hizmetlerimiz', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/hizmetlerimiz' }
+                { name: 'Ana Sayfa', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com.tr') + '/' },
+                { name: 'Hizmetlerimiz', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com.tr') + '/hizmetlerimiz' }
             ]} />
 
         {/* Hero */}

@@ -39,6 +39,7 @@ const HomePage: React.FC<HomePageProps> = ({ services, products, heroContents, c
     const orgSchema = {
       "@context": "https://schema.org",
       "@type": "Organization",
+        "@id": "https://akaydintarim.com.tr/#organization",
       "name": "Akaydın Tarım",
       "description": "Hendek, Sakarya'da fındık üretimi, fındık kırma & kavurma, organomineral gübre ve tarımsal danışmanlık",
       "url": "https://akaydintarim.com.tr",
@@ -52,6 +53,7 @@ const HomePage: React.FC<HomePageProps> = ({ services, products, heroContents, c
       },
       "telephone": contactContent.phone || "+902641234567",
       "sameAs": [
+        "https://hendekfindikkirma.com",
         contactContent.facebook_url, contactContent.instagram_url, contactContent.youtube_url
       ].filter(Boolean)
     };
@@ -59,12 +61,12 @@ const HomePage: React.FC<HomePageProps> = ({ services, products, heroContents, c
     return (
         <>
             <SEOHead seoSettings={seoSettings||undefined} pageSEO={pageSEO||undefined}
-                pageTitle="Akaydın Tarım | Fındık Kırma & İşleme | Organomineral Gübre | Hendek/Sakarya"
-                pageDescription="Hendek, Sakarya'da fındık üretimi, fındık kırma-kavurma hizmeti, organomineral gübre ve tarımsal danışmanlık. 25+ yıllık deneyim."
-                pageKeywords="fındık kırma hendek, fındık işleme sakarya, fındık kavurma, organomineral gübre, hendek tarım, akaydın tarım, fındık üretimi"
+                pageTitle="Akaydın Tarım | Hendek Fındık Kırma & Kavurma | Vakumlu Paketleme | Hendek/Sakarya"
+                pageDescription="Hendek, Sakarya'da fındık kırma, kavurma ve vakumlu paketleme hizmeti. Organomineral gübre ve tarımsal danışmanlık. 25+ yıllık deneyim. Hemen arayın!"
+                pageKeywords="hendek fındık kırma, hendek fındık, fındık kırma kavurma, hendek fındık kavurma, hendek fındık kavurma paketleme, fındık kırma kavurma vakumlu paketleme, fındık işleme sakarya, organomineral gübre, hendek tarım, akaydın tarım, fındık üretimi, fındık kavurma"
                 structuredData={orgSchema}
                 breadcrumbItems={[
-                    { name: 'Ana Sayfa', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/' }
+                    { name: 'Ana Sayfa', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com.tr') + '/' }
                 ]} />
 
             {/* ===== HERO — editorial dark ===== */}
@@ -160,6 +162,7 @@ const HomePage: React.FC<HomePageProps> = ({ services, products, heroContents, c
                         </Link>
                         <p className="text-xs text-ink-3">
                             Hendek fındık kırma, kavurma ve vakumlu paketleme • Saatte 5-10 kg • %98 hasarsız iç fındık
+                            <br /><a href="https://hendekfindikkirma.com" target="_blank" rel="noopener" className="text-accent hover:underline">hendekfindikkirma.com</a> — özel landing sayfamızı ziyaret edin
                         </p>
                     </div>
                 </div>

@@ -17,6 +17,7 @@ import axios from 'axios';
 import { imageOptimizer } from './imageProcessor.js';
 
 import fs from 'fs';
+import compression from 'compression';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -71,6 +72,7 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
+app.use(compression({ threshold: 1024 }));
 app.use(express.json({ limit: '1mb' }));
 
 // /akaydin-tarim prefix temizleyici
@@ -92,7 +94,7 @@ app.use('/uploads', (req, res, next) => {
 // Cache middleware
 app.use((req, res, next) => {
   if (req.method === 'GET' && !req.path.startsWith('/api/admin')) {
-    res.setHeader('Cache-Control', 'public, max-age=30');
+    res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
   }
   next();
 });
@@ -1024,12 +1026,12 @@ app.get('/api/seo/settings', async (req, res) => {
       og_title: 'Akaydın Tarım - Premium Fındık Üreticisi',
       og_description: 'Hendek/Sakarya\'da kaliteli fındık üretimi',
       og_image: '',
-      og_url: 'https://www.akaydintarim.com',
+      og_url: 'https://www.akaydintarim.com.tr',
       twitter_card: 'summary_large_image',
       twitter_site: '@akaydintarim',
       twitter_creator: '@akaydintarim',
-      canonical_url: 'https://www.akaydintarim.com',
-      robots_txt: 'User-agent: *\\nAllow: /\\nDisallow: /api/\\nDisallow: /admin\\nSitemap: https://www.akaydintarim.com/sitemap.xml',
+      canonical_url: 'https://www.akaydintarim.com.tr',
+      robots_txt: 'User-agent: *\\nAllow: /\\nDisallow: /api/\\nDisallow: /admin\\nSitemap: https://www.akaydintarim.com.tr/sitemap.xml',
       google_analytics_id: '',
       google_search_console: '',
       facebook_pixel_id: '',
@@ -1303,16 +1305,27 @@ async function generateSitemapFile() {
     db.query('SELECT * FROM seo_settings LIMIT 1'),
   ]);
 
-  const baseUrl = (seoSettings.rows[0]?.canonical_url || 'https://www.akaydintarim.com').replace(/\/$/, '');
+  const baseUrl = (seoSettings.rows[0]?.canonical_url || 'https://www.akaydintarim.com.tr').replace(/\/$/, '');
   const now = new Date().toISOString().split('T')[0];
+
+  // Statik sayfalar - lastmod için en güncel blog/ürün tarihini kullan
+  const latestProductDate = products.rows.reduce((max, p) => {
+    const d = p.updated_at ? new Date(p.updated_at).toISOString().split('T')[0] : max;
+    return d > max ? d : max;
+  }, '2026-01-01');
+  const latestBlogDate = blogPosts.rows.reduce((max, p) => {
+    const d = p.updated_at ? new Date(p.updated_at).toISOString().split('T')[0] : max;
+    return d > max ? d : max;
+  }, '2026-01-01');
+
   const urls = [
-    { loc: `${baseUrl}/`, priority: '1.0', changefreq: 'daily', lastmod: now },
-    { loc: `${baseUrl}/hakkimizda`, priority: '0.9', changefreq: 'monthly', lastmod: now },
-    { loc: `${baseUrl}/findik-isleme`, priority: '0.9', changefreq: 'monthly', lastmod: now },
-    { loc: `${baseUrl}/hizmetlerimiz`, priority: '0.9', changefreq: 'monthly', lastmod: now },
-    { loc: `${baseUrl}/urunler`, priority: '0.9', changefreq: 'monthly', lastmod: now },
-    { loc: `${baseUrl}/blog`, priority: '0.7', changefreq: 'weekly', lastmod: now },
-    { loc: `${baseUrl}/iletisim`, priority: '0.8', changefreq: 'monthly', lastmod: now },
+    { loc: `${baseUrl}/`, priority: '1.0', changefreq: 'daily', lastmod: latestProductDate > latestBlogDate ? latestProductDate : latestBlogDate },
+    { loc: `${baseUrl}/hakkimizda`, priority: '0.8', changefreq: 'monthly', lastmod: now },
+    { loc: `${baseUrl}/findik-isleme`, priority: '1.0', changefreq: 'daily', lastmod: now },
+    { loc: `${baseUrl}/hizmetlerimiz`, priority: '0.9', changefreq: 'weekly', lastmod: now },
+    { loc: `${baseUrl}/urunler`, priority: '0.8', changefreq: 'weekly', lastmod: latestProductDate },
+    { loc: `${baseUrl}/blog`, priority: '0.8', changefreq: 'weekly', lastmod: latestBlogDate },
+    { loc: `${baseUrl}/iletisim`, priority: '0.7', changefreq: 'monthly', lastmod: now },
   ];
 
   // Ürün detay sayfaları — hash kullanmadan temiz URL'ler
@@ -1322,6 +1335,16 @@ async function generateSitemapFile() {
       priority: '0.6',
       changefreq: 'monthly',
       lastmod: p.updated_at ? new Date(p.updated_at).toISOString().split('T')[0] : now,
+    });
+  }
+
+  // Blog yazısı detay sayfaları
+  for (const bp of blogPosts.rows) {
+    urls.push({
+      loc: `${baseUrl}/blog/${bp.id}`,
+      priority: '0.5',
+      changefreq: 'monthly',
+      lastmod: bp.updated_at ? new Date(bp.updated_at).toISOString().split('T')[0] : now,
     });
   }
 
@@ -1418,7 +1441,7 @@ app.put('/api/seo/robots', adminAuth, async (req, res) => {
 app.get('/api/seo/robots', adminAuth, async (req, res) => {
   try {
     const robotsPath = path.join(__dirname, '../public/robots.txt');
-    let content = 'User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin\nSitemap: https://www.akaydintarim.com/sitemap.xml';
+    let content = 'User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin\nSitemap: https://www.akaydintarim.com.tr/sitemap.xml';
     if (fs.existsSync(robotsPath)) {
       content = fs.readFileSync(robotsPath, 'utf-8');
     }

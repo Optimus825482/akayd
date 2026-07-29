@@ -260,7 +260,7 @@ const SEOManagement: React.FC<SEOManagementProps> = ({ addNotification }) => {
                                         value={seoSettings.og_image}
                                         onChange={(e) => setSeoSettings({ ...seoSettings, og_image: e.target.value })}
                                         className="border border-gray-300 rounded-lg px-4 py-3 w-full focus:ring-2 focus:ring-blue-500"
-                                        placeholder="https://www.akaydintarim.com/images/og-image.jpg"
+                                        placeholder="https://www.akaydintarim.com.tr/images/og-image.jpg"
                                     />
                                 </div>
 
@@ -334,7 +334,7 @@ const SEOManagement: React.FC<SEOManagementProps> = ({ addNotification }) => {
                                 value={seoSettings.robots_txt}
                                 onChange={(e) => setSeoSettings({ ...seoSettings, robots_txt: e.target.value })}
                                 className="border border-gray-300 rounded-lg px-4 py-3 h-32 w-full focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-                                placeholder={`User-agent: *\nAllow: /\nSitemap: https://www.akaydintarim.com/sitemap.xml`}
+                                placeholder={`User-agent: *\nAllow: /\nSitemap: https://www.akaydintarim.com.tr/sitemap.xml`}
                             />
                         </div>
 
@@ -499,7 +499,7 @@ const SEOManagement: React.FC<SEOManagementProps> = ({ addNotification }) => {
                                 value={analysisUrl}
                                 onChange={(e) => setAnalysisUrl(e.target.value)}
                                 className="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500"
-                                placeholder="https://www.akaydintarim.com/urunler"
+                                placeholder="https://www.akaydintarim.com.tr/urunler"
                             />
                             <button
                                 onClick={handleAnalyzePage}

@@ -121,9 +121,9 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ contactContent, s
                 pageKeywords={`${product.name}, ${product.category}, ürün detayı, akaydın tarım`}
                 ogImage={product.imageUrl}
                 breadcrumbItems={[
-                    { name: 'Ana Sayfa', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/' },
-                    { name: 'Ürünler', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/urunler' },
-                    { name: product.name, url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/urun/' + product.id }
+                    { name: 'Ana Sayfa', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com.tr') + '/' },
+                    { name: 'Ürünler', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com.tr') + '/urunler' },
+                    { name: product.name, url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com.tr') + '/urun/' + product.id }
                 ]}
             />
             <div className="min-h-screen bg-paper-2 py-8">

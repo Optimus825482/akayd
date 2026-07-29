@@ -132,7 +132,7 @@ export const INITIAL_CONTACT_CONTENT: ContactPageContent = {
   address: 'Başpınar, Remzi Efendi Cd. No:24 D:b, 54300 Hendek/Sakarya',
   phone: '+90 (264) 123 45 67',
   whatsapp_phone: '905397751517', // WhatsApp sipariş hattı
-  email: 'info@akaydintarim.com',
+  email: 'info@akaydintarim.com.tr',
   website: '',
   working_hours: '',
   map_embed: '',

@@ -47,6 +47,7 @@ const ContactPage: React.FC<ContactPageProps> = ({ content, seoSettings }) => {
     const localBusinessSchema = useMemo(() => ({
       "@context": "https://schema.org",
       "@type": "LocalBusiness",
+        "@id": "https://akaydintarim.com.tr/#localbusiness",
       "name": "Akaydın Tarım",
       "description": "Hendek, Sakarya'da fındık üretimi, fındık kırma & kavurma, organomineral gübre ve tarımsal danışmanlık hizmetleri.",
       "image": "https://akaydintarim.com.tr/akaylogo.png",
@@ -80,8 +81,8 @@ const ContactPage: React.FC<ContactPageProps> = ({ content, seoSettings }) => {
             pageKeywords="iletişim, akaydın tarım, hendek, sakarya, fındık kırma, adres, telefon, whatsapp, ulaşım"
             structuredData={localBusinessSchema}
             breadcrumbItems={[
-                { name: 'Ana Sayfa', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/' },
-                { name: 'İletişim', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/iletisim' }
+                { name: 'Ana Sayfa', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com.tr') + '/' },
+                { name: 'İletişim', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com.tr') + '/iletisim' }
             ]} />
 
         {/* Hero */}

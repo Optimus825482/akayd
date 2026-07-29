@@ -42,7 +42,7 @@ const SEOHead: React.FC<SEOHeadProps> = ({
 }) => {
     // Canonical URL: önce sayfa özel canonical, sonra genel canonical_url + window.location
     const baseUrl = seoSettings?.canonical_url || '';
-    const currentPath = typeof window !== 'undefined' ? window.location.hash.replace('#', '') || '/' : '/';
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname || '/' : '/';
     const finalCanonicalUrl = canonicalUrl || pageSEO?.canonical_url || (baseUrl ? `${baseUrl.replace(/\/$/, '')}${currentPath}` : '');
 
     // Sayfa özel SEO verilerini önceliklendir, yoksa genel ayarları kullan

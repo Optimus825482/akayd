@@ -121,10 +121,10 @@ const seasonInfo = [
 ];
 
 const galleryImages = [
-  { src: '/images/findik-isleme/makine-1.jpg', alt: 'Fındık kırma makinesi ön görünüm', label: 'Kırma Hattı' },
-  { src: '/images/findik-isleme/makine-2.jpg', alt: 'Boyutlandırma ünitesi', label: 'Kalibrasyon' },
-  { src: '/images/findik-isleme/vakum.jpg', alt: 'Vakum paketleme makinesi', label: 'Vakumlama' },
-  { src: '/images/findik-isleme/sonuc.jpg', alt: 'İşlenmiş hazır fındık', label: 'Sonuç' },
+  { src: 'https://picsum.photos/seed/findik-makine/600/400', alt: 'Fındık kırma makinesi ön görünüm', label: 'Kırma Hattı' },
+  { src: 'https://picsum.photos/seed/findik-kalibrasyon/600/400', alt: 'Boyutlandırma ünitesi', label: 'Kalibrasyon' },
+  { src: 'https://picsum.photos/seed/findik-vakum/600/400', alt: 'Vakum paketleme makinesi', label: 'Vakumlama' },
+  { src: 'https://picsum.photos/seed/findik-sonuc/600/400', alt: 'İşlenmiş hazır fındık', label: 'Sonuç' },
 ];
 
 /* ──────────────── COMPONENT ──────────────── */
@@ -163,6 +163,7 @@ const FindikIslemePage: React.FC<FindikIslemePageProps> = ({ contactContent, seo
   const localBusinessSchema = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
+    "@id": "https://akaydintarim.com.tr/#localbusiness",
     "name": "Akaydın Tarım - Hendek Fındık Kırma & İşleme",
     "description": "Hendek, Sakarya'da ev tipi fındık kırma, kavurma ve vakumlu paketleme hizmeti. Saatte 5-10 kg kapasite, %98 hasarsız iç fındık.",
     "image": "https://akaydintarim.com.tr/akaylogo.png",
@@ -182,17 +183,53 @@ const FindikIslemePage: React.FC<FindikIslemePageProps> = ({ contactContent, seo
     "areaServed": { "@type": "City", "name": "Hendek, Sakarya" }
   };
 
+  const productSchema = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": "Hendek Fındık Kırma, Kavurma ve Vakumlu Paketleme Hizmeti",
+    "description": "Hendek, Sakarya'da profesyonel fındık kırma, kavurma ve vakumlu paketleme. Saatte 5-10 kg kapasite, %98 hasarsız iç fındık.",
+    "brand": { "@type": "Brand", "name": "Akaydın Tarım" },
+    "category": "AgriculturalService",
+    "areaServed": { "@type": "City", "name": "Hendek" },
+    "offers": {
+      "@type": "Offer",
+      "priceCurrency": "TRY",
+      "availability": "https://schema.org/InStock",
+      "areaServed": { "@type": "City", "name": "Hendek, Sakarya" }
+    }
+  };
+
+  const serviceSchema = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "name": "Fındık Kırma, Kavurma ve Vakumlu Paketleme",
+    "provider": { "@type": "LocalBusiness", "name": "Akaydın Tarım", "@id": "https://akaydintarim.com.tr/#localbusiness" },
+    "areaServed": { "@type": "City", "name": "Hendek, Sakarya" },
+    "description": "Kabuklu fındığın profesyonel ekipmanla kırılması, kavrulması ve vakumlu paketlenmesi. Ev tipi miktarlar kabul edilir.",
+    "serviceType": "Fındık İşleme Hizmeti",
+    "termsOfService": "https://akaydintarim.com.tr/#/findik-isleme",
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "Fındık İşleme Hizmetleri",
+      "itemListElement": [
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Fındık Kırma" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Fındık Kavurma" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Vakumlu Paketleme" } }
+      ]
+    }
+  };
+
   const greenGradient = { background: 'linear-gradient(135deg, #0f1f10 0%, #142218 60%, #1a2a1a 100%)' };
 
   return (<>
     <SEOHead seoSettings={seoSettings || undefined} pageSEO={pageSEO || undefined}
-      pageTitle="Hendek Fındık Kırma & Kavurma | Profesyonel Fındık İşleme | Akaydın Tarım"
-      pageDescription="Hendek, Sakarya'da ev tipi fındık kırma ✓ kavurma ✓ vakumlu paketleme hizmeti. Saatte 5-10 kg kapasite, %98 hasarsız iç fındık. Hemen WhatsApp'tan bilgi alın!"
-      pageKeywords="hendek fındık kırma, fındık kırma kavurma, fındık işleme sakarya, hendek fındık işleme, ev tipi fındık kırma, vakumlu paketleme, fındık kavurma hizmeti"
-      structuredData={[faqSchema, howToSchema, localBusinessSchema]}
+      pageTitle="Hendek Fındık Kırma & Kavurma | Vakumlu Paketleme | Akaydın Tarım"
+      pageDescription="Hendek'te fındık kırma, kavurma ve vakumlu paketleme hizmeti. Saatte 10 kg kapasite, %98 hasarsız iç fındık. Hendek fındık kırma kavurma vakumlu paketleme için hemen arayın: 0539 775 15 17"
+      pageKeywords="hendek fındık kırma, hendek fındık kavurma, hendek fındık, fındık kırma kavurma, hendek fındık kavurma paketleme, fındık kırma kavurma vakumlu paketleme, vakumlu paketleme hendek, fındık işleme sakarya, ev tipi fındık kırma, fındık kavurma hizmeti"
+      structuredData={[faqSchema, howToSchema, localBusinessSchema, productSchema, serviceSchema]}
       breadcrumbItems={[
-        { name: 'Ana Sayfa', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/' },
-        { name: 'Fındık İşleme', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/findik-isleme' }
+        { name: 'Ana Sayfa', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com.tr') + '/' },
+        { name: 'Fındık İşleme', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com.tr') + '/findik-isleme' }
       ]} />
 
     {/* ═══════════ HERO ═══════════ */}
@@ -262,6 +299,76 @@ const FindikIslemePage: React.FC<FindikIslemePageProps> = ({ contactContent, seo
               </div>
             </div>
           ))}
+        </div>
+      </div>
+    </section>
+
+    {/* ═══════════ HENDEK FINDIK KAVURMA PAKETLEME ═══════════ */}
+    <section className="section bg-paper-2">
+      <div className="container">
+        <div className="text-center mb-12">
+          <p className="text-xs font-semibold tracking-[0.2em] uppercase text-accent mb-4">Kavurma & Paketleme</p>
+          <h2 className="text-3xl md:text-5xl font-[family-name:var(--font-display)] font-bold text-ink mb-4">Hendek Fındık Kavurma ve Paketleme Hizmeti</h2>
+          <p className="text-ink-2 max-w-xl mx-auto">
+            Kırma işleminin ardından fındıklarınızı profesyonel ekipmanla <strong>kavurup vakumlu paketliyoruz</strong>. Hendek fındık kavurma paketleme hizmetimizle fındıklarınız uzun süre taze kalır.
+          </p>
+        </div>
+        <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          {[
+            { icon: '🔥', t: 'Profesyonel Kavurma', d: 'Endüstriyel kavurma fırınında, istenen kıvamda homojen kavurma. Az, orta veya çok kavrulmuş seçenekleri mevcuttur.' },
+            { icon: '📦', t: 'Vakumlu Paketleme', d: 'Kavrulan fındıklar hava almaz vakum poşetlerinde paketlenir. Serin ortamda 24 aya kadar tazelik garantisi.' },
+            { icon: '🏠', t: 'Ev Tipi Miktarlar', d: '1 kg\'dan itibaren her miktarda kavurma ve paketleme hizmeti. Kendi fındığınızı getirin, kavrulmuş ve paketlenmiş alın.' },
+          ].map((item) => (
+            <div key={item.t} className="group p-6 rounded-2xl bg-surface border border-rule hover:border-accent hover:shadow-md transition-all duration-300">
+              <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">{item.icon}</div>
+              <h3 className="text-lg font-bold text-ink mb-2">{item.t}</h3>
+              <p className="text-sm text-ink-2 leading-relaxed">{item.d}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    {/* ═══════════ FINDIK KIRMA KAVURMA VAKUMLU PAKETLEME — DETAY ═══════════ */}
+    <section className="section bg-surface">
+      <div className="container">
+        <div className="text-center mb-12">
+          <p className="text-xs font-semibold tracking-[0.2em] uppercase text-accent mb-4">Komple Hizmet</p>
+          <h2 className="text-3xl md:text-5xl font-[family-name:var(--font-display)] font-bold text-ink mb-4">
+            Fındık Kırma, Kavurma ve Vakumlu Paketleme
+          </h2>
+          <p className="text-ink-2 max-w-xl mx-auto">
+            Tek elden <strong>fındık kırma kavurma vakumlu paketleme</strong> hizmeti ile fındıklarınız zahmetsizce sofraya hazır hale gelir. Hendek'te komple fındık işleme çözümü.
+          </p>
+        </div>
+        <div className="max-w-3xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="p-6 rounded-2xl bg-paper-2 border border-rule">
+              <h3 className="font-bold text-ink mb-3 text-lg">📋 Paket İçeriği</h3>
+              <ul className="space-y-2 text-sm text-ink-2">
+                <li className="flex items-start gap-2"><span className="text-accent mt-0.5">✓</span> Kabuklu fındığın teslim alınması ve tartım</li>
+                <li className="flex items-start gap-2"><span className="text-accent mt-0.5">✓</span> Profesyonel makinede boyuta göre kırma</li>
+                <li className="flex items-start gap-2"><span className="text-accent mt-0.5">✓</span> Hava akımıyla kabuk ve iç fındık ayrıştırma</li>
+                <li className="flex items-start gap-2"><span className="text-accent mt-0.5">✓</span> Endüstriyel fırında istenen kıvamda kavurma</li>
+                <li className="flex items-start gap-2"><span className="text-accent mt-0.5">✓</span> Vakumlu paketleme (1 kg'lık poşetler)</li>
+                <li className="flex items-start gap-2"><span className="text-accent mt-0.5">✓</span> Son kontrol ve hijyenik teslimat</li>
+              </ul>
+            </div>
+            <div className="p-6 rounded-2xl bg-paper-2 border border-rule">
+              <h3 className="font-bold text-ink mb-3 text-lg">💡 Neden Tek Elden?</h3>
+              <ul className="space-y-3 text-sm text-ink-2">
+                <li className="flex items-start gap-2"><span className="text-accent font-bold">01</span> Farklı yerlere taşıma zahmeti ortadan kalkar</li>
+                <li className="flex items-start gap-2"><span className="text-accent font-bold">02</span> İşlemler arası bekleme süresi olmaz</li>
+                <li className="flex items-start gap-2"><span className="text-accent font-bold">03</span> Toplu işlem avantajıyla daha uygun maliyet</li>
+                <li className="flex items-start gap-2"><span className="text-accent font-bold">04</span> Tüm süreç tek elden takip edilir, fire minimize edilir</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div className="text-center mt-8">
+          <p className="text-xs text-ink-3">
+            Hendek fındık kırma kavurma vakumlu paketleme • Profesyonel ekipman • %98 hasarsız iç fındık • Aynı gün teslimat
+          </p>
         </div>
       </div>
     </section>
@@ -475,6 +582,9 @@ const FindikIslemePage: React.FC<FindikIslemePageProps> = ({ contactContent, seo
         </div>
         <p className="text-white/40 text-sm mt-8">
           Veya doğrudan arayın: <a href={`tel:${contactContent.phone}`} className="text-white/80 hover:text-white underline">{contactContent.phone}</a>
+        </p>
+        <p className="text-white/30 text-xs mt-4">
+          Fındık kırma hizmetimiz hakkında daha fazla bilgi için: <a href="https://hendekfindikkirma.com" target="_blank" rel="noopener noreferrer" className="text-white/50 hover:text-white underline">hendekfindikkirma.com</a>
         </p>
       </div>
     </section>

@@ -40,6 +40,7 @@ const AboutPage: React.FC<AboutPageProps> = ({ content, seoSettings }) => {
       {
         "@context": "https://schema.org",
         "@type": "Organization",
+            "@id": "https://akaydintarim.com.tr/#organization",
         "name": "Akaydın Tarım",
         "description": "Hendek, Sakarya'da fındık üretimi, fındık kırma & kavurma, organomineral gübre ve tarımsal danışmanlık",
         "url": "https://akaydintarim.com.tr",
@@ -68,8 +69,8 @@ const AboutPage: React.FC<AboutPageProps> = ({ content, seoSettings }) => {
             pageKeywords="hakkımızda, akaydın tarım, fındık üretimi, hendek, sakarya, organomineral gübre, fındık kırma, tarımsal danışmanlık, misyon, vizyon"
             structuredData={aboutSchemas}
             breadcrumbItems={[
-                { name: 'Ana Sayfa', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/' },
-                { name: 'Hakkımızda', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/hakkimizda' }
+                { name: 'Ana Sayfa', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com.tr') + '/' },
+                { name: 'Hakkımızda', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com.tr') + '/hakkimizda' }
             ]} />
 
         {/* ═══════════ HERO — sadece başlık ═══════════ */}

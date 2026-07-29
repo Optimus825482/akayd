@@ -85,7 +85,7 @@ const ContactPageManagement: React.FC<ContactPageManagementProps> = ({
                                 value={contactForm.website || ''}
                                 onChange={(e) => setContactForm({ ...contactForm, website: e.target.value })}
                                 className="border border-gray-300 rounded-lg px-4 py-3 w-full focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                placeholder="https://www.akaydintarim.com"
+                                placeholder="https://www.akaydintarim.com.tr"
                             />
                         </div>
                     </div>
@@ -134,7 +134,7 @@ const ContactPageManagement: React.FC<ContactPageManagementProps> = ({
                             value={contactForm.email}
                             onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
                             className="border border-gray-300 rounded-lg px-4 py-3 w-full focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                            placeholder="info@akaydintarim.com"
+                            placeholder="info@akaydintarim.com.tr"
                             required
                         />
                     </div>

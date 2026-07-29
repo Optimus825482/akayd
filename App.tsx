@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import type { Service, Product, BlogPost, AboutPageContent, ContactPageContent, HeroContent, SEOSettings } from './types';
 import { INITIAL_SERVICES, INITIAL_PRODUCTS, INITIAL_BLOG_POSTS, INITIAL_ABOUT_CONTENT, INITIAL_CONTACT_CONTENT } from './constants'; // constants.tsx
@@ -174,7 +174,7 @@ function App(): React.ReactNode {
 
   return (
     <HelmetProvider>
-      <HashRouter>
+      <BrowserRouter>
           <Routes>
             {/* Admin Route - No Header/Footer */}
             <Route
@@ -220,7 +220,7 @@ function App(): React.ReactNode {
               </div>
             } />
         </Routes>
-      </HashRouter>
+      </BrowserRouter>
     </HelmetProvider>
   );
 }

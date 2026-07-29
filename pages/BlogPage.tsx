@@ -15,20 +15,21 @@ const BlogPage: React.FC<BlogPageProps> = ({ blogPosts, seoSettings }) => {
 
     return (<>
         <SEOHead seoSettings={seoSettings||undefined} pageSEO={pageSEO||undefined}
-            pageTitle="Blog" pageDescription="Tarım ve fındık üretimi hakkında güncel yazılar."
-            pageKeywords="blog, tarım, fındık"
+            pageTitle="Fındık ve Tarım Blogu | Hendek Fındık Rehberi | Akaydın Tarım"
+            pageDescription="Hendek fındık üretimi, fındık kırma, kavurma ve paketleme hakkında uzman ipuçları, güncel tarım yazıları ve rehberler. Hendek/Sakarya tarım blogu."
+            pageKeywords="fındık blog, hendek fındık, hendek fındık kırma, fındık kavurma, fındık kırma kavurma vakumlu paketleme, tarım blogu, hendek fındık kavurma paketleme, fındık üretimi, hendek tarım, sakarya fındık, fındık rehberi, vakumlu paketleme"
             breadcrumbItems={[
-                { name: 'Ana Sayfa', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/' },
-                { name: 'Blog', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/blog' }
+                { name: 'Ana Sayfa', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com.tr') + '/' },
+                { name: 'Blog', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com.tr') + '/blog' }
             ]} />
 
         {/* Hero */}
         <section className="relative py-20 md:py-28 overflow-hidden" style={{background:'linear-gradient(135deg, #0f1f10 0%, #142218 60%, #1a2a1a 100%)'}}>
             <div className="absolute inset-0 opacity-[0.02]" style={{backgroundImage:'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")'}}></div>
             <div className="container relative z-10">
-                <p className="text-accent-bg/60 text-xs font-semibold tracking-[0.2em] uppercase mb-4">Blog</p>
-                <h1 className="text-4xl md:text-6xl font-[family-name:var(--font-display)] font-bold text-white mb-4">Bilgi ve deneyim paylaşımları</h1>
-                <p className="text-lg text-white/60 max-w-xl">Fındık ve tarım dünyasındaki son gelişmeler, ipuçları ve uzman görüşleri.</p>
+                <p className="text-accent-bg/60 text-xs font-semibold tracking-[0.2em] uppercase mb-4">Hendek Fındık Rehberi</p>
+                <h1 className="text-4xl md:text-6xl font-[family-name:var(--font-display)] font-bold text-white mb-4">Fındık ve Tarım Blogu</h1>
+                <p className="text-lg text-white/60 max-w-xl">Hendek fındık üretimi, fındık kırma kavurma, vakumlu paketleme ve tarım dünyasındaki son gelişmeler, ipuçları ve uzman görüşleri.</p>
             </div>
         </section>
 
