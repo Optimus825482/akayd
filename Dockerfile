@@ -1,20 +1,22 @@
+# ============================================
+# Akaydın Tarım — Backend Dockerfile
+# - Node 20 Alpine
+# - Vite build (dist/)
+# - Express API (server/index.js)
+# - Vite SPA serve (production modda)
+# ============================================
+
 FROM node:20-alpine
-
-# ---- PostgreSQL kur ----
-RUN apk add --no-cache postgresql16 postgresql16-client tini
-
-# ---- Dizinler ----
-RUN mkdir -p /run/postgresql && chown node:node /run/postgresql \
- && mkdir -p /app /app/data /app/uploads /app/public \
- && chown -R node:node /app /run/postgresql
-
+RUN apk add --no-cache tini
 WORKDIR /app
 
-# ---- Node deps (sadece production runtime) ----
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev 2>/dev/null || npm install --omit=dev
 
-# ---- Vite build (devDeps ile, ayrı layer) ----
+# Dev deps kur (sadece build aşaması için)
+RUN npm install --include=dev 2>/dev/null || true
+
+# Frontend build
 COPY tsconfig.json vite.config.ts tailwind.config.js postcss.config.js index.html vite-env.d.ts ./
 COPY index.tsx App.tsx constants.tsx types.ts ./
 COPY components/ ./components/
@@ -23,15 +25,15 @@ COPY hooks/ ./hooks/
 COPY services/ ./services/
 COPY public/ ./public/
 COPY index.css ./
-RUN npm install --include=dev 2>/dev/null && npx vite build && npm prune --omit=dev
+RUN npx vite build && npm prune --omit=dev
 
-# ---- Server + init SQL + startup ----
+# Backend server
 COPY server/ ./server/
-COPY docker/init/ ./docker/init/
-COPY docker/start.sh /start.sh
-RUN chmod +x /start.sh
+
+# uploads + public
+RUN mkdir -p uploads public && chown -R node:node /app
+USER node
 
 EXPOSE 3003
-VOLUME ["/app/data", "/app/uploads", "/app/public"]
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["/start.sh"]
+CMD ["node", "server/index.js"]
