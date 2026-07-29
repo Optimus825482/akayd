@@ -16,27 +16,6 @@ Protein ve sağlıklı yağlar sayesinde uzun süreli enerji sağlar.
 🛡️ Antioksidan Deposu
 C vitamini ve E vitamini ile bağışıklık sistemini güçlendirir.
 Günde 30 gram (yaklaşık 20-25 adet) fındık tüketimi önerilmektedir. Akaydın Tarım''ın taze ve kaliteli fındıkları ile sağlıklı yaşamınıza katkıda bulunabilirsiniz.', 'Erkan ERDEM', '2025-10-31', '/akaydin-tarim/uploads/blog/1761921867_d9ff2bef17513d70.jpg', 'Fındık, protein, lif ve sağlıklı yağlar açısından zengin bir besin kaynağıdır', 1, NULL, NULL, NULL, '2025-10-31 17:44:12', '2025-10-31 17:44:58');
-INSERT INTO blog_posts (id, title, summary, content, author, date, image_url, excerpt, views, seo_title, seo_description, seo_keywords, created_at, updated_at) VALUES (13, '🌿 Toprağa Saygı, Geleceğe Yatırım: Organomineral Gübre ile Verimli Bir Yolculuk', NULL, 'Ben Aydın Ak.
-Yıllardır fındık üretimiyle iç içe bir yaşam sürdürüyorum. Çocukluğumdan bu yana toprağın kokusunu, mevsimlerin değişimini ve her fındık dalının bize ne anlattığını öğrenerek büyüdüm. Bu topraklar, bana hem ekmeğimi hem de emeğin kıymetini öğretti.
-Zamanla gördüm ki, verimli bir tarımın sırrı yalnızca iyi tohumda ya da güçlü bir bitkide değil; sağlıklı toprakta yatıyor.
-Toprak yorgunsa, su dengesini kaybetmişse, organik yapısı zayıflamışsa… hangi tohumu atarsanız atın, istediğiniz sonucu alamazsınız. İşte bu noktada organomineral gübre devreye giriyor.
-Organomineral gübre, hem organik hem de mineral içeriğiyle toprağa çift yönlü bir destek sağlıyor.
-Organik kısmı toprağın canlılığını yeniden kazandırıyor; mineral kısmı ise bitkinin hemen alabileceği besinleri veriyor. Yani hem kısa vadede etki sağlıyor, hem de uzun vadede toprağın doğal yapısını koruyor.
-Benim için bu ürünlerin en önemli yanı, doğaya zarar vermeden verimi artırmak.
-Eskiden kimyasal gübrelerle sadece bir sezonluk verim hedeflenirdi. Fakat biz biliyoruz ki, toprak sadece bugünün değil, yarının da rızkını taşır.
-O yüzden organomineral gübre kullanmak, toprağa yapılan bir yatırım demektir.
-AKAYDIN TARIM olarak yıllardır yaptığımız saha çalışmalarında, bu gübrelerin nasıl fark yarattığını birebir gözlemledim.
-Toprak daha kolay işleniyor, bitkiler daha güçlü büyüyor ve fındığın kalitesi gözle görülür şekilde artıyor. En güzeli de, çiftçimiz artık hasat sonrası toprağını değil, geleceğini koruduğunu biliyor.
-Bizim vizyonumuz basit ama anlamlı:
-Doğaya dost, insana faydalı bir üretim modeli.
-Bu yüzden her üreticiye gönül rahatlığıyla diyorum ki:
-👉 Toprağınıza yatırım yapın.
-👉 Organomineral gübreyle toprağınızın gücünü yeniden keşfedin.
-👉 Çünkü verimli toprak, sürdürülebilir geleceğin ta kendisidir.
-Toprağınız bereketli, ürününüz daim olsun.
-🌱
-Aydın Ak
-Kurucu – AKAYDIN TARIM', 'Aydın AK', '2025-10-31', '/akaydin-tarim/uploads/blog/1761929108_a5dc5cb104a9ccfb.jpg', 'Zamanla gördüm ki, verimli bir tarımın sırrı yalnızca iyi tohumda ya da güçlü bir bitkide değil; sağlıklı toprakta yatıyor.', 1, NULL, NULL, NULL, '2025-10-31 19:45:08', '2025-10-31 19:45:31');
 INSERT INTO blog_posts (id, title, summary, content, author, date, image_url, excerpt, views, seo_title, seo_description, seo_keywords, created_at, updated_at) VALUES (14, '✂️ Fındık Üretiminde Budamanın Önemi', NULL, 'Ben Aydın Ak.
 Yıllarımı fındık üretimine verdim, bu süreçte toprağın, ağacın ve emeğin dilini öğrenmeye çalıştım. Şunu açık yüreklilikle söyleyebilirim:
 Bir fındık bahçesinin verimi, budama bilgisiyle doğru orantılıdır.
@@ -62,155 +41,6 @@ Doğru zamanda, doğru yöntemle yapılan her budama, bir sonraki sezonun bereke
 Ve biz AKAYDIN TARIM olarak, bu bilinci her geçen gün daha fazla üreticiyle paylaşmanın gururunu yaşıyoruz.
 ✂️ Unutmayın:
 Verimli bir fındık bahçesi, doğru budamayla başlar.', 'Aydın Ak', '2025-10-31', '/akaydin-tarim/uploads/blog/1761930738_5375e3ed99180b08.jpg', 'Bir fındık bahçesinin verimi, budama bilgisiyle doğru orantılıdır.', 0, NULL, NULL, NULL, '2025-10-31 20:12:18', '2025-10-31 20:12:18');
-INSERT INTO blog_posts (id, title, summary, content, author, date, image_url, excerpt, views, seo_title, seo_description, seo_keywords, created_at, updated_at) VALUES (15, 'Fındık İşleme Nedir? Detaylı Rehber', NULL, '<h2>???? Fındık İşleme Nedir?</h2>
-    <p>Fındık işleme, fındığın daldan toplanmasından sonra tüketime hazır hale getirilmesi için yapılan tüm işlemleri kapsar. Bu süreç, fındığın kalitesini, raf ömrünü ve lezzetini doğrudan etkiler.</p>
-    
-    <h3>???? Fındık İşleme Aşamaları</h3>
-    
-    <h4>1️⃣ Hasat ve Toplama</h4>
-    <p>Fındık hasadı genellikle <strong>Ağustos-Eylül</strong> aylarında yapılır. Fındıklar yerden toplanır ve çuval ya da naylon çuvallarda taşınır.</p>
-    <ul>
-        <li><strong>Doğru Zaman:</strong> Fındık kabukları kahverengileştiğinde</li>
-        <li><strong>Yöntem:</strong> Manuel veya makine ile toplama</li>
-        <li><strong>Depolama:</strong> Havadar ve kuru ortamda</li>
-    </ul>
-    
-    <h4>2️⃣ Temizleme</h4>
-    <p>Toplanan fındıklar yaprak, dal, toprak gibi yabancı maddelerden arındırılır.</p>
-    <ul>
-        <li>Fındık temizleme makinesi kullanılır</li>
-        <li>Hava akımı ile hafif maddeler ayrılır</li>
-        <li>Elek sistemleriyle boyutlandırma yapılır</li>
-    </ul>
-    
-    <h4>3️⃣ Kurutma</h4>
-    <p>Fındıkların nem oranı <strong>%6-8</strong> seviyesine indirilir. Aksi halde küflenme riski yüksektir.</p>
-    <ul>
-        <li><strong>Güneşte Kurutma:</strong> Geleneksel yöntem (7-10 gün)</li>
-        <li><strong>Fırında Kurutma:</strong> Hızlı ve kontrollü (2-3 gün)</li>
-        <li><strong>Modern Kurutucular:</strong> Endüstriyel tesislerde kullanılır</li>
-    </ul>
-    
-    <h4>4️⃣ Fındık Kırma</h4>
-    <p>Fındığın sert kabuktan ayrılması işlemidir. <strong>Profesyonel fındık kırma makineleri</strong> kullanılarak hasarsız şekilde yapılır.</p>
-    <blockquote>
-        ???? <strong>Önemli Not:</strong> Manuel kırma yönteminde hasar oranı %15-20 olabilirken, makineli kırmada bu oran %1''in altındadır!
-    </blockquote>
-    
-    <h4>5️⃣ Kabuk Ayrımı</h4>
-    <p>Kırılan fındıklardan kabuklar tamamen ayrılır. Hava akımı veya elek sistemleri kullanılır.</p>
-    
-    <h4>6️⃣ İç Zar Soyma (Opsiyonel)</h4>
-    <p>Bazı kullanım alanları için fındığın iç zarının (kahverengi ince tabaka) soyulması gerekir.</p>
-    <ul>
-        <li>Kavurma işlemi sonrası kolaylaşır</li>
-        <li>Manuel veya makine ile yapılır</li>
-        <li>Çikolata ve pasta endüstrisi için gereklidir</li>
-    </ul>
-    
-    <h4>7️⃣ Kavurma (Opsiyonel)</h4>
-    <p>Fındıkların aromasını geliştirmek ve raf ömrünü uzatmak için <strong>150-180°C</strong> sıcaklıkta kavrulur.</p>
-    <ul>
-        <li><strong>Hafif Kavurma:</strong> 10-12 dakika (açık renk)</li>
-        <li><strong>Orta Kavurma:</strong> 15-18 dakika (altın sarısı)</li>
-        <li><strong>Koyu Kavurma:</strong> 20-25 dakika (kahverengi)</li>
-    </ul>
-    
-    <h4>8️⃣ Sınıflandırma</h4>
-    <p>Fındıklar kalite ve boyutlarına göre sınıflandırılır:</p>
-    <ul>
-        <li><strong>Giresun Kalite (13-15 mm):</strong> En kaliteli</li>
-        <li><strong>Levant Kalite (11-13 mm):</strong> Orta kalite</li>
-        <li><strong>Küçük Boy (9-11 mm):</strong> Ezme ve pasta için</li>
-    </ul>
-    
-    <h4>9️⃣ Paketleme</h4>
-    <p>Fındıklar tüketime hazır hale getirilerek paketlenir:</p>
-    <ul>
-        <li><strong>Naylon Torba:</strong> Evsel kullanım (raf ömrü 6 ay)</li>
-        <li><strong>Vakumlu Paket:</strong> Uzun süre saklama (raf ömrü 2 yıl)</li>
-        <li><strong>Kavanoz:</strong> Perakende satış için</li>
-    </ul>
-    
-    <h3>⚠️ Fındık İşlemede Dikkat Edilmesi Gerekenler</h3>
-    
-    <div style="background: #fef3c7; padding: 15px; border-left: 4px solid #f59e0b; margin: 20px 0;">
-        <strong>1. Nem Kontrolü:</strong> Fındık nem oranı %8''in üzerinde olmamalı. Aksi halde küflenme ve aflatoksin riski vardır.
-    </div>
-    
-    <div style="background: #dbeafe; padding: 15px; border-left: 4px solid #3b82f6; margin: 20px 0;">
-        <strong>2. Hijyen:</strong> Tüm işlem aşamalarında hijyenik koşullar sağlanmalı. Makine ve ekipmanlar düzenli temizlenmelidir.
-    </div>
-    
-    <div style="background: #dcfce7; padding: 15px; border-left: 4px solid #22c55e; margin: 20px 0;">
-        <strong>3. Doğru Depolama:</strong> Fındıklar serin (15-20°C), kuru (%50-60 nem) ve karanlık ortamda saklanmalıdır.
-    </div>
-    
-    <div style="background: #fce7f3; padding: 15px; border-left: 4px solid #ec4899; margin: 20px 0;">
-        <strong>4. Kalite Kontrol:</strong> Her aşamada çürük, hasarlı ve boş fındıklar ayıklanmalıdır.
-    </div>
-    
-    <h3>???? Profesyonel Fındık İşleme Tesisi mi, Yoksa Evde mi?</h3>
-    
-    <table border="1" cellpadding="10" style="width:100%; border-collapse: collapse; margin: 20px 0;">
-        <tr style="background: #f3f4f6;">
-            <th>Özellik</th>
-            <th>Evde İşleme</th>
-            <th>Profesyonel Tesis</th>
-        </tr>
-        <tr>
-            <td><strong>Kapasite</strong></td>
-            <td>5-10 kg/gün</td>
-            <td>200-500 kg/saat</td>
-        </tr>
-        <tr>
-            <td><strong>Hasar Oranı</strong></td>
-            <td>%15-20</td>
-            <td>%1''in altı</td>
-        </tr>
-        <tr>
-            <td><strong>Temizlik</strong></td>
-            <td>%80-85</td>
-            <td>%99,5</td>
-        </tr>
-        <tr>
-            <td><strong>İşçilik</strong></td>
-            <td>Yoğun</td>
-            <td>Otomatik</td>
-        </tr>
-        <tr>
-            <td><strong>Hijyen</strong></td>
-            <td>Orta</td>
-            <td>Yüksek</td>
-        </tr>
-        <tr>
-            <td><strong>Maliyet</strong></td>
-            <td>Düşük (zaman kaybı yüksek)</td>
-            <td>Makul (toplu işlem)</td>
-        </tr>
-    </table>
-    
-    <h3>???? Hendek''te Fındık İşleme</h3>
-    <p><strong>Sakarya Hendek</strong> bölgesi, Karadeniz''e yakınlığı ve uygun iklim koşulları sayesinde önemli bir fındık üretim bölgesidir.</p>
-    <ul>
-        <li>Yıllık 5000+ ton fındık üretimi</li>
-        <li>Modern fındık işleme tesisleri</li>
-        <li>Ankara, İstanbul ve Düzce''ye yakınlık avantajı</li>
-        <li>Profesyonel fındık kırma ve kavurma hizmetleri</li>
-    </ul>
-    
-    <blockquote style="background: #f0fdf4; padding: 20px; border-left: 5px solid #22c55e; margin: 20px 0;">
-        ???? <strong>Akaydın Tarım Farkı:</strong> Hendek''te ilk ve tek profesyonel fındık işleme tesisi! 
-        7 aşamalı hijyenik işlem, son teknoloji makineler, vakumlu paketleme seçeneği. 
-        <a href="/#/hendek-findik-kirma">Fındıklarınızı bize emanet edin!</a>
-    </blockquote>
-    
-    <h3>???? İlgili Konular</h3>
-    <ul>
-        <li><a href="/#/blog">Fındık Kırma Makineleri Nasıl Çalışır?</a></li>
-        <li><a href="/#/blog">Hendek Bölgesinde Fındık İşleme Avantajları</a></li>
-        <li><a href="/#/hizmetlerimiz">Profesyonel Fındık Kırma Hizmeti</a></li>
-    </ul>', 'Aydın Ak', '2025-01-15', NULL, 'Fındık işleme süreci nedir, nasıl yapılır? Hasat, kurutma, kırma, kavurma ve paketleme aşamalarıyla detaylı fındık işleme rehberi. Hendek''te profesyonel fındık işleme hizmetleri.', 0, NULL, NULL, NULL, '2025-10-31 23:45:38', '2025-10-31 23:45:38');
 INSERT INTO blog_posts (id, title, summary, content, author, date, image_url, excerpt, views, seo_title, seo_description, seo_keywords, created_at, updated_at) VALUES (16, 'Fındık Kırma Makineleri Nasıl Çalışır? Teknik Rehber', NULL, '<h2>⚙️ Fındık Kırma Makineleri Nasıl Çalışır?</h2>
     <p>Fındık kırma makineleri, fındığın sert kabuktan hasarsız şekilde ayrılmasını sağlayan özel tasarlanmış endüstriyel ekipmanlardır. Modern fındık kırma teknolojisi, geleneksel yöntemlere göre <strong>%95 daha verimli</strong> ve <strong>%90 daha hızlı</strong> çalışır.</p>
     
@@ -672,6 +502,177 @@ INSERT INTO blog_posts (id, title, summary, content, author, date, image_url, ex
         <li><a href="/#/blog">Fındık İşleme Nedir? Detaylı Rehber</a></li>
         <li><a href="/#/blog">Fındık Kırma Makineleri Nasıl Çalışır?</a></li>
     </ul>', 'Aydın Ak', '2025-01-25', NULL, 'Hendek bölgesinde fındık işleme avantajları nelerdir? Coğrafi konum, iklim, lojistik ve ekonomik avantajlar. Sakarya Hendek''te fındık sektörü analizi.', 0, NULL, NULL, NULL, '2025-10-31 23:45:38', '2025-10-31 23:45:38');
+INSERT INTO blog_posts (id, title, summary, content, author, date, image_url, excerpt, views, seo_title, seo_description, seo_keywords, created_at, updated_at) VALUES (15, 'Fındık İşleme Nedir? Detaylı Rehber', NULL, '<h2>???? Fındık İşleme Nedir?</h2>
+    <p>Fındık işleme, fındığın daldan toplanmasından sonra tüketime hazır hale getirilmesi için yapılan tüm işlemleri kapsar. Bu süreç, fındığın kalitesini, raf ömrünü ve lezzetini doğrudan etkiler.</p>
+    
+    <h3>???? Fındık İşleme Aşamaları</h3>
+    
+    <h4>1️⃣ Hasat ve Toplama</h4>
+    <p>Fındık hasadı genellikle <strong>Ağustos-Eylül</strong> aylarında yapılır. Fındıklar yerden toplanır ve çuval ya da naylon çuvallarda taşınır.</p>
+    <ul>
+        <li><strong>Doğru Zaman:</strong> Fındık kabukları kahverengileştiğinde</li>
+        <li><strong>Yöntem:</strong> Manuel veya makine ile toplama</li>
+        <li><strong>Depolama:</strong> Havadar ve kuru ortamda</li>
+    </ul>
+    
+    <h4>2️⃣ Temizleme</h4>
+    <p>Toplanan fındıklar yaprak, dal, toprak gibi yabancı maddelerden arındırılır.</p>
+    <ul>
+        <li>Fındık temizleme makinesi kullanılır</li>
+        <li>Hava akımı ile hafif maddeler ayrılır</li>
+        <li>Elek sistemleriyle boyutlandırma yapılır</li>
+    </ul>
+    
+    <h4>3️⃣ Kurutma</h4>
+    <p>Fındıkların nem oranı <strong>%6-8</strong> seviyesine indirilir. Aksi halde küflenme riski yüksektir.</p>
+    <ul>
+        <li><strong>Güneşte Kurutma:</strong> Geleneksel yöntem (7-10 gün)</li>
+        <li><strong>Fırında Kurutma:</strong> Hızlı ve kontrollü (2-3 gün)</li>
+        <li><strong>Modern Kurutucular:</strong> Endüstriyel tesislerde kullanılır</li>
+    </ul>
+    
+    <h4>4️⃣ Fındık Kırma</h4>
+    <p>Fındığın sert kabuktan ayrılması işlemidir. <strong>Profesyonel fındık kırma makineleri</strong> kullanılarak hasarsız şekilde yapılır.</p>
+    <blockquote>
+        ???? <strong>Önemli Not:</strong> Manuel kırma yönteminde hasar oranı %15-20 olabilirken, makineli kırmada bu oran %1''in altındadır!
+    </blockquote>
+    
+    <h4>5️⃣ Kabuk Ayrımı</h4>
+    <p>Kırılan fındıklardan kabuklar tamamen ayrılır. Hava akımı veya elek sistemleri kullanılır.</p>
+    
+    <h4>6️⃣ İç Zar Soyma (Opsiyonel)</h4>
+    <p>Bazı kullanım alanları için fındığın iç zarının (kahverengi ince tabaka) soyulması gerekir.</p>
+    <ul>
+        <li>Kavurma işlemi sonrası kolaylaşır</li>
+        <li>Manuel veya makine ile yapılır</li>
+        <li>Çikolata ve pasta endüstrisi için gereklidir</li>
+    </ul>
+    
+    <h4>7️⃣ Kavurma (Opsiyonel)</h4>
+    <p>Fındıkların aromasını geliştirmek ve raf ömrünü uzatmak için <strong>150-180°C</strong> sıcaklıkta kavrulur.</p>
+    <ul>
+        <li><strong>Hafif Kavurma:</strong> 10-12 dakika (açık renk)</li>
+        <li><strong>Orta Kavurma:</strong> 15-18 dakika (altın sarısı)</li>
+        <li><strong>Koyu Kavurma:</strong> 20-25 dakika (kahverengi)</li>
+    </ul>
+    
+    <h4>8️⃣ Sınıflandırma</h4>
+    <p>Fındıklar kalite ve boyutlarına göre sınıflandırılır:</p>
+    <ul>
+        <li><strong>Giresun Kalite (13-15 mm):</strong> En kaliteli</li>
+        <li><strong>Levant Kalite (11-13 mm):</strong> Orta kalite</li>
+        <li><strong>Küçük Boy (9-11 mm):</strong> Ezme ve pasta için</li>
+    </ul>
+    
+    <h4>9️⃣ Paketleme</h4>
+    <p>Fındıklar tüketime hazır hale getirilerek paketlenir:</p>
+    <ul>
+        <li><strong>Naylon Torba:</strong> Evsel kullanım (raf ömrü 6 ay)</li>
+        <li><strong>Vakumlu Paket:</strong> Uzun süre saklama (raf ömrü 2 yıl)</li>
+        <li><strong>Kavanoz:</strong> Perakende satış için</li>
+    </ul>
+    
+    <h3>⚠️ Fındık İşlemede Dikkat Edilmesi Gerekenler</h3>
+    
+    <div style="background: #fef3c7; padding: 15px; border-left: 4px solid #f59e0b; margin: 20px 0;">
+        <strong>1. Nem Kontrolü:</strong> Fındık nem oranı %8''in üzerinde olmamalı. Aksi halde küflenme ve aflatoksin riski vardır.
+    </div>
+    
+    <div style="background: #dbeafe; padding: 15px; border-left: 4px solid #3b82f6; margin: 20px 0;">
+        <strong>2. Hijyen:</strong> Tüm işlem aşamalarında hijyenik koşullar sağlanmalı. Makine ve ekipmanlar düzenli temizlenmelidir.
+    </div>
+    
+    <div style="background: #dcfce7; padding: 15px; border-left: 4px solid #22c55e; margin: 20px 0;">
+        <strong>3. Doğru Depolama:</strong> Fındıklar serin (15-20°C), kuru (%50-60 nem) ve karanlık ortamda saklanmalıdır.
+    </div>
+    
+    <div style="background: #fce7f3; padding: 15px; border-left: 4px solid #ec4899; margin: 20px 0;">
+        <strong>4. Kalite Kontrol:</strong> Her aşamada çürük, hasarlı ve boş fındıklar ayıklanmalıdır.
+    </div>
+    
+    <h3>???? Profesyonel Fındık İşleme Tesisi mi, Yoksa Evde mi?</h3>
+    
+    <table border="1" cellpadding="10" style="width:100%; border-collapse: collapse; margin: 20px 0;">
+        <tr style="background: #f3f4f6;">
+            <th>Özellik</th>
+            <th>Evde İşleme</th>
+            <th>Profesyonel Tesis</th>
+        </tr>
+        <tr>
+            <td><strong>Kapasite</strong></td>
+            <td>5-10 kg/gün</td>
+            <td>200-500 kg/saat</td>
+        </tr>
+        <tr>
+            <td><strong>Hasar Oranı</strong></td>
+            <td>%15-20</td>
+            <td>%1''in altı</td>
+        </tr>
+        <tr>
+            <td><strong>Temizlik</strong></td>
+            <td>%80-85</td>
+            <td>%99,5</td>
+        </tr>
+        <tr>
+            <td><strong>İşçilik</strong></td>
+            <td>Yoğun</td>
+            <td>Otomatik</td>
+        </tr>
+        <tr>
+            <td><strong>Hijyen</strong></td>
+            <td>Orta</td>
+            <td>Yüksek</td>
+        </tr>
+        <tr>
+            <td><strong>Maliyet</strong></td>
+            <td>Düşük (zaman kaybı yüksek)</td>
+            <td>Makul (toplu işlem)</td>
+        </tr>
+    </table>
+    
+    <h3>???? Hendek''te Fındık İşleme</h3>
+    <p><strong>Sakarya Hendek</strong> bölgesi, Karadeniz''e yakınlığı ve uygun iklim koşulları sayesinde önemli bir fındık üretim bölgesidir.</p>
+    <ul>
+        <li>Yıllık 5000+ ton fındık üretimi</li>
+        <li>Modern fındık işleme tesisleri</li>
+        <li>Ankara, İstanbul ve Düzce''ye yakınlık avantajı</li>
+        <li>Profesyonel fındık kırma ve kavurma hizmetleri</li>
+    </ul>
+    
+    <blockquote style="background: #f0fdf4; padding: 20px; border-left: 5px solid #22c55e; margin: 20px 0;">
+        ???? <strong>Akaydın Tarım Farkı:</strong> Hendek''te ilk ve tek profesyonel fındık işleme tesisi! 
+        7 aşamalı hijyenik işlem, son teknoloji makineler, vakumlu paketleme seçeneği. 
+        <a href="/#/hendek-findik-kirma">Fındıklarınızı bize emanet edin!</a>
+    </blockquote>
+    
+    <h3>???? İlgili Konular</h3>
+    <ul>
+        <li><a href="/#/blog">Fındık Kırma Makineleri Nasıl Çalışır?</a></li>
+        <li><a href="/#/blog">Hendek Bölgesinde Fındık İşleme Avantajları</a></li>
+        <li><a href="/#/hizmetlerimiz">Profesyonel Fındık Kırma Hizmeti</a></li>
+    </ul>', 'Aydın Ak', '2025-01-15', NULL, 'Fındık işleme süreci nedir, nasıl yapılır? Hasat, kurutma, kırma, kavurma ve paketleme aşamalarıyla detaylı fındık işleme rehberi. Hendek''te profesyonel fındık işleme hizmetleri.', 1, NULL, NULL, NULL, '2025-10-31 23:45:38', '2025-10-31 23:45:38');
+INSERT INTO blog_posts (id, title, summary, content, author, date, image_url, excerpt, views, seo_title, seo_description, seo_keywords, created_at, updated_at) VALUES (13, '🌿 Toprağa Saygı, Geleceğe Yatırım: Organomineral Gübre ile Verimli Bir Yolculuk', NULL, 'Ben Aydın Ak.
+Yıllardır fındık üretimiyle iç içe bir yaşam sürdürüyorum. Çocukluğumdan bu yana toprağın kokusunu, mevsimlerin değişimini ve her fındık dalının bize ne anlattığını öğrenerek büyüdüm. Bu topraklar, bana hem ekmeğimi hem de emeğin kıymetini öğretti.
+Zamanla gördüm ki, verimli bir tarımın sırrı yalnızca iyi tohumda ya da güçlü bir bitkide değil; sağlıklı toprakta yatıyor.
+Toprak yorgunsa, su dengesini kaybetmişse, organik yapısı zayıflamışsa… hangi tohumu atarsanız atın, istediğiniz sonucu alamazsınız. İşte bu noktada organomineral gübre devreye giriyor.
+Organomineral gübre, hem organik hem de mineral içeriğiyle toprağa çift yönlü bir destek sağlıyor.
+Organik kısmı toprağın canlılığını yeniden kazandırıyor; mineral kısmı ise bitkinin hemen alabileceği besinleri veriyor. Yani hem kısa vadede etki sağlıyor, hem de uzun vadede toprağın doğal yapısını koruyor.
+Benim için bu ürünlerin en önemli yanı, doğaya zarar vermeden verimi artırmak.
+Eskiden kimyasal gübrelerle sadece bir sezonluk verim hedeflenirdi. Fakat biz biliyoruz ki, toprak sadece bugünün değil, yarının da rızkını taşır.
+O yüzden organomineral gübre kullanmak, toprağa yapılan bir yatırım demektir.
+AKAYDIN TARIM olarak yıllardır yaptığımız saha çalışmalarında, bu gübrelerin nasıl fark yarattığını birebir gözlemledim.
+Toprak daha kolay işleniyor, bitkiler daha güçlü büyüyor ve fındığın kalitesi gözle görülür şekilde artıyor. En güzeli de, çiftçimiz artık hasat sonrası toprağını değil, geleceğini koruduğunu biliyor.
+Bizim vizyonumuz basit ama anlamlı:
+Doğaya dost, insana faydalı bir üretim modeli.
+Bu yüzden her üreticiye gönül rahatlığıyla diyorum ki:
+👉 Toprağınıza yatırım yapın.
+👉 Organomineral gübreyle toprağınızın gücünü yeniden keşfedin.
+👉 Çünkü verimli toprak, sürdürülebilir geleceğin ta kendisidir.
+Toprağınız bereketli, ürününüz daim olsun.
+🌱
+Aydın Ak
+Kurucu – AKAYDIN TARIM', 'Aydın AK', '2025-10-31', '/akaydin-tarim/uploads/blog/1761929108_a5dc5cb104a9ccfb.jpg', 'Zamanla gördüm ki, verimli bir tarımın sırrı yalnızca iyi tohumda ya da güçlü bir bitkide değil; sağlıklı toprakta yatıyor.', 2, NULL, NULL, NULL, '2025-10-31 19:45:08', '2025-10-31 19:45:31');
+INSERT INTO contact_page (id, company_name, address, phone, whatsapp_phone, email, facebook_url, instagram_url, twitter_url, linkedin_url, youtube_url, website, working_hours, map_embed, created_at, updated_at) VALUES (1, 'Akaydın Tarım', 'Başpınar, Remzi Efendi Cd. No:24 D:b, 54300 Hendek/Sakarya', '+90 (264) 123 45 67', '905397751517', 'info@akaydintarim.com', '', '', '', '', '', 'https://akaydintarim.com.tr', 'Pazartesi - Cumartesi: 08:00 - 18:00', '', '2026-07-29 16:58:42.936506', '2026-07-29 16:58:42.936506');
 INSERT INTO hazelnut_prices (id, price, daily_change, change_percentage, source, scraped_price, last_scraped_at, update_mode, scraping_enabled, notes, created_at, updated_at) VALUES (1, 283.75, 0.00, 0.00, 'scraped', 283.75, '2026-07-29 12:04:26.559582', 'automatic', 1, 'Otomatik scraping - 29.07.2026 12:04:26', '2026-07-29 12:04:26.559582', '2026-07-29 12:04:49.359065');
 INSERT INTO hazelnut_prices (id, price, daily_change, change_percentage, source, scraped_price, last_scraped_at, update_mode, scraping_enabled, notes, created_at, updated_at) VALUES (2, 283.75, 0.00, 0.00, 'scraped', 283.75, '2026-07-29 12:05:08.74133', 'automatic', 1, 'Otomatik scraping - 29.07.2026 12:05:08', '2026-07-29 12:05:08.74133', '2026-07-29 12:05:08.74133');
 INSERT INTO hero_content (id, title, subtitle, description, cta, background_gradient, background_image, is_active, order_index, created_at, updated_at) VALUES (8, 'Fındık Üretiminizi', 'Bir Sonraki Seviyeye Taşıyın', 'Modern tarım teknikleri ve uzman danışmanlık hizmetleriyle verimliliğinizi artırın.', 'Hemen Başlayın', 'from-green-600 via-green-700 to-blue-800', '/uploads/background_image-1785315368594-597197766.webp', 1, 1, '2025-10-31 14:03:03', '2025-10-31 16:03:06');

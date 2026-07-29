@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import type { Product, Notification } from '../../types';
 import { productsAPI } from '../../services/api';
 
-const STATIC_URL = import.meta.env.VITE_STATIC_URL || 'http://localhost:3003';
+const STATIC_URL = import.meta.env.VITE_STATIC_URL || (typeof window !== 'undefined' ? window.location.origin : '');
 const imgUrl = (path: string) => path ? `${STATIC_URL}${path}` : '';
 
 interface ProductManagementProps {
@@ -28,6 +28,7 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
         isFeatured: false
     });
     const [productImages, setProductImages] = useState<File[]>([]);
+    const [deletedImages, setDeletedImages] = useState<string[]>([]);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
 
     const handleProductSubmit = async (e: React.FormEvent) => {
@@ -63,6 +64,16 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
             productImages.forEach((file) => {
                 formData.append('images', file);
             });
+
+            // Silinen görselleri bildir
+            if (deletedImages.length > 0) {
+                formData.append('deletedImages', JSON.stringify(deletedImages));
+            }
+
+            // Yeni resim yoksa mevcutları koru
+            if (productImages.length === 0 && getCurrentImages().length > 0) {
+                formData.append('keepExistingImages', 'true');
+            }
 
             if (currentProduct) {
                 const updatedProduct = await productsAPI.update(Number(currentProduct.id), formData);
@@ -108,10 +119,17 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
         setIsProductModalOpen(true);
     };
 
+    const getCurrentImages = (): string[] => {
+        if (currentProduct?.images && currentProduct.images.length > 0) return currentProduct.images.filter(i => !deletedImages.includes(i));
+        if (currentProduct?.imageUrl && !deletedImages.includes(currentProduct.imageUrl)) return [currentProduct.imageUrl];
+        return [];
+    };
+
     const closeProductModal = () => {
         setCurrentProduct(null);
         setProductForm({ name: '', description: '', category: '', isFeatured: false });
         setProductImages([]);
+        setDeletedImages([]);
         setIsProductModalOpen(false);
     };
 
@@ -315,34 +333,58 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
                                 <div className="mt-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Mevcut Görseller:</label>
                                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                                        {currentProduct.images && currentProduct.images.length > 0 ? (
-                                            currentProduct.images.map((image, index) => (
-                                                <div key={index} className="relative group">
-                                                    <img
-                                                        src={image}
-                                                        alt={`${currentProduct.name} ${index + 1}`}
-                                                        className="w-full h-20 object-cover rounded-lg border border-gray-200"
-                                                    />
-                                                    {index === 0 && (
-                                                        <div className="absolute bottom-1 left-1 bg-blue-500 text-white text-xs px-2 py-1 rounded">
-                                                            Ana
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))
-                                        ) : currentProduct.imageUrl && (
-                                            <div className="relative group">
+                                        {getCurrentImages().map((image, index) => (
+                                            <div key={index} className="relative group">
                                                 <img
-                                                    src={currentProduct.imageUrl}
-                                                    alt={currentProduct.name}
-                                                    className="w-full h-20 object-cover rounded-lg border border-gray-200"
+                                                    src={image}
+                                                    alt={`${currentProduct.name} ${index + 1}`}
+                                                    className={`w-full h-20 object-cover rounded-lg border ${index === 0 ? 'border-blue-500 ring-1 ring-blue-300' : 'border-gray-200'}`}
                                                 />
-                                                <div className="absolute bottom-1 left-1 bg-blue-500 text-white text-xs px-2 py-1 rounded">
-                                                    Ana
+                                                {index === 0 && (
+                                                    <div className="absolute bottom-1 left-1 bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                                                        Ana
+                                                    </div>
+                                                )}
+                                                {/* Butonlar */}
+                                                <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    {index > 0 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                // Ana görsel yap: bu index'i 0'a taşı
+                                                                const imgs = [...getCurrentImages()];
+                                                                const moved = imgs.splice(index, 1)[0];
+                                                                imgs.unshift(moved);
+                                                                // State'i güncelle
+                                                                setDeletedImages(d => [...d, ...currentProduct.images!.filter(i => !imgs.includes(i))]);
+                                                            }}
+                                                            className="bg-yellow-500 text-white p-1.5 rounded-full hover:bg-yellow-600 transition-colors"
+                                                            title="Ana Görsel Yap"
+                                                        >
+                                                            ⭐
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setDeletedImages(d => [...d, image]);
+                                                        }}
+                                                        className="bg-red-500 text-white p-1.5 rounded-full hover:bg-red-600 transition-colors"
+                                                        title="Görseli Sil"
+                                                    >
+                                                        ✕
+                                                    </button>
                                                 </div>
                                             </div>
-                                        )}
+                                        ))}
                                     </div>
+                                    {deletedImages.length > 0 && (
+                                        <p className="text-xs text-amber-600 mt-2">
+                                            {deletedImages.length} görsel silinecek. Kaydet'e tıklayarak kalıcı hale getirin.
+                                        </p>
+                                    )}
                                 </div>
                             )}
 

@@ -12,10 +12,41 @@ const ContactPageManagement: React.FC<ContactPageManagementProps> = ({
     onUpdateContact,
     loading
 }) => {
-    const [contactForm, setContactForm] = React.useState<ContactPageContent>(contactContent);
+    const [contactForm, setContactForm] = React.useState<ContactPageContent>({
+        company_name: '',
+        address: '',
+        phone: '',
+        whatsapp_phone: '',
+        email: '',
+        website: '',
+        working_hours: '',
+        map_embed: '',
+        facebook_url: '',
+        instagram_url: '',
+        twitter_url: '',
+        linkedin_url: '',
+        youtube_url: ''
+    });
 
+    // DB'den gelen veriyi forma yansıt (mount + contactContent değişince)
     React.useEffect(() => {
-        setContactForm(contactContent);
+        if (contactContent) {
+            setContactForm({
+                company_name: contactContent.company_name || '',
+                address: contactContent.address || '',
+                phone: contactContent.phone || '',
+                whatsapp_phone: contactContent.whatsapp_phone || '',
+                email: contactContent.email || '',
+                website: contactContent.website || '',
+                working_hours: contactContent.working_hours || '',
+                map_embed: contactContent.map_embed || '',
+                facebook_url: contactContent.facebook_url || '',
+                instagram_url: contactContent.instagram_url || '',
+                twitter_url: contactContent.twitter_url || '',
+                linkedin_url: contactContent.linkedin_url || '',
+                youtube_url: contactContent.youtube_url || ''
+            });
+        }
     }, [contactContent]);
 
     const handleSubmit = async (e: React.FormEvent) => {

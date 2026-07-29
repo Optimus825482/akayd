@@ -1072,62 +1072,52 @@ app.put('/api/hazelnut-prices', adminAuth, async (req, res) => {
 // Web scraping endpoint for hazelnut prices
 app.post('/api/hazelnut-prices/scrape', adminAuth, async (req, res) => {
   try {
-    // Web scraping fonksiyonu
     const scrapePrices = async () => {
       try {
-        const response = await axios.get('https://www.findiktv.com/urunler/findik/sakarya/fiyati', {
+        // https://findikfiyati.org.tr/hendek-findik-fiyatlari
+        const response = await axios.get('https://findikfiyati.org.tr/hendek-findik-fiyatlari', {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml',
+            'Accept-Language': 'tr-TR,tr;q=0.9',
           },
-          timeout: 10000
+          timeout: 15000,
+          maxRedirects: 5,
         });
         
-        // Lazy import cheerio sadece gerektiğinde
         const { load } = await import('cheerio');
         const $ = load(response.data);
-        
-        // Fiyatları bul - sayfa yapısına göre
         let scrapedPrice = null;
-        
-        // İlk yöntem: Text içinde ₺ ile başlayan ikinci fiyatı bul
-        const bodyText = $('body').text();
-        const priceMatches = bodyText.match(/₺(\d{1,3}(?:,\d{2})?)/g);
-        
-        if (priceMatches && priceMatches.length >= 2) {
-          // İkinci fiyatı al
-          const priceString = priceMatches[1].replace('₺', '').replace(',', '.');
-          scrapedPrice = parseFloat(priceString);
-        }
-        
-        // İkinci yöntem: Spesifik CSS selector'ları dene
-        if (!scrapedPrice || isNaN(scrapedPrice)) {
-          const selectors = [
-            '.price-value',
-            '.fiyat',
-            '.price',
-            '[class*="fiyat"]',
-            '[class*="price"]'
-          ];
-          
-          for (const selector of selectors) {
-            const elements = $(selector);
-            if (elements.length >= 2) {
-              const secondElement = elements.eq(1);
-              const text = secondElement.text().trim();
-              const match = text.match(/(\d{1,3}(?:,\d{2})?)/);
-              if (match) {
-                scrapedPrice = parseFloat(match[1].replace(',', '.'));
-                break;
-              }
+
+        // Yöntem 1: schema.org Product/Offer structured data
+        const jsonLd = $('script[type="application/ld+json"]').html();
+        if (jsonLd) {
+          try {
+            const ld = JSON.parse(jsonLd);
+            if (ld.offers?.price) {
+              scrapedPrice = parseFloat(ld.offers.price);
+            } else if (ld.mainEntity?.offers?.price) {
+              scrapedPrice = parseFloat(ld.mainEntity.offers.price);
             }
+          } catch {}
+        }
+
+        // Yöntem 2: Sayfadaki "Price: TRY X" pattern'i
+        if (!scrapedPrice || isNaN(scrapedPrice)) {
+          const bodyText = $('body').text();
+          // "Price: TRY 148.5" veya "TRY 148.5" formatı
+          const priceMatch = bodyText.match(/TRY\s*(\d{2,4}(?:[.,]\d{1,2})?)/i);
+          if (priceMatch) {
+            scrapedPrice = parseFloat(priceMatch[1].replace(',', '.'));
           }
         }
-        
-        // Üçüncü yöntem: Tüm sayısal değerleri kontrol et
-        if (!scrapedPrice || isNaN(scrapedPrice) || scrapedPrice < 100 || scrapedPrice > 300) {
-          const allNumbers = bodyText.match(/\d{3},\d{2}/g);
-          if (allNumbers && allNumbers.length >= 2) {
-            scrapedPrice = parseFloat(allNumbers[1].replace(',', '.'));
+
+        // Yöntem 3: Meta description veya title içinde fiyat
+        if (!scrapedPrice || isNaN(scrapedPrice)) {
+          const metaDesc = $('meta[name="description"]').attr('content') || '';
+          const metaMatch = metaDesc.match(/(\d{2,4}(?:[.,]\d{1,2})?)\s*[₺TL]/);
+          if (metaMatch) {
+            scrapedPrice = parseFloat(metaMatch[1].replace(',', '.'));
           }
         }
         
@@ -1135,8 +1125,7 @@ app.post('/api/hazelnut-prices/scrape', adminAuth, async (req, res) => {
           throw new Error('Geçerli fiyat bulunamadı');
         }
         
-        // Makul bir fiyat aralığında olup olmadığını kontrol et
-        if (scrapedPrice < 100 || scrapedPrice > 300) {
+        if (scrapedPrice < 50 || scrapedPrice > 500) {
           throw new Error(`Geçersiz fiyat aralığı: ${scrapedPrice}`);
         }
         
@@ -1147,11 +1136,12 @@ app.post('/api/hazelnut-prices/scrape', adminAuth, async (req, res) => {
         let changePercentage = 0;
         
         if (current.rows.length > 0 && current.rows[0].price) {
-          dailyChange = scrapedPrice - current.rows[0].price;
-          changePercentage = (dailyChange / current.rows[0].price) * 100;
+          dailyChange = scrapedPrice - Number(current.rows[0].price);
+          changePercentage = Number(current.rows[0].price) > 0 
+            ? (dailyChange / Number(current.rows[0].price)) * 100 
+            : 0;
         }
         
-        // En son kaydın update_mode ve scraping_enabled ayarlarını al
         let updateMode = 'manual';
         let scrapingEnabled = 1;
         
@@ -1160,7 +1150,6 @@ app.post('/api/hazelnut-prices/scrape', adminAuth, async (req, res) => {
           scrapingEnabled = toSmallInt(current.rows[0].scraping_enabled);
         }
         
-        // Scraped price'ı yeni kayıt olarak ekle
         const result = await db.query(
           'INSERT INTO hazelnut_prices (price, daily_change, change_percentage, source, scraped_price, last_scraped_at, update_mode, scraping_enabled, notes) VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, $6, $7, $8) RETURNING id',
           [scrapedPrice, dailyChange, changePercentage, 'scraped', scrapedPrice, updateMode, scrapingEnabled, `Otomatik scraping - ${new Date().toLocaleString('tr-TR')}`]
@@ -1227,28 +1216,38 @@ const autoScrapeJob = cron.schedule('0 */4 * * *', async () => {
     
     if (settings.rows.length > 0 && settings.rows[0].scraping_enabled && settings.rows[0].update_mode === 'automatic') {
       // Scraping yap
-      const response = await axios.get('https://www.findiktv.com/urunler/findik/sakarya/fiyati', {
+      const response = await axios.get('https://findikfiyati.org.tr/hendek-findik-fiyatlari', {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml',
+          'Accept-Language': 'tr-TR,tr;q=0.9',
         },
-        timeout: 10000
+        timeout: 15000
       });
       
-      // Lazy import cheerio sadece gerektiğinde
+      // Fiyat çıkarma (yeni site: findikfiyati.org.tr)
       const { load } = await import('cheerio');
       const $ = load(response.data);
-      
-      // Fiyat çıkarma (aynı logic scrape endpoint'i ile)
       let scrapedPrice = null;
-      const bodyText = $('body').text();
-      const priceMatches = bodyText.match(/₺(\d{1,3}(?:,\d{2})?)/g);
       
-      if (priceMatches && priceMatches.length >= 2) {
-        const priceString = priceMatches[1].replace('₺', '').replace(',', '.');
-        scrapedPrice = parseFloat(priceString);
+      // Schema.org structured data
+      const jsonLd = $('script[type="application/ld+json"]').html();
+      if (jsonLd) {
+        try {
+          const ld = JSON.parse(jsonLd);
+          if (ld.offers?.price) scrapedPrice = parseFloat(ld.offers.price);
+          else if (ld.mainEntity?.offers?.price) scrapedPrice = parseFloat(ld.mainEntity.offers.price);
+        } catch {}
       }
       
-      if (scrapedPrice && !isNaN(scrapedPrice) && scrapedPrice >= 100 && scrapedPrice <= 300) {
+      // "TRY X" pattern
+      if (!scrapedPrice || isNaN(scrapedPrice)) {
+        const bodyText = $('body').text();
+        const priceMatch = bodyText.match(/TRY\s*(\d{2,4}(?:[.,]\d{1,2})?)/i);
+        if (priceMatch) scrapedPrice = parseFloat(priceMatch[1].replace(',', '.'));
+      }
+      
+      if (scrapedPrice && !isNaN(scrapedPrice) && scrapedPrice >= 50 && scrapedPrice <= 500) {
         // Scraped price'ı güncelle
         await db.query(
           'UPDATE hazelnut_prices SET scraped_price = $1, last_scraped_at = CURRENT_TIMESTAMP WHERE id = $2',
