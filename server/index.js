@@ -633,16 +633,25 @@ app.put('/api/about', adminAuth, upload.array('images', 10), imageOptimizer, asy
     
     // Silinen görselleri çıkar
     let updatedImages = currentImages;
-    if (deletedImages) {
-      const toDelete = JSON.parse(deletedImages);
+    if (deletedImages && deletedImages !== '[]' && deletedImages !== 'null') {
+      let toDelete = [];
+      try {
+        toDelete = JSON.parse(deletedImages);
+      } catch {
+        toDelete = [];
+      }
+      console.log(`About silinecek: ${toDelete.length} görsel, mevcut: ${currentImages.length}`);
       updatedImages = currentImages.filter(img => !toDelete.includes(img));
+      console.log(`About kalan: ${updatedImages.length} görsel`);
       
-      // Fiziksel dosyaları sil
+      // Fiziksel dosyaları sil (hata olsa bile devam et)
       toDelete.forEach(imagePath => {
         if (imagePath.startsWith('/uploads/')) {
           const fullPath = path.join(UPLOADS_DIR, path.basename(imagePath));
-          if (fs.existsSync(fullPath)) {
-            fs.unlinkSync(fullPath);
+          try {
+            if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+          } catch (e) {
+            console.warn(`Dosya silinemedi: ${fullPath} — ${e.message}`);
           }
         }
       });
@@ -1093,7 +1102,8 @@ app.put('/api/seo/settings', adminAuth, async (req, res) => {
           twitter_card, twitter_site, twitter_creator,
           canonical_url, robots_txt,
           google_analytics_id, google_search_console, facebook_pixel_id,
-          schema_organization, toSmallInt(sitemap_enabled)
+          schema_organization, toSmallInt(sitemap_enabled),
+          existing.rows[0].id
         ]
       );
     } else {

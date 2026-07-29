@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { AboutPageContent, Notification } from '../../types';
 import { aboutAPI } from '../../services/api';
 
@@ -18,6 +18,7 @@ const AboutManagement: React.FC<AboutManagementProps> = ({
     addNotification,
     onSave
 }) => {
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [aboutForm, setAboutForm] = useState<AboutPageContent>(aboutContent);
     const [aboutImages, setAboutImages] = useState<File[]>([]);
     const [deletedImages, setDeletedImages] = useState<string[]>([]);
@@ -48,20 +49,22 @@ const AboutManagement: React.FC<AboutManagementProps> = ({
                 formData.append(`images`, image);
             });
 
-            // Silinen görselleri gönder
-            if (deletedImages.length > 0) {
-                formData.append('deletedImages', JSON.stringify(deletedImages));
-            }
+            // Silinen görselleri gönder — her zaman, boş bile olsa
+            formData.append('deletedImages', JSON.stringify(deletedImages));
 
             const updatedAbout = await aboutAPI.update(formData);
 
-            // Güncellenen about içeriğini state'e ekle
-            const newAboutContent = {
-                ...aboutForm,
-                images: updatedAbout.images || aboutContent.images || []
-            };
+            // Sunucudan gelen cevabı olduğu gibi kullan (merge yapma!)
+            setAboutContent({
+                title: updatedAbout.title || '',
+                content: updatedAbout.content || '',
+                mission: updatedAbout.mission || '',
+                vision: updatedAbout.vision || '',
+                images: Array.isArray(updatedAbout.images) ? updatedAbout.images : []
+            });
 
-            setAboutContent(newAboutContent);
+            // File input'u temizle — çoğalmayı önle
+            if (fileInputRef.current) fileInputRef.current.value = '';
             setAboutImages([]);
             setDeletedImages([]);
             if (onSave) await onSave();
@@ -127,6 +130,7 @@ const AboutManagement: React.FC<AboutManagementProps> = ({
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">🖼️ Hakkımızda Görselleri</label>
                         <input
+                            ref={fileInputRef}
                             type="file"
                             accept="image/*"
                             multiple
