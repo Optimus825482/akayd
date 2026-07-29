@@ -1474,7 +1474,15 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Akaydın Tarım sunucusu port ${PORT} üzerinde çalışıyor.`);
   console.log(`Admin paneli: http://localhost:${PORT}/admin`);
+
+  // Sunucu başlangıcında sitemap'i otomatik oluştur
+  try {
+    const result = await generateSitemapFile();
+    console.log(`Sitemap oluşturuldu: ${result.url_count} URL`);
+  } catch (err) {
+    console.error('Sitemap başlangıçta oluşturulamadı:', err.message);
+  }
 });

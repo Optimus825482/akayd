@@ -1,2 +1,3 @@
 - Prefers communication in Turkish, especially for detailed technical reports and action plans. Confidence: 0.85
-- Prefers comprehensive batch implementation — when given a list of recommendations, applies all at once rather than incrementally. Confidence: 0.70
+- Prefers comprehensive batch implementation — when given a list of recommendations, applies all at once rather than incrementally. Confidence: 0.80
+- Proactively verifies implementation results — checks deployed changes independently (e.g., visiting sitemap URLs, testing endpoints) and reports issues promptly. Confidence: 0.75
