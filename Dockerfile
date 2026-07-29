@@ -7,13 +7,12 @@
 # ============================================
 
 FROM node:20-alpine
-RUN apk add --no-cache tini
+# postgresql-client backend'in tablo oluşturması için gerekli
+RUN apk add --no-cache tini postgresql16-client
 WORKDIR /app
 
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev 2>/dev/null || npm install --omit=dev
-
-# Dev deps kur (sadece build aşaması için)
 RUN npm install --include=dev 2>/dev/null || true
 
 # Frontend build
@@ -27,13 +26,16 @@ COPY public/ ./public/
 COPY index.css ./
 RUN npx vite build && npm prune --omit=dev
 
-# Backend server
+# Backend server + init scripts
 COPY server/ ./server/
+COPY docker/init/ ./docker/init/
+COPY docker/init-db.sh /usr/local/bin/init-db.sh
+RUN chmod +x /usr/local/bin/init-db.sh
 
-# uploads + public
 RUN mkdir -p uploads public && chown -R node:node /app
 USER node
 
 EXPOSE 3003
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["node", "server/index.js"]
+# DB init + Express start
+CMD ["sh", "-c", "/usr/local/bin/init-db.sh && node server/index.js"]
