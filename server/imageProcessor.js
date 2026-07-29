@@ -12,8 +12,17 @@ const QUALITY = 80;
  */
 export async function processImage(filePath) {
   const ext = path.extname(filePath).toLowerCase();
-  if (!['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext)) {
+  if (!['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'].includes(ext)) {
     return; // Desteklenmeyen format — olduğu gibi bırak
+  }
+
+  // SVG'yi optimize etmiyoruz (vektörel)
+  if (ext === '.svg') {
+    return {
+      filename: path.basename(filePath),
+      path: filePath,
+      size: fs.statSync(filePath).size,
+    };
   }
 
   // WebP zaten optimize edilmiş, tekrar işlenmesine gerek yok
@@ -45,10 +54,17 @@ export async function processImage(filePath) {
       size: fs.statSync(webpPath).size,
     };
   } catch (err) {
-    console.error('Görsel işleme hatası:', err);
-    // Hata durumunda geçici dosyayı temizle
-    if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
-    return null;
+    console.error('Görsel işleme hatası:', err.message);
+    // Hata durumunda: orijinal dosyayı koru, sadece tmp dosyayı sil
+    if (fs.existsSync(tmpPath)) {
+      try { fs.unlinkSync(tmpPath); } catch {}
+    }
+    // Sharp işleyemediyse (örn. bozuk PNG), orijinal dosyayı olduğu gibi bırak
+    return {
+      filename: path.basename(filePath),
+      path: filePath,
+      size: fs.statSync(filePath).size,
+    };
   }
 }
 
