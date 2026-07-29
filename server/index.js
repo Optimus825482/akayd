@@ -640,8 +640,14 @@ app.put('/api/about', adminAuth, upload.array('images', 10), imageOptimizer, asy
       } catch {
         toDelete = [];
       }
-      console.log(`About silinecek: ${toDelete.length} görsel, mevcut: ${currentImages.length}`);
-      updatedImages = currentImages.filter(img => !toDelete.includes(img));
+      // Path'leri normalize et: sadece dosya adıyla eşleştir (farklı prefix'lere karşı)
+      const toDeleteBasenames = toDelete.map(p => {
+        try { return path.basename(new URL(p).pathname); } catch { return path.basename(p); }
+      });
+      console.log(`About silinecek: ${toDelete.length} görsel (basenames: ${JSON.stringify(toDeleteBasenames.slice(0,3))}...), mevcut: ${currentImages.length}`);
+      updatedImages = currentImages.filter(img => {
+        try { return !toDeleteBasenames.includes(path.basename(new URL(img).pathname)); } catch { return !toDeleteBasenames.includes(path.basename(img)); }
+      });
       console.log(`About kalan: ${updatedImages.length} görsel`);
       
       // Fiziksel dosyaları sil (hata olsa bile devam et)
