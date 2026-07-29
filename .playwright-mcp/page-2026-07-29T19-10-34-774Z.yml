@@ -1,0 +1,389 @@
+- generic [ref=f37e3]:
+  - banner [ref=f37e4]:
+    - generic [ref=f37e6]:
+      - generic [ref=f37e7]:
+        - generic [ref=f37e8]: +90 (264) 123 45 67
+        - link "WhatsApp" [ref=f37e11] [cursor=pointer]:
+          - /url: https://wa.me/905397751517
+      - generic [ref=f37e14]: Remzi Efendi Cd. No:24 D:b, 54300 Hendek/Sakarya
+    - generic [ref=f37e15]:
+      - link [ref=f37e16] [cursor=pointer]:
+        - /url: "#/"
+        - img "Akaydın Tarım" [ref=f37e17]
+        - generic [ref=f37e18]:
+          - text: Akaydın Tarım
+          - paragraph [ref=f37e19]: Fındık Uzmanı
+      - navigation [ref=f37e20]:
+        - link "Ana Sayfa" [ref=f37e21] [cursor=pointer]:
+          - /url: "#/"
+        - link "Hakkımızda" [ref=f37e22] [cursor=pointer]:
+          - /url: "#/hakkimizda"
+        - link "Fındık İşleme" [ref=f37e23] [cursor=pointer]:
+          - /url: "#/findik-isleme"
+        - link "Hizmetler" [ref=f37e24] [cursor=pointer]:
+          - /url: "#/hizmetlerimiz"
+        - link "Ürünler" [ref=f37e25] [cursor=pointer]:
+          - /url: "#/urunler"
+        - link "Blog" [ref=f37e26] [cursor=pointer]:
+          - /url: "#/blog"
+        - link "İletişim" [ref=f37e27] [cursor=pointer]:
+          - /url: "#/iletisim"
+  - main [ref=f37e28]:
+    - generic [ref=f37e474]:
+      - paragraph [ref=f37e475]: Fındık İşleme Hizmeti
+      - heading "Hendek'te Profesyonel Fındık Kırma Hizmeti" [level=1] [ref=f37e476]: Hendek'te ProfesyonelFındık Kırma Hizmeti
+      - paragraph [ref=f37e477]: Hendek ve Sakarya çevresinde ev tipi fındık işleme hizmeti. Kabuklu fındığın kabulünden vakumlu paketlemeye kadar her aşamada profesyonel çözüm.
+      - paragraph [ref=f37e478]: Haftanın 6 günü hizmet • Saatte 5-10 kg kapasite • %98+ hasarsız iç fındık • Vakumlu paketleme dahil
+      - generic [ref=f37e479]:
+        - link "WhatsApp'tan Bilgi Al" [ref=f37e480] [cursor=pointer]:
+          - /url: https://wa.me/905397751517
+        - link "📞 +90 (264) 123 45 67" [ref=f37e483] [cursor=pointer]:
+          - /url: tel:+90 (264) 123 45 67
+    - generic [ref=f37e485]:
+      - generic [ref=f37e486]:
+        - paragraph [ref=f37e487]: Neden Biz
+        - heading "6 önemli avantaj" [level=2] [ref=f37e488]
+        - paragraph [ref=f37e489]: Evde fındık kırmak zahmetli ve fire oranı yüksektir. Profesyonel ekipmanla bu sorunları ortadan kaldırıyoruz.
+      - generic [ref=f37e490]:
+        - generic [ref=f37e491]:
+          - generic [ref=f37e492]: 🏆
+          - heading "Hendek'te İlk ve Tek" [level=3] [ref=f37e493]
+          - paragraph [ref=f37e494]: Hendek merkezde ev kullanıcılarına profesyonel fındık kırma hizmeti sunan ilk firmayız.
+        - generic [ref=f37e495]:
+          - generic [ref=f37e496]: 🔬
+          - heading "Son Teknoloji Makine" [level=3] [ref=f37e497]
+          - paragraph [ref=f37e498]: Elektronik kontrollü, ayarlanabilir basınçlı, hijyenik paslanmaz çelik işleme hattı.
+        - generic [ref=f37e499]:
+          - generic [ref=f37e500]: 💎
+          - heading "Maksimum Randıman" [level=3] [ref=f37e501]
+          - paragraph [ref=f37e502]: Boyuta özel kalibrasyonla iç fındık hasar oranı %2'nin altında. Değeriniz korunur.
+        - generic [ref=f37e503]:
+          - generic [ref=f37e504]: 🛡️
+          - heading "Çürüme Riskine Son" [level=3] [ref=f37e505]
+          - paragraph [ref=f37e506]: Kabuklu bekletmede oluşan küf, acılaşma ve böceklenme riskini tamamen ortadan kaldırıyoruz.
+        - generic [ref=f37e507]:
+          - generic [ref=f37e508]: 📦
+          - heading "Profesyonel Vakumlama" [level=3] [ref=f37e509]
+          - paragraph [ref=f37e510]: Endüstriyel vakum makinesiyle oksijensiz paketleme; serin ortamda 24 aya kadar tazelik.
+        - generic [ref=f37e511]:
+          - generic [ref=f37e512]: ⚡
+          - heading "Hızlı ve Esnek Teslimat" [level=3] [ref=f37e513]
+          - paragraph [ref=f37e514]: Hendek ve çevre ilçelere aynı gün teslim. Acil işler için öncelikli işleme seçeneği.
+    - generic [ref=f37e516]:
+      - generic [ref=f37e517]:
+        - paragraph [ref=f37e518]: İşlem Süreci
+        - heading "6 aşamalı hijyenik işlem" [level=2] [ref=f37e519]
+        - paragraph [ref=f37e520]: Kabuklu fındığın kabulünden vakumlu pakete uzanan yolculuğun her aşaması titizlikle yönetilir.
+      - generic [ref=f37e521]:
+        - generic [ref=f37e522]:
+          - generic [ref=f37e523]: "01"
+          - generic [ref=f37e524]:
+            - heading "Kabul & Tartım" [level=3] [ref=f37e525]
+            - paragraph [ref=f37e526]: Kabuklu fındığınızı teslim alıyor, miktar ve genel durum değerlendirmesi yapıyoruz. Fındığın nem oranı, çürük/bozuk oranı kontrol edilir.
+            - paragraph [ref=f37e527]: 💡 Teslim fişi düzenlenir, işlem süresi ve teslim tarihi karşılıklı teyit edilir.
+        - generic [ref=f37e528]:
+          - generic [ref=f37e529]: "02"
+          - generic [ref=f37e530]:
+            - heading "Temizleme & Eleme" [level=3] [ref=f37e531]
+            - paragraph [ref=f37e532]: Yaprak, dal, toprak, taş ve diğer yabancı maddelerden arındırılır. Çift elekli sistem ile boş ve çürük fındıklar ayrıştırılır.
+            - paragraph [ref=f37e533]: 💡 Bu aşama randımanı doğrudan etkiler; temizlenmemiş fındıkta %5-10 fire normaldir.
+        - generic [ref=f37e534]:
+          - generic [ref=f37e535]: "03"
+          - generic [ref=f37e536]:
+            - heading "Boyutlandırma" [level=3] [ref=f37e537]
+            - paragraph [ref=f37e538]: Fındıklar profesyonel kalibrasyon makinesinde 3-4 farklı boyuta ayrılır. Her boyut için kırma makinesi ayrı kalibre edilir.
+            - paragraph [ref=f37e539]: 💡 Doğru boyutlandırma, iç fındığın hasarsız çıkma oranını %90'dan %98'e yükseltir.
+        - generic [ref=f37e540]:
+          - generic [ref=f37e541]: "04"
+          - generic [ref=f37e542]:
+            - heading "Profesyonel Kırma" [level=3] [ref=f37e543]
+            - paragraph [ref=f37e544]: Her boyut grubu için optimize edilmiş basınç ayarlarıyla, özel alaşımlı kırma tamburunda kabuklar hasarsız şekilde açılır.
+            - paragraph [ref=f37e545]: 💡 Geleneksel yöntemlere göre 10 kata kadar daha hızlı; saatte 5-10 kg kapasite.
+        - generic [ref=f37e546]:
+          - generic [ref=f37e547]: "05"
+          - generic [ref=f37e548]:
+            - heading "Hava Akımıyla Ayırma" [level=3] [ref=f37e549]
+            - paragraph [ref=f37e550]: Güçlü ve ayarlanabilir fan sistemiyle hafif kabuk parçaları emilir, ağır iç fındıklar aşağıya düşerek ayrılır. Çift kademeli filtreleme.
+            - paragraph [ref=f37e551]: 💡 Bu sistem sayesinde iç fındıkta kabuk kalıntısı %0.3'ün altına düşer.
+        - generic [ref=f37e552]:
+          - generic [ref=f37e553]: "06"
+          - generic [ref=f37e554]:
+            - heading "Son Kontrol & Paketleme" [level=3] [ref=f37e555]
+            - paragraph [ref=f37e556]: El değmeden bant üzerinde son kalite kontrolü yapılır. Onaylanan fındıklar vakumlu paketleme ile hava almaz şekilde mühürlenir.
+            - paragraph [ref=f37e557]: 💡 Vakumlu paket serin ve kuru ortamda 2 yıla kadar tazeliğini korur.
+    - generic [ref=f37e559]:
+      - generic [ref=f37e560]:
+        - paragraph [ref=f37e561]: Ekipman
+        - heading "Makine Teknik Özellikleri" [level=2] [ref=f37e562]
+        - paragraph [ref=f37e563]: Gıdaya uygun, endüstriyel standartlarda işleme hattımızın teknik detayları.
+      - table [ref=f37e566]:
+        - rowgroup [ref=f37e567]:
+          - row [ref=f37e568]:
+            - cell "Marka/Model" [ref=f37e569]
+            - cell "Endüstriyel Tip Kırma Hattı" [ref=f37e570]
+          - row [ref=f37e571]:
+            - cell "Kırma Kapasitesi" [ref=f37e572]
+            - cell "5–10 kg/saat (boyuta göre)" [ref=f37e573]
+          - row [ref=f37e574]:
+            - cell "Kırma Tamburu" [ref=f37e575]
+            - cell "Sertleştirilmiş krom-nikel alaşım" [ref=f37e576]
+          - row [ref=f37e577]:
+            - cell "Boyutlandırma" [ref=f37e578]
+            - cell "3–4 kalibre (elektronik kontrollü)" [ref=f37e579]
+          - row [ref=f37e580]:
+            - cell "Hava Ayırma" [ref=f37e581]
+            - cell "Çift kademeli, ayarlanabilir fan" [ref=f37e582]
+          - row [ref=f37e583]:
+            - cell "Vakum Makinesi" [ref=f37e584]
+            - cell "Endüstriyel, çift ısıtma çubuklu" [ref=f37e585]
+          - row [ref=f37e586]:
+            - cell "Gövde Malzemesi" [ref=f37e587]
+            - cell "Gıdaya uygun 304 paslanmaz çelik" [ref=f37e588]
+          - row [ref=f37e589]:
+            - cell "Güç Tüketimi" [ref=f37e590]
+            - cell "220V ev tipi priz, ~1.5 kW" [ref=f37e591]
+    - generic [ref=f37e593]:
+      - generic [ref=f37e594]:
+        - paragraph [ref=f37e595]: Karşılaştırma
+        - heading "Evde Kırma vs Profesyonel Hizmet" [level=2] [ref=f37e596]
+        - paragraph [ref=f37e597]: Geleneksel yöntemlerle profesyonel işleme arasındaki farkı rakamlarla görün.
+      - generic [ref=f37e598]:
+        - table [ref=f37e599]:
+          - rowgroup [ref=f37e600]:
+            - row [ref=f37e601]:
+              - columnheader "Kriter" [ref=f37e602]
+              - columnheader "🏠 Evde" [ref=f37e603]
+              - columnheader "⚙️ Profesyonel" [ref=f37e604]
+          - rowgroup [ref=f37e605]:
+            - row [ref=f37e606]:
+              - cell "İç Fındık Hasarı" [ref=f37e607]
+              - cell "%15-20" [ref=f37e608]
+              - cell "< %2 ✓" [ref=f37e609]
+            - row [ref=f37e610]:
+              - cell "İşlem Süresi (20 kg)" [ref=f37e611]
+              - cell "2-3 gün" [ref=f37e612]
+              - cell "2-3 saat ✓" [ref=f37e613]
+            - row [ref=f37e614]:
+              - cell "Kabuk Ayırma" [ref=f37e615]
+              - cell "Elle, zahmetli" [ref=f37e616]
+              - cell "Hava akımı, otomatik ✓" [ref=f37e617]
+            - row [ref=f37e618]:
+              - cell "Hijyen" [ref=f37e619]
+              - cell "Değişken" [ref=f37e620]
+              - cell "Gıda onaylı hat ✓" [ref=f37e621]
+            - row [ref=f37e622]:
+              - cell "Paketleme" [ref=f37e623]
+              - cell "Poşet/bez torba" [ref=f37e624]
+              - cell "Vakumlu, 2 yıl tazelik ✓" [ref=f37e625]
+            - row [ref=f37e626]:
+              - cell "Fire Oranı" [ref=f37e627]
+              - cell "%10-25" [ref=f37e628]
+              - cell "< %5 ✓" [ref=f37e629]
+            - row [ref=f37e630]:
+              - cell "Zaman Esnekliği" [ref=f37e631]
+              - cell "Kendi zamanınız ✓" [ref=f37e632]
+              - cell "Randevulu, planlı" [ref=f37e633]
+        - paragraph [ref=f37e634]: ✓ işareti o kriter için avantajlı seçeneği gösterir.
+    - generic [ref=f37e636]:
+      - generic [ref=f37e637]:
+        - paragraph [ref=f37e638]: Hijyen Standardı
+        - heading "Gıda Güvenliği Önceliğimiz" [level=2] [ref=f37e639]
+        - paragraph [ref=f37e640]: İşleme hattımız gıda kodeksine uygun olarak tasarlanmıştır. Her aşamada hijyen standartlarına uyulur.
+      - generic [ref=f37e641]:
+        - generic [ref=f37e642]:
+          - generic [ref=f37e643]: 🧤
+          - heading "Temassız İşleme" [level=4] [ref=f37e644]
+          - paragraph [ref=f37e645]: Kabulden paketlemeye kadar hiçbir aşamada el teması yoktur. Tamamen kapalı hat.
+        - generic [ref=f37e646]:
+          - generic [ref=f37e647]: 🧼
+          - heading "Gıda Onaylı Ekipman" [level=4] [ref=f37e648]
+          - paragraph [ref=f37e649]: Tüm makine aksamı 304 kalite paslanmaz çelikten imal edilmiştir. Gıda kodeksine uygundur.
+        - generic [ref=f37e650]:
+          - generic [ref=f37e651]: 🧹
+          - heading "Her Parti Sonrası Temizlik" [level=4] [ref=f37e652]
+          - paragraph [ref=f37e653]: Her müşteri partisi sonrası makine komple temizlenir; çapraz bulaşma riski sıfırdır.
+        - generic [ref=f37e654]:
+          - generic [ref=f37e655]: 📋
+          - heading "İşlem Kaydı" [level=4] [ref=f37e656]
+          - paragraph [ref=f37e657]: Her parti için işlem fişi düzenlenir; giriş miktarı, fire oranı ve çıkış miktarı kayıt altına alınır.
+    - generic [ref=f37e659]:
+      - generic [ref=f37e660]:
+        - paragraph [ref=f37e661]: Fındık Takvimi
+        - heading "Sezon Bazında İşleme Rehberi" [level=2] [ref=f37e662]
+        - paragraph [ref=f37e663]: Yılın her döneminde hizmetinizdeyiz. Hangi ayda neye dikkat etmeniz gerektiğini öğrenin.
+      - generic [ref=f37e664]:
+        - generic [ref=f37e665]:
+          - generic [ref=f37e666]: Ağustos-Eylül
+          - generic [ref=f37e669]:
+            - heading "Hasat Sezonu" [level=4] [ref=f37e670]
+            - paragraph [ref=f37e671]: En yoğun dönem. Taze fındıkların işlenmesi için ideal zaman. Yoğunluk nedeniyle 2-3 gün önceden randevu önerilir.
+        - generic [ref=f37e672]:
+          - generic [ref=f37e673]: Ekim-Kasım
+          - generic [ref=f37e676]:
+            - heading "Kuruma & Dinlendirme" [level=4] [ref=f37e677]
+            - paragraph [ref=f37e678]: Fındıkların nem oranı düşer, kırma randımanı yükselir. İşleme için en uygun dönemdir.
+        - generic [ref=f37e679]:
+          - generic [ref=f37e680]: Aralık-Şubat
+          - generic [ref=f37e683]:
+            - heading "Kış Sezonu" [level=4] [ref=f37e684]
+            - paragraph [ref=f37e685]: Düşük yoğunluk, hızlı teslimat. Soğuk hava fındık kalitesini korur. Kış aylarında çalışma saatleri kısalabilir.
+        - generic [ref=f37e686]:
+          - generic [ref=f37e687]: Mart-Temmuz
+          - generic [ref=f37e690]:
+            - heading "Bakım & Stok Dönemi" [level=4] [ref=f37e691]
+            - paragraph [ref=f37e692]: Yeni sezon öncesi bakım dönemi. Elde kalan stok fındıkların işlenmesi için son fırsat.
+    - generic [ref=f37e694]:
+      - generic [ref=f37e695]:
+        - paragraph [ref=f37e696]: Merak Edilenler
+        - heading "Sıkça Sorulan Sorular" [level=2] [ref=f37e697]
+        - paragraph [ref=f37e698]: Fındık işleme hizmetimiz hakkında en çok merak edilen soruların cevapları.
+      - generic [ref=f37e699]:
+        - generic [ref=f37e700]:
+          - button "Ne kadar fındık getirmeliyim? +" [ref=f37e701] [cursor=pointer]:
+            - generic [ref=f37e702]: Ne kadar fındık getirmeliyim?
+            - generic [ref=f37e703]: +
+          - paragraph [ref=f37e704]: Minimum miktar sınırımız yoktur. 1 kg'dan 500 kg'a kadar her miktarda fındığınızı işleyebiliriz. 50 kg üzeri işlemler için lütfen önceden randevu alınız.
+        - generic [ref=f37e705]:
+          - button "İşlem süresi ne kadar? +" [ref=f37e706] [cursor=pointer]:
+            - generic [ref=f37e707]: İşlem süresi ne kadar?
+            - generic [ref=f37e708]: +
+          - paragraph [ref=f37e709]: Makine kapasitemiz saatte 5-10 kg'dır. 20 kg'lık bir parti yaklaşık 2-3 saatte işlenir. Yoğunluğa göre teslimat süresi değişebilir, teslim anında net bilgi verilir.
+        - generic [ref=f37e710]:
+          - button "Fındığım kırılırken içi zarar görür mü? +" [ref=f37e711] [cursor=pointer]:
+            - generic [ref=f37e712]: Fındığım kırılırken içi zarar görür mü?
+            - generic [ref=f37e713]: +
+          - paragraph [ref=f37e714]: Hayır. Her boyut grubu için ayrı kalibre edilen profesyonel kırma tamburumuz sayesinde iç fındık hasar oranı %2'nin altındadır. Geleneksel yöntemlerde bu oran %15-20'ye kadar çıkabilir.
+        - generic [ref=f37e715]:
+          - button "Kabuklar ne oluyor? +" [ref=f37e716] [cursor=pointer]:
+            - generic [ref=f37e717]: Kabuklar ne oluyor?
+            - generic [ref=f37e718]: +
+          - paragraph [ref=f37e719]: Dilerseniz kabuklarınızı geri alabilirsiniz (bahçede malç, soba yakıtı vb. için). İstemediğiniz takdirde bertarafını biz üstleniyoruz.
+        - generic [ref=f37e720]:
+          - button "Vakumlu paketleme ücretli mi? +" [ref=f37e721] [cursor=pointer]:
+            - generic [ref=f37e722]: Vakumlu paketleme ücretli mi?
+            - generic [ref=f37e723]: +
+          - paragraph [ref=f37e724]: Tüm işlemlerimize vakumlu paketleme dahildir. Ayrıca ücret talep edilmez. Standart olarak 1 kg'lık vakum poşetleri kullanılır, isteğe bağlı farklı gramaj seçenekleri mevcuttur.
+        - generic [ref=f37e725]:
+          - button "Hangi bölgelere hizmet veriyorsunuz? +" [ref=f37e726] [cursor=pointer]:
+            - generic [ref=f37e727]: Hangi bölgelere hizmet veriyorsunuz?
+            - generic [ref=f37e728]: +
+          - paragraph [ref=f37e729]: Hendek merkez ve tüm mahallelerine teslimat yapıyoruz. Sakarya merkez, Akyazı, Karasu, Kocaali ve Düzce'nin yakın bölgelerine de anlaşmalı olarak hizmet vermekteyiz.
+        - generic [ref=f37e730]:
+          - button "Fındıklarımı ne zaman teslim edebilirim? +" [ref=f37e731] [cursor=pointer]:
+            - generic [ref=f37e732]: Fındıklarımı ne zaman teslim edebilirim?
+            - generic [ref=f37e733]: +
+          - paragraph [ref=f37e734]: Haftanın 6 günü (Pazartesi-Cumartesi) 08:00-18:00 saatleri arasında teslim alıyoruz. Acil işler için telefonla özel randevu alabilirsiniz.
+        - generic [ref=f37e735]:
+          - button "Ödemeyi nasıl yapabilirim? +" [ref=f37e736] [cursor=pointer]:
+            - generic [ref=f37e737]: Ödemeyi nasıl yapabilirim?
+            - generic [ref=f37e738]: +
+          - paragraph [ref=f37e739]: Nakit, havale/EFT veya kapıda ödeme seçenekleri mevcuttur. Kurumsal müşteriler için fatura kesilmektedir.
+    - generic [ref=f37e741]:
+      - generic [ref=f37e742]:
+        - paragraph [ref=f37e743]: Hızlı Bilgi
+        - heading "Özet Bilgiler" [level=2] [ref=f37e744]
+      - generic [ref=f37e745]:
+        - generic [ref=f37e746]:
+          - generic [ref=f37e747]: ⏱️
+          - paragraph [ref=f37e748]: İşlem Süresi
+          - paragraph [ref=f37e749]: 5-10 kg/saat
+          - paragraph [ref=f37e750]: Parti büyüklüğüne göre
+        - generic [ref=f37e751]:
+          - generic [ref=f37e752]: 📦
+          - paragraph [ref=f37e753]: Paketleme
+          - paragraph [ref=f37e754]: Vakumlu
+          - paragraph [ref=f37e755]: 24 ay tazelik garantisi
+        - generic [ref=f37e756]:
+          - generic [ref=f37e757]: 📍
+          - paragraph [ref=f37e758]: Hizmet Bölgesi
+          - paragraph [ref=f37e759]: Hendek + Sakarya
+          - paragraph [ref=f37e760]: Aynı gün teslimat
+        - generic [ref=f37e761]:
+          - generic [ref=f37e762]: 📅
+          - paragraph [ref=f37e763]: Çalışma Günleri
+          - paragraph [ref=f37e764]: Pzt-Cmt
+          - paragraph [ref=f37e765]: 08:00 - 18:00
+    - generic [ref=f37e767]:
+      - generic [ref=f37e768]:
+        - paragraph [ref=f37e769]: Galeri
+        - heading "İşleme Hattımızdan Kareler" [level=2] [ref=f37e770]
+        - paragraph [ref=f37e771]: Profesyonel ekipmanlarımız ve işleme sürecimizden görüntüler.
+      - generic [ref=f37e772]:
+        - generic [ref=f37e773]:
+          - generic [ref=f37e775]:
+            - generic [ref=f37e776]: ⚙️
+            - paragraph [ref=f37e777]: Kırma Hattı
+            - paragraph [ref=f37e778]: Görsel yakında
+          - generic [ref=f37e779]: Kırma Hattı
+        - generic [ref=f37e781]:
+          - generic [ref=f37e783]:
+            - generic [ref=f37e784]: 📐
+            - paragraph [ref=f37e785]: Kalibrasyon
+            - paragraph [ref=f37e786]: Görsel yakında
+          - generic [ref=f37e787]: Kalibrasyon
+        - generic [ref=f37e789]:
+          - generic [ref=f37e791]:
+            - generic [ref=f37e792]: 📦
+            - paragraph [ref=f37e793]: Vakumlama
+            - paragraph [ref=f37e794]: Görsel yakında
+          - generic [ref=f37e795]: Vakumlama
+        - generic [ref=f37e797]:
+          - generic [ref=f37e799]:
+            - generic [ref=f37e800]: ✨
+            - paragraph [ref=f37e801]: Sonuç
+            - paragraph [ref=f37e802]: Görsel yakında
+          - generic [ref=f37e803]: Sonuç
+    - generic [ref=f37e807]:
+      - heading "Fındıklarınızı Bize Emanet Edin" [level=2] [ref=f37e808]: FındıklarınızıBize Emanet Edin
+      - paragraph [ref=f37e809]: Evleriniz için ayırdığınız fındıklar artık çürümeyecek, tadı bozulmayacak. Profesyonel ekipman ve hijyenik ortamda, maksimum randımanla işliyoruz.
+      - generic [ref=f37e810]:
+        - link "WhatsApp'tan Bilgi Al" [ref=f37e811] [cursor=pointer]:
+          - /url: https://wa.me/905397751517
+        - link "📧 İletişim" [ref=f37e814] [cursor=pointer]:
+          - /url: "#/iletisim"
+      - paragraph [ref=f37e815]:
+        - text: "Veya doğrudan arayın:"
+        - link "+90 (264) 123 45 67" [ref=f37e816] [cursor=pointer]:
+          - /url: tel:+90 (264) 123 45 67
+  - contentinfo [ref=f37e203]:
+    - generic [ref=f37e204]:
+      - generic [ref=f37e205]:
+        - generic [ref=f37e206]:
+          - link "Logo Akaydın Tarım" [ref=f37e207] [cursor=pointer]:
+            - /url: "#/"
+            - img "Logo" [ref=f37e208]
+            - generic [ref=f37e209]: Akaydın Tarım
+          - paragraph [ref=f37e210]: Fındık ve tarım sektöründe yenilikçi çözümlerle geleceğin tarımını bugünden inşa ediyoruz.
+        - generic [ref=f37e211]:
+          - heading "Hızlı Erişim" [level=4] [ref=f37e212]
+          - list [ref=f37e213]:
+            - listitem [ref=f37e214]:
+              - link "Hakkımızda" [ref=f37e215] [cursor=pointer]:
+                - /url: "#/hakkimizda"
+            - listitem [ref=f37e216]:
+              - link "Fındık İşleme" [ref=f37e217] [cursor=pointer]:
+                - /url: "#/findik-isleme"
+            - listitem [ref=f37e218]:
+              - link "Hizmetlerimiz" [ref=f37e219] [cursor=pointer]:
+                - /url: "#/hizmetlerimiz"
+            - listitem [ref=f37e220]:
+              - link "Ürünler" [ref=f37e221] [cursor=pointer]:
+                - /url: "#/urunler"
+            - listitem [ref=f37e222]:
+              - link "Blog" [ref=f37e223] [cursor=pointer]:
+                - /url: "#/blog"
+        - generic [ref=f37e224]:
+          - heading "İletişim" [level=4] [ref=f37e225]
+          - list [ref=f37e226]:
+            - listitem [ref=f37e227]:
+              - generic [ref=f37e230]: Başpınar, Remzi Efendi Cd. No:24 D:b, 54300 Hendek/Sakarya
+            - listitem [ref=f37e231]:
+              - link "+90 (264) 123 45 67" [ref=f37e234] [cursor=pointer]:
+                - /url: tel:+90 (264) 123 45 67
+            - listitem [ref=f37e235]:
+              - link "WhatsApp" [ref=f37e238] [cursor=pointer]:
+                - /url: https://wa.me/905397751517
+        - generic [ref=f37e239]:
+          - heading "Bizi Takip Edin" [level=4] [ref=f37e240]
+          - paragraph [ref=f37e241]: Admin panelinden ekleyin
+      - generic [ref=f37e242]: © 2026 Akaydın Tarım. Tüm hakları saklıdır.

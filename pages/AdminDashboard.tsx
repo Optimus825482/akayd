@@ -275,6 +275,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             aboutContent={aboutContent}
                             setAboutContent={setAboutContent}
                             addNotification={addNotification}
+                            onSave={refreshData}
                         />
                     )}
                     {activeSection === 'contact-page' && (

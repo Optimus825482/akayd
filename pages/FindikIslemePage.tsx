@@ -136,27 +136,75 @@ const FindikIslemePage: React.FC<FindikIslemePageProps> = ({ contactContent, seo
 
   const wp = contactContent.whatsapp_phone || contactContent.phone?.replace(/[^\d]/g, '') || '905397751517';
 
+  // ═══════════ SCHEMA MARKUP ═══════════
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faq.map(item => ({
+      "@type": "Question",
+      "name": item.q,
+      "acceptedAnswer": { "@type": "Answer", "text": item.a }
+    }))
+  };
+
+  const howToSchema = {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "Hendek Fındık Kırma & İşleme Süreci",
+    "description": "6 aşamalı profesyonel fındık işleme süreci: kabul, temizleme, boyutlandırma, kırma, hava akımıyla ayırma ve son kontrol-paketleme.",
+    "step": steps.map((s, i) => ({
+      "@type": "HowToStep",
+      "position": i + 1,
+      "name": s.t,
+      "text": s.d + " " + s.extra
+    }))
+  };
+
+  const localBusinessSchema = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "Akaydın Tarım - Hendek Fındık Kırma & İşleme",
+    "description": "Hendek, Sakarya'da ev tipi fındık kırma, kavurma ve vakumlu paketleme hizmeti. Saatte 5-10 kg kapasite, %98 hasarsız iç fındık.",
+    "image": "https://akaydintarim.com.tr/akaylogo.png",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": contactContent.address?.split(',').slice(0, 2).join(',').trim() || "Remzi Efendi Cd. No:24",
+      "addressLocality": "Hendek",
+      "addressRegion": "Sakarya",
+      "postalCode": "54300",
+      "addressCountry": "TR"
+    },
+    "telephone": contactContent.phone || "+902641234567",
+    "priceRange": "₺₺",
+    "openingHoursSpecification": [
+      { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"], "opens": "08:00", "closes": "18:00" }
+    ],
+    "areaServed": { "@type": "City", "name": "Hendek, Sakarya" }
+  };
+
   const greenGradient = { background: 'linear-gradient(135deg, #0f1f10 0%, #142218 60%, #1a2a1a 100%)' };
 
   return (<>
     <SEOHead seoSettings={seoSettings || undefined} pageSEO={pageSEO || undefined}
-      pageTitle="Fındık İşleme Hizmeti" pageDescription="Hendek'te ev tipi fındık kırma, kavurma ve vakumlu paketleme hizmeti. Profesyonel fındık işleme, kabuklu fındık kabulü, hijyenik ortam, hasarsız kırma."
-      pageKeywords="fındık kırma, fındık işleme, hendek, sakarya, vakumlu paketleme, fındık kavurma, ev tipi fındık kırma" />
+      pageTitle="Hendek Fındık Kırma & Kavurma | Profesyonel Fındık İşleme | Akaydın Tarım"
+      pageDescription="Hendek, Sakarya'da ev tipi fındık kırma ✓ kavurma ✓ vakumlu paketleme hizmeti. Saatte 5-10 kg kapasite, %98 hasarsız iç fındık. Hemen WhatsApp'tan bilgi alın!"
+      pageKeywords="hendek fındık kırma, fındık kırma kavurma, fındık işleme sakarya, hendek fındık işleme, ev tipi fındık kırma, vakumlu paketleme, fındık kavurma hizmeti"
+      structuredData={[faqSchema, howToSchema, localBusinessSchema]} />
 
     {/* ═══════════ HERO ═══════════ */}
     <section className="relative py-20 md:py-28 overflow-hidden" style={greenGradient}>
       <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")' }}></div>
       <div className="absolute -top-40 -right-40 w-[40rem] h-[40rem] rounded-full opacity-8 blur-3xl" style={{ background: '#1a6532' }}></div>
       <div className="container relative z-10">
-        <p className="text-accent-bg/60 text-xs font-semibold tracking-[0.2em] uppercase mb-4">Fındık İşleme Hizmeti</p>
+        <p className="text-accent-bg/60 text-xs font-semibold tracking-[0.2em] uppercase mb-4">Hendek • Sakarya</p>
         <h1 className="text-4xl md:text-6xl font-[family-name:var(--font-display)] font-bold text-white mb-4">
-          Hendek'te Profesyonel<br /><span style={{ color: 'oklch(80% 0.12 142)' }}>Fındık Kırma Hizmeti</span>
+          Hendek Fındık Kırma<br /><span style={{ color: 'oklch(80% 0.12 142)' }}>& Kavurma Hizmeti</span>
         </h1>
         <p className="text-lg text-white/60 max-w-2xl mb-3">
-          Hendek ve Sakarya çevresinde ev tipi fındık işleme hizmeti. Kabuklu fındığın kabulünden vakumlu paketlemeye kadar her aşamada profesyonel çözüm.
+          Hendek ve Sakarya'da <strong>fındık kırma ve kavurma</strong> hizmeti. Kabuklu fındığın profesyonel ekipmanla işlenmesi, hijyenik ortamda vakumlu paketleme. Ev tipi fındık işleme için Hendek'in güvenilir adresi.
         </p>
         <p className="text-sm text-white/40 max-w-xl mb-10">
-          Haftanın 6 günü hizmet • Saatte 5-10 kg kapasite • %98+ hasarsız iç fındık • Vakumlu paketleme dahil
+          Haftanın 6 günü hizmet • Saatte 5-10 kg kapasite • %98+ hasarsız iç fındık • Vakumlu paketleme dahil • Hendek merkez
         </p>
         <div className="flex flex-wrap gap-3">
           <a href={`https://wa.me/${wp.replace(/[^\d]/g, '')}`} target="_blank" rel="noopener noreferrer"

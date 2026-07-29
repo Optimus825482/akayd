@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import type { AboutPageContent, SEOSettings, PageSEO } from '../types';
 import SEOHead from '../components/SEOHead';
@@ -35,22 +35,47 @@ const AboutPage: React.FC<AboutPageProps> = ({ content, seoSettings }) => {
     const nextImg = useCallback(() => setImgIdx(p => p === imgs.length-1 ? 0 : p+1), [imgs.length]);
     const prevImg = useCallback(() => setImgIdx(p => p === 0 ? imgs.length-1 : p-1), [imgs.length]);
 
+    // ═══ Schema — Organization + AboutPage ═══
+    const aboutSchemas = useMemo(() => [
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Akaydın Tarım",
+        "description": "Hendek, Sakarya'da fındık üretimi, fındık kırma & kavurma, organomineral gübre ve tarımsal danışmanlık",
+        "url": "https://akaydintarim.com.tr",
+        "logo": "https://akaydintarim.com.tr/akaylogo.png",
+        "foundingDate": "1999",
+        "areaServed": { "@type": "City", "name": "Hendek, Sakarya" }
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "AboutPage",
+        "name": "Hakkımızda | Akaydın Tarım | Hendek Fındık Üretimi",
+        "description": content.content?.replace(/<[^>]*>/g, '').slice(0, 160) || "Akaydın Tarım, Hendek/Sakarya bölgesinde fındık üretimi, fındık kırma-kavurma, organomineral gübre ve tarımsal danışmanlık alanında 25+ yıllık deneyime sahip köklü bir aile işletmesidir.",
+        "about": {
+          "@type": "Organization",
+          "name": "Akaydın Tarım",
+          "foundingDate": "1999",
+          "areaServed": { "@type": "City", "name": "Hendek, Sakarya" }
+        }
+      }
+    ], [content.content]);
+
     return (<>
         <SEOHead seoSettings={seoSettings||undefined} pageSEO={pageSEO||undefined}
-            pageTitle="Hakkımızda" pageDescription="Akaydın Tarım'ın misyonu, vizyonu ve değerleri."
-            pageKeywords="hakkımızda, akaydın tarım, misyon, vizyon" />
+            pageTitle="Hakkımızda | Akaydın Tarım | Hendek Fındık Üretimi"
+            pageDescription="Akaydın Tarım, Hendek/Sakarya'da fındık üretimi, kırma-kavurma, organomineral gübre ve tarımsal danışmanlık. 25+ yıllık deneyim, misyon, vizyon ve değerlerimiz."
+            pageKeywords="hakkımızda, akaydın tarım, fındık üretimi, hendek, sakarya, organomineral gübre, fındık kırma, tarımsal danışmanlık, misyon, vizyon"
+            structuredData={aboutSchemas} />
 
-        {/* ═══════════ HERO ═══════════ */}
+        {/* ═══════════ HERO — sadece başlık ═══════════ */}
         <section className="relative py-20 md:py-28 overflow-hidden" style={{background:'linear-gradient(135deg, #0f1f10 0%, #142218 60%, #1a2a1a 100%)'}}>
             <div className="absolute inset-0 opacity-[0.02]" style={{backgroundImage:'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")'}}></div>
             <div className="container relative z-10">
                 <p className="text-accent-bg/60 text-xs font-semibold tracking-[0.2em] uppercase mb-4">Hakkımızda</p>
-                <h1 className="text-4xl md:text-6xl font-[family-name:var(--font-display)] font-bold text-white mb-4">
+                <h1 className="text-4xl md:text-6xl font-[family-name:var(--font-display)] font-bold text-white">
                     {content.title || 'Akaydın Tarım'}
                 </h1>
-                <p className="text-lg text-white/60 max-w-2xl">
-                    {content.content?.replace(/<[^>]*>/g, '').slice(0, 160) || 'Hendek, Sakarya\'da fındık üretimi ve tarımsal danışmanlık'}...
-                </p>
             </div>
         </section>
 

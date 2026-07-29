@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import type { Product, ContactPageContent, SEOSettings, PageSEO } from '../types';
 import ProductCard from '../components/ProductCard';
@@ -12,10 +12,28 @@ const ProductsPage: React.FC<ProductsPageProps> = ({ products, contactContent, s
     useEffect(() => { seoAPI.getPageSEO('/urunler').then(setPageSEO).catch(()=>{}); }, []);
     const wp = contactContent.phone?.replace(/[^\d]/g,'') || '905397751517';
 
+    // ═══ Schema — ItemList for products ═══
+    const productsSchema = useMemo(() => ({
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "name": "Akaydın Tarım Ürünleri",
+      "description": "Organomineral gübreler ve işlenmiş fındık çeşitleri. Hendek/Sakarya'da kaliteli tarım ürünleri.",
+      "numberOfItems": products.length,
+      "itemListElement": products.map((p, i) => ({
+        "@type": "ListItem",
+        "position": i + 1,
+        "name": p.name,
+        "description": p.description,
+        "url": `https://akaydintarim.com.tr/urunler#${p.id}`
+      }))
+    }), [products]);
+
     return (<>
         <SEOHead seoSettings={seoSettings||undefined} pageSEO={pageSEO||undefined}
-            pageTitle="Ürünlerimiz" pageDescription="Akaydın Tarım ürün kataloğu."
-            pageKeywords="ürünlerimiz, fındık, gübre" />
+            pageTitle="Ürünlerimiz | Fındık & Organomineral Gübre | Akaydın Tarım"
+            pageDescription="Akaydın Tarım ürün kataloğu: organomineral gübreler, işlenmiş fındık çeşitleri ve tarımsal ürünler. Hendek/Sakarya'da kaliteli ve verimli tarım ürünleri."
+            pageKeywords="ürünlerimiz, fındık, organomineral gübre, organik gübre, akaydın tarım, hendek, sakarya, fındık çeşitleri, tarım ürünleri"
+            structuredData={productsSchema} />
 
         {/* Hero */}
         <section className="relative py-20 md:py-28 overflow-hidden" style={{background:'linear-gradient(135deg, #0f1f10 0%, #142218 60%, #1a2a1a 100%)'}}>

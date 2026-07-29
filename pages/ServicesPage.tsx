@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import type { Service, SEOSettings, PageSEO } from '../types';
 import ServiceCard from '../components/ServiceCard';
@@ -11,10 +11,28 @@ const ServicesPage: React.FC<ServicesPageProps> = ({ services, seoSettings }) =>
     const [pageSEO, setPageSEO] = useState<PageSEO | null>(null);
     useEffect(() => { seoAPI.getPageSEO('/hizmetlerimiz').then(setPageSEO).catch(()=>{}); }, []);
 
+    // ═══ Schema — ItemList for services ═══
+    const servicesSchema = useMemo(() => ({
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "name": "Akaydın Tarım Hizmetleri",
+      "description": "Fındık üretimi danışmanlığı, toprak analizi, gübreleme programları, zararlılarla mücadele ve hasat yönetimi hizmetleri.",
+      "numberOfItems": services.length,
+      "itemListElement": services.map((s, i) => ({
+        "@type": "ListItem",
+        "position": i + 1,
+        "name": s.title,
+        "description": s.description,
+        "url": `https://akaydintarim.com.tr/hizmetlerimiz#${s.id}`
+      }))
+    }), [services]);
+
     return (<>
         <SEOHead seoSettings={seoSettings||undefined} pageSEO={pageSEO||undefined}
-            pageTitle="Hizmetlerimiz" pageDescription="Akaydın Tarım profesyonel hizmetleri."
-            pageKeywords="hizmetlerimiz, tarım danışmanlığı, fındık üretimi" />
+            pageTitle="Hizmetlerimiz | Fındık Danışmanlığı & Gübre | Akaydın Tarım"
+            pageDescription="Akaydın Tarım profesyonel hizmetleri: fındık üretimi danışmanlığı, toprak analizi, organomineral gübreleme, zararlılarla mücadele ve hasat yönetimi. Hendek/Sakarya."
+            pageKeywords="hizmetlerimiz, fındık danışmanlığı, tarım danışmanlığı, fındık üretimi, organomineral gübre, toprak analizi, hendek, sakarya, akaydın tarım"
+            structuredData={servicesSchema} />
 
         {/* Hero */}
         <section className="relative py-20 md:py-28 overflow-hidden" style={{background:'linear-gradient(135deg, #0f1f10 0%, #142218 60%, #1a2a1a 100%)'}}>

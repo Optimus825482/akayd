@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import type { ContactPageContent, SEOSettings, PageSEO } from '../types';
 import SEOHead from '../components/SEOHead';
 import { contactMessagesAPI, seoAPI } from '../services/api';
@@ -43,10 +43,42 @@ const ContactPage: React.FC<ContactPageProps> = ({ content, seoSettings }) => {
         setLoading(false);
     };
 
+    // ═══ Schema — LocalBusiness ═══
+    const localBusinessSchema = useMemo(() => ({
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      "name": "Akaydın Tarım",
+      "description": "Hendek, Sakarya'da fındık üretimi, fındık kırma & kavurma, organomineral gübre ve tarımsal danışmanlık hizmetleri.",
+      "image": "https://akaydintarim.com.tr/akaylogo.png",
+      "url": "https://akaydintarim.com.tr",
+      "telephone": content.phone || "+902641234567",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": content.address?.split(',').slice(0, 2).join(',').trim() || "Remzi Efendi Cd. No:24",
+        "addressLocality": "Hendek",
+        "addressRegion": "Sakarya",
+        "postalCode": "54300",
+        "addressCountry": "TR"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 40.7937,
+        "longitude": 30.7436
+      },
+      "openingHoursSpecification": [
+        { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"], "opens": "08:00", "closes": "18:00" }
+      ],
+      "priceRange": "₺₺",
+      "areaServed": { "@type": "City", "name": "Hendek, Sakarya" },
+      "sameAs": [content.facebook_url, content.instagram_url, content.youtube_url].filter(Boolean)
+    }), [content]);
+
     return (<>
         <SEOHead seoSettings={seoSettings||undefined} pageSEO={pageSEO||undefined}
-            pageTitle="İletişim" pageDescription="Akaydın Tarım iletişim bilgileri."
-            pageKeywords="iletişim, adres, telefon" />
+            pageTitle="İletişim | Akaydın Tarım | Hendek Fındık Kırma & İşleme"
+            pageDescription="Akaydın Tarım iletişim bilgileri: Remzi Efendi Cd. No:24, Hendek/Sakarya. Fındık kırma, kavurma, organomineral gübre ve tarımsal danışmanlık için hemen ulaşın."
+            pageKeywords="iletişim, akaydın tarım, hendek, sakarya, fındık kırma, adres, telefon, whatsapp, ulaşım"
+            structuredData={localBusinessSchema} />
 
         {/* Hero */}
         <section className="relative py-20 md:py-28 overflow-hidden" style={{background:'linear-gradient(135deg, #0f1f10 0%, #142218 60%, #1a2a1a 100%)'}}>

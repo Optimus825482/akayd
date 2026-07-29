@@ -1013,7 +1013,7 @@ app.get('/api/seo/settings', async (req, res) => {
       twitter_site: '@akaydintarim',
       twitter_creator: '@akaydintarim',
       canonical_url: 'https://www.akaydintarim.com',
-      robots_txt: 'User-agent: *\\nAllow: /\\nSitemap: https://www.akaydintarim.com/sitemap.xml',
+      robots_txt: 'User-agent: *\\nAllow: /\\nDisallow: /api/\\nDisallow: /admin\\nSitemap: https://www.akaydintarim.com/sitemap.xml',
       google_analytics_id: '',
       google_search_console: '',
       facebook_pixel_id: '',
@@ -1288,24 +1288,33 @@ app.get('/api/seo/sitemap', adminAuth, async (req, res) => {
     ]);
 
     const baseUrl = (seoSettings.rows[0]?.canonical_url || 'https://www.akaydintarim.com').replace(/\/$/, '');
+    const now = new Date().toISOString().split('T')[0];
     const urls = [
-      { loc: `${baseUrl}/`, priority: '1.0', changefreq: 'daily' },
-      { loc: `${baseUrl}/hakkimizda`, priority: '0.8', changefreq: 'monthly' },
-      { loc: `${baseUrl}/hizmetlerimiz`, priority: '0.8', changefreq: 'monthly' },
-      { loc: `${baseUrl}/urunler`, priority: '0.9', changefreq: 'weekly' },
-      { loc: `${baseUrl}/blog`, priority: '0.9', changefreq: 'weekly' },
-      { loc: `${baseUrl}/iletisim`, priority: '0.7', changefreq: 'monthly' },
+      // Ana sayfa — en yüksek öncelik, her gün kontrol
+      { loc: `${baseUrl}/`, priority: '1.0', changefreq: 'daily', lastmod: now },
+      // Ana sayfalar — yüksek öncelik, aylık kontrol
+      { loc: `${baseUrl}/hakkimizda`, priority: '0.9', changefreq: 'monthly', lastmod: now },
+      { loc: `${baseUrl}/findik-isleme`, priority: '0.9', changefreq: 'monthly', lastmod: now },
+      { loc: `${baseUrl}/hizmetlerimiz`, priority: '0.9', changefreq: 'monthly', lastmod: now },
+      { loc: `${baseUrl}/urunler`, priority: '0.9', changefreq: 'monthly', lastmod: now },
+      // Blog — daha sık güncellenir, orta öncelik
+      { loc: `${baseUrl}/blog`, priority: '0.7', changefreq: 'weekly', lastmod: now },
+      // İletişim — orta öncelik
+      { loc: `${baseUrl}/iletisim`, priority: '0.8', changefreq: 'monthly', lastmod: now },
     ];
 
-    // Ürün sayfaları
+    // Ürün detay sayfaları
     for (const p of products.rows) {
       urls.push({
         loc: `${baseUrl}/#/urun/${p.id}`,
-        priority: '0.7',
+        priority: '0.6',
         changefreq: 'monthly',
-        lastmod: p.updated_at ? new Date(p.updated_at).toISOString().split('T')[0] : null,
+        lastmod: p.updated_at ? new Date(p.updated_at).toISOString().split('T')[0] : now,
       });
     }
+
+    // Not: Blog yazıları modal ile görüntülenir; bireysel blog sayfası URL'si yoktur.
+    // Bu nedenle sitemap'te yalnızca blog index sayfası yer alır.
 
     const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -1354,7 +1363,7 @@ app.put('/api/seo/robots', adminAuth, async (req, res) => {
 app.get('/api/seo/robots', adminAuth, async (req, res) => {
   try {
     const robotsPath = path.join(__dirname, '../public/robots.txt');
-    let content = 'User-agent: *\nAllow: /\nSitemap: https://www.akaydintarim.com/sitemap.xml';
+    let content = 'User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin\nSitemap: https://www.akaydintarim.com/sitemap.xml';
     if (fs.existsSync(robotsPath)) {
       content = fs.readFileSync(robotsPath, 'utf-8');
     }

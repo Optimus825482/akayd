@@ -9,12 +9,14 @@ interface AboutManagementProps {
     aboutContent: AboutPageContent;
     setAboutContent: React.Dispatch<React.SetStateAction<AboutPageContent>>;
     addNotification: (type: Notification['type'], title: string, message: string) => void;
+    onSave?: () => Promise<void>;
 }
 
 const AboutManagement: React.FC<AboutManagementProps> = ({
     aboutContent,
     setAboutContent,
-    addNotification
+    addNotification,
+    onSave
 }) => {
     const [aboutForm, setAboutForm] = useState<AboutPageContent>(aboutContent);
     const [aboutImages, setAboutImages] = useState<File[]>([]);
@@ -62,6 +64,7 @@ const AboutManagement: React.FC<AboutManagementProps> = ({
             setAboutContent(newAboutContent);
             setAboutImages([]);
             setDeletedImages([]);
+            if (onSave) await onSave();
             addNotification('success', 'Başarılı!', 'Hakkımızda sayfası güncellendi.');
         } catch (error) {
             console.error('Hakkımızda sayfası güncellenirken hata:', error);

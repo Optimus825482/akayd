@@ -35,11 +35,34 @@ const HomePage: React.FC<HomePageProps> = ({ services, products, heroContents, c
     const c = activeHero[currentSlide];
     const wp = contactContent.phone?.replace(/[^\d]/g,'') || '905397751517';
 
+    // ═══ Schema — Organization + LocalBusiness ═══
+    const orgSchema = {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Akaydın Tarım",
+      "description": "Hendek, Sakarya'da fındık üretimi, fındık kırma & kavurma, organomineral gübre ve tarımsal danışmanlık",
+      "url": "https://akaydintarim.com.tr",
+      "logo": "https://akaydintarim.com.tr/akaylogo.png",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": contactContent.address?.split(',').slice(0, 2).join(',').trim() || "Remzi Efendi Cd. No:24",
+        "addressLocality": "Hendek",
+        "addressRegion": "Sakarya",
+        "addressCountry": "TR"
+      },
+      "telephone": contactContent.phone || "+902641234567",
+      "sameAs": [
+        contactContent.facebook_url, contactContent.instagram_url, contactContent.youtube_url
+      ].filter(Boolean)
+    };
+
     return (
         <>
             <SEOHead seoSettings={seoSettings||undefined} pageSEO={pageSEO||undefined}
-                pageTitle="Ana Sayfa" pageDescription="Hendek/Sakarya'da kaliteli fındık üretimi."
-                pageKeywords="ana sayfa, fındık, tarım, hendek, sakarya" />
+                pageTitle="Akaydın Tarım | Fındık Kırma & İşleme | Organomineral Gübre | Hendek/Sakarya"
+                pageDescription="Hendek, Sakarya'da fındık üretimi, fındık kırma-kavurma hizmeti, organomineral gübre ve tarımsal danışmanlık. 25+ yıllık deneyim."
+                pageKeywords="fındık kırma hendek, fındık işleme sakarya, fındık kavurma, organomineral gübre, hendek tarım, akaydın tarım, fındık üretimi"
+                structuredData={orgSchema} />
 
             {/* ===== HERO — editorial dark ===== */}
             <section className="relative min-h-[90vh] flex items-center overflow-hidden" style={{background:'linear-gradient(135deg, #0f1f10 0%, #142218 40%, #1a2a1a 100%)'}}>
@@ -102,31 +125,39 @@ const HomePage: React.FC<HomePageProps> = ({ services, products, heroContents, c
                 </div>
             </section>
 
-            {/* ===== FINDIK İŞLEME — yatay process ===== */}
+            {/* ===== FINDIK İŞLEME — SEO güçlendirilmiş ===== */}
             <section className="section bg-paper-2">
                 <div className="container">
                     <div className="text-center mb-16">
-                        <p className="text-xs font-semibold tracking-[0.2em] uppercase text-accent mb-4">Hendek'te İlk Defa</p>
-                        <h2 className="text-3xl md:text-5xl font-[family-name:var(--font-display)] font-bold text-ink mb-4">Fındık İşleme Hizmetleri</h2>
-                        <p className="text-ink-2 max-w-xl mx-auto">Evleriniz için ayırdığınız fındıklar artık çürümeyecek — profesyonel işleme hattımızla tanışın.</p>
+                        <p className="text-xs font-semibold tracking-[0.2em] uppercase text-accent mb-4">Hendek'te İlk ve Tek</p>
+                        <h2 className="text-3xl md:text-5xl font-[family-name:var(--font-display)] font-bold text-ink mb-4">Fındık Kırma ve İşleme Hizmetleri</h2>
+                        <p className="text-ink-2 max-w-xl mx-auto">
+                            Evleriniz için ayırdığınız fındıklar artık çürümeyecek. 
+                            Hendek'te <strong>profesyonel fındık kırma, kavurma ve vakumlu paketleme</strong> hizmeti ile tanışın.
+                        </p>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
                         {[
-                            {icon:'🔨',title:'Kırma',desc:'Son teknoloji, hasarsız'},
-                            {icon:'🔥',title:'Kavurma',desc:'Profesyonel lezzet'},
-                            {icon:'📦',title:'Vakumlama',desc:'Uzun raf ömrü'},
-                            {icon:'🛡️',title:'Koruma',desc:'Değer kaybı yok'}
+                            {icon:'🔨',title:'Fındık Kırma',desc:'Son teknoloji, hasarsız'},
+                            {icon:'🔥',title:'Fındık Kavurma',desc:'Profesyonel lezzet'},
+                            {icon:'📦',title:'Vakumlu Paketleme',desc:'2 yıl tazelik garantisi'},
+                            {icon:'🛡️',title:'Değer Koruma',desc:'Fire oranı %5\'in altında'}
                         ].map((s,i)=>(
                             <div key={i} className="relative text-center p-6 rounded-2xl bg-surface border border-rule group hover:border-accent hover:shadow-md transition-all duration-300">
                                 <div className="text-3xl mb-3">{s.icon}</div>
-                                <h4 className="font-bold text-ink mb-1">{s.title}</h4>
+                                <h3 className="font-bold text-ink mb-1">{s.title}</h3>
                                 <p className="text-xs text-ink-3">{s.desc}</p>
                                 {i<3 && <div className="hidden md:block absolute -right-2 top-1/2 -translate-y-1/2 text-ink-3 text-lg">→</div>}
                             </div>
                         ))}
                     </div>
-                    <div className="text-center">
-                        <Link to="/iletisim" className="btn btn-primary btn-lg">Hemen Bilgi Alın</Link>
+                    <div className="text-center space-y-4">
+                        <Link to="/findik-isleme" className="btn btn-primary btn-lg">
+                            🔍 Fındık Kırma Hizmeti Detayları
+                        </Link>
+                        <p className="text-xs text-ink-3">
+                            Hendek fındık kırma, kavurma ve vakumlu paketleme • Saatte 5-10 kg • %98 hasarsız iç fındık
+                        </p>
                     </div>
                 </div>
             </section>

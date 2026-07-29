@@ -97,11 +97,17 @@ const SEOHead: React.FC<SEOHeadProps> = ({
                 <meta name="google-site-verification" content={seoSettings.google_search_console} />
             )}
 
-            {/* Structured Data */}
+            {/* Structured Data — tek obje veya obje array */}
             {structuredData && (
-                <script type="application/ld+json">
-                    {JSON.stringify(structuredData)}
-                </script>
+                Array.isArray(structuredData) 
+                    ? structuredData.map((schema, i) => (
+                        <script key={i} type="application/ld+json">
+                            {JSON.stringify(schema)}
+                        </script>
+                    ))
+                    : <script type="application/ld+json">
+                        {JSON.stringify(structuredData)}
+                    </script>
             )}
 
             {/* Schema Organization */}
