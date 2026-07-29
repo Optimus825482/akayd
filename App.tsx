@@ -14,7 +14,8 @@ import ProductDetailPage from './pages/ProductDetailPage';
 import BlogPage from './pages/BlogPage';
 import ContactPage from './pages/ContactPage';
 
-const STATIC_BASE_URL = import.meta.env.VITE_STATIC_URL || 'http://localhost:3003';
+const STATIC_BASE_URL = import.meta.env.VITE_STATIC_URL
+  || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3003');
 const img = (p: string) => {
   if (!p) return '';
   // URL temizleme: baştaki slash'leri kaldır, /akaydin-tarim prefix'ini kaldır, çift slash'ları tek slash yap

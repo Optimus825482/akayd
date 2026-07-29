@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import type { HeroContent, Notification } from '../../types';
 import { heroAPI } from '../../services/api';
 
-const STATIC_URL = import.meta.env.VITE_STATIC_URL || 'http://localhost:3003';
+const STATIC_URL = import.meta.env.VITE_STATIC_URL || (typeof window !== 'undefined' ? window.location.origin : '');
 const imgUrl = (path: string) => path ? `${STATIC_URL}${path}` : '';
 
 interface HeroManagementProps {
