@@ -1,4 +1,6 @@
 - Prefers communication in Turkish, especially for detailed technical reports and action plans. Confidence: 0.85
 - Uses Coolify (self-hosted Docker platform) for deployment, not cPanel. Infrastructure advice should assume Docker Compose / Coolify workflows, not shared hosting conventions. Confidence: 0.85
-- Prefers comprehensive batch implementation — when given a list of recommendations, applies all at once rather than incrementally. Confidence: 0.80
+- Prefers comprehensive batch implementation — when given a list of recommendations, applies all at once rather than incrementally. Confidence: 0.85
+- Prefers defensive programming with self-diagnostic logging at I/O boundaries (e.g., filesystem access checks, upload validation). Adds `fs.accessSync`/permission checks with human-readable warnings so failures are immediately diagnosable in production logs. Confidence: 0.75
+- Prefers permissive, multi-layered input validation — supplements strict MIME-type checks with file-extension fallbacks so that edge cases (e.g., browsers sending non-standard MIME types for PNG) don't block legitimate uploads. Confidence: 0.70
 - Proactively verifies implementation results — checks deployed changes independently (e.g., visiting sitemap URLs, testing endpoints) and reports issues promptly. Confidence: 0.75

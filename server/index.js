@@ -28,6 +28,12 @@ if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
   console.log(`Uploads klasörü oluşturuldu: ${UPLOADS_DIR}`);
 }
+// Bind mount için yazma izni kontrolü
+try {
+  fs.accessSync(UPLOADS_DIR, fs.constants.W_OK);
+} catch {
+  console.warn(`UYARI: ${UPLOADS_DIR} yazılabilir değil! chmod 777 veya chown node yapın.`);
+}
 
 const app = express();
 const PORT = process.env.PORT || 3003;
@@ -193,7 +199,12 @@ db.on('error', (err) => {
 });
 
 // Multer configuration
-const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg', 'image/jpg', 'image/png', 'image/x-png',
+  'image/gif', 'image/webp', 'image/svg+xml',
+  'image/avif', 'image/bmp'
+];
+const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.avif', '.bmp'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 const storage = multer.diskStorage({
@@ -207,10 +218,12 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+  const ext = path.extname(file.originalname).toLowerCase();
+  // Önce MIME tipine bak, başarısız olursa uzantıya göre karar ver (bazı tarayıcılar PNG'yi yanlış MIME ile gönderir)
+  if (ALLOWED_MIME_TYPES.includes(file.mimetype) || ALLOWED_EXTENSIONS.includes(ext)) {
     cb(null, true);
   } else {
-    cb(new Error(`Desteklenmeyen dosya türü: ${file.mimetype}. Sadece JPEG, PNG, GIF, WebP ve SVG kabul edilmektedir.`), false);
+    cb(new Error(`Desteklenmeyen dosya türü: ${file.mimetype} (${ext}). JPEG, PNG, GIF, WebP, SVG, AVIF ve BMP kabul edilir.`), false);
   }
 };
 
