@@ -1655,7 +1655,7 @@ app.get('/api/seo/robots', adminAuth, async (req, res) => {
 // Production modda Vite build çıktısını serve et
 if (process.env.NODE_ENV === 'production') {
   const distPath = path.join(__dirname, '../dist');
-  
+
   // Statik dosyalar (JS, CSS, resimler)
   app.use(express.static(distPath, {
     maxAge: '30d',
@@ -1664,12 +1664,12 @@ if (process.env.NODE_ENV === 'production') {
     }
   }));
 
+  // Favicon ve robots.txt
+  app.use(express.static(path.join(__dirname, '../public'), { maxAge: '7d' }));
+
   // Tüm route'ları index.html'e yönlendir (SPA client-side routing)
-  app.get('*', (req, res, next) => {
-    // API route'larını skip et
-    if (req.path.startsWith('/api/') || req.path.startsWith('/uploads/')) {
-      return next();
-    }
+  // API ve uploads hariç
+  app.get(/^\/(?!api\/|uploads\/).*/, (req, res) => {
     res.sendFile(path.join(distPath, 'index.html'));
   });
 }

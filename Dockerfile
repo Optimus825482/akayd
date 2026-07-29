@@ -1,8 +1,20 @@
-# ---- Stage 1: Build Frontend ----
-FROM node:20-alpine AS frontend-builder
+FROM node:20-alpine
+
+# ---- PostgreSQL kur ----
+RUN apk add --no-cache postgresql16 postgresql16-client tini
+
+# ---- Dizinler ----
+RUN mkdir -p /run/postgresql && chown node:node /run/postgresql \
+ && mkdir -p /app /app/data /app/uploads /app/public \
+ && chown -R node:node /app /run/postgresql
+
 WORKDIR /app
+
+# ---- Node deps (sadece production runtime) ----
 COPY package.json package-lock.json ./
-RUN npm ci --include=dev 2>/dev/null || npm install
+RUN npm ci --omit=dev 2>/dev/null || npm install --omit=dev
+
+# ---- Vite build (devDeps ile, ayrı layer) ----
 COPY tsconfig.json vite.config.ts tailwind.config.js postcss.config.js index.html vite-env.d.ts ./
 COPY index.tsx App.tsx constants.tsx types.ts ./
 COPY components/ ./components/
@@ -11,31 +23,15 @@ COPY hooks/ ./hooks/
 COPY services/ ./services/
 COPY public/ ./public/
 COPY index.css ./
-RUN npx vite build
+RUN npm install --include=dev 2>/dev/null && npx vite build && npm prune --omit=dev
 
-# ---- Stage 2: Production Runtime ----
-FROM node:20-alpine
-RUN apk add --no-cache tini
-WORKDIR /app
-
-# Create non-root user
-RUN addgroup -g 1001 -S app && adduser -S app -u 1001 -G app
-
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev 2>/dev/null || npm install --omit=dev
-
-# Copy server code
+# ---- Server + init SQL + startup ----
 COPY server/ ./server/
-
-# Copy built frontend from stage 1
-COPY --from=frontend-builder /app/dist ./dist
-
-# Create directories with correct permissions
-RUN mkdir -p uploads public && \
-    chown -R app:app /app
-
-USER app
+COPY docker/init/ ./docker/init/
+COPY docker/start.sh /start.sh
+RUN chmod +x /start.sh
 
 EXPOSE 3003
+VOLUME ["/app/data", "/app/uploads", "/app/public"]
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["node", "server/index.js"]
+CMD ["/start.sh"]
