@@ -30,12 +30,12 @@ RUN npx vite build && npm prune --omit=dev
 COPY server/ ./server/
 COPY docker/init/ ./docker/init/
 COPY docker/init-db.sh /usr/local/bin/init-db.sh
-RUN chmod +x /usr/local/bin/init-db.sh
+COPY docker/startup.sh /usr/local/bin/startup.sh
+RUN chmod +x /usr/local/bin/init-db.sh /usr/local/bin/startup.sh
 
 RUN mkdir -p uploads public && chown -R node:node /app
-USER node
 
 EXPOSE 3003
 ENTRYPOINT ["/sbin/tini", "--"]
-# DB init + Express start
-CMD ["sh", "-c", "/usr/local/bin/init-db.sh && node server/index.js"]
+# Root olarak başla, startup.sh izinleri düzeltsin, sonra node kullanıcısına geçsin
+CMD ["/usr/local/bin/startup.sh"]
