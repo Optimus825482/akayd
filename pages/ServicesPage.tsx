@@ -32,7 +32,11 @@ const ServicesPage: React.FC<ServicesPageProps> = ({ services, seoSettings }) =>
             pageTitle="Hizmetlerimiz | Fındık Danışmanlığı & Gübre | Akaydın Tarım"
             pageDescription="Akaydın Tarım profesyonel hizmetleri: fındık üretimi danışmanlığı, toprak analizi, organomineral gübreleme, zararlılarla mücadele ve hasat yönetimi. Hendek/Sakarya."
             pageKeywords="hizmetlerimiz, fındık danışmanlığı, tarım danışmanlığı, fındık üretimi, organomineral gübre, toprak analizi, hendek, sakarya, akaydın tarım"
-            structuredData={servicesSchema} />
+            structuredData={servicesSchema}
+            breadcrumbItems={[
+                { name: 'Ana Sayfa', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/' },
+                { name: 'Hizmetlerimiz', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/hizmetlerimiz' }
+            ]} />
 
         {/* Hero */}
         <section className="relative py-20 md:py-28 overflow-hidden" style={{background:'linear-gradient(135deg, #0f1f10 0%, #142218 60%, #1a2a1a 100%)'}}>

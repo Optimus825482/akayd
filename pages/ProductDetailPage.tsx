@@ -120,6 +120,11 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ contactContent, s
                 pageDescription={product.description}
                 pageKeywords={`${product.name}, ${product.category}, ürün detayı, akaydın tarım`}
                 ogImage={product.imageUrl}
+                breadcrumbItems={[
+                    { name: 'Ana Sayfa', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/' },
+                    { name: 'Ürünler', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/urunler' },
+                    { name: product.name, url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/urun/' + product.id }
+                ]}
             />
             <div className="min-h-screen bg-paper-2 py-8">
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8">

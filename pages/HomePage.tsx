@@ -62,7 +62,10 @@ const HomePage: React.FC<HomePageProps> = ({ services, products, heroContents, c
                 pageTitle="Akaydın Tarım | Fındık Kırma & İşleme | Organomineral Gübre | Hendek/Sakarya"
                 pageDescription="Hendek, Sakarya'da fındık üretimi, fındık kırma-kavurma hizmeti, organomineral gübre ve tarımsal danışmanlık. 25+ yıllık deneyim."
                 pageKeywords="fındık kırma hendek, fındık işleme sakarya, fındık kavurma, organomineral gübre, hendek tarım, akaydın tarım, fındık üretimi"
-                structuredData={orgSchema} />
+                structuredData={orgSchema}
+                breadcrumbItems={[
+                    { name: 'Ana Sayfa', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/' }
+                ]} />
 
             {/* ===== HERO — editorial dark ===== */}
             <section className="relative min-h-[90vh] flex items-center overflow-hidden" style={{background:'linear-gradient(135deg, #0f1f10 0%, #142218 40%, #1a2a1a 100%)'}}>

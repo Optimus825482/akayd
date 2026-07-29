@@ -66,7 +66,11 @@ const AboutPage: React.FC<AboutPageProps> = ({ content, seoSettings }) => {
             pageTitle="Hakkımızda | Akaydın Tarım | Hendek Fındık Üretimi"
             pageDescription="Akaydın Tarım, Hendek/Sakarya'da fındık üretimi, kırma-kavurma, organomineral gübre ve tarımsal danışmanlık. 25+ yıllık deneyim, misyon, vizyon ve değerlerimiz."
             pageKeywords="hakkımızda, akaydın tarım, fındık üretimi, hendek, sakarya, organomineral gübre, fındık kırma, tarımsal danışmanlık, misyon, vizyon"
-            structuredData={aboutSchemas} />
+            structuredData={aboutSchemas}
+            breadcrumbItems={[
+                { name: 'Ana Sayfa', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/' },
+                { name: 'Hakkımızda', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/hakkimizda' }
+            ]} />
 
         {/* ═══════════ HERO — sadece başlık ═══════════ */}
         <section className="relative py-20 md:py-28 overflow-hidden" style={{background:'linear-gradient(135deg, #0f1f10 0%, #142218 60%, #1a2a1a 100%)'}}>

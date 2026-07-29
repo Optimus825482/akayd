@@ -16,7 +16,11 @@ const BlogPage: React.FC<BlogPageProps> = ({ blogPosts, seoSettings }) => {
     return (<>
         <SEOHead seoSettings={seoSettings||undefined} pageSEO={pageSEO||undefined}
             pageTitle="Blog" pageDescription="Tarım ve fındık üretimi hakkında güncel yazılar."
-            pageKeywords="blog, tarım, fındık" />
+            pageKeywords="blog, tarım, fındık"
+            breadcrumbItems={[
+                { name: 'Ana Sayfa', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/' },
+                { name: 'Blog', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/blog' }
+            ]} />
 
         {/* Hero */}
         <section className="relative py-20 md:py-28 overflow-hidden" style={{background:'linear-gradient(135deg, #0f1f10 0%, #142218 60%, #1a2a1a 100%)'}}>

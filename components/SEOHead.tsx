@@ -2,6 +2,11 @@ import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import type { SEOSettings, PageSEO } from '../types';
 
+interface BreadcrumbItem {
+    name: string;
+    url: string;
+}
+
 interface SEOHeadProps {
     pageTitle?: string;
     pageDescription?: string;
@@ -16,6 +21,7 @@ interface SEOHeadProps {
     structuredData?: any;
     seoSettings?: SEOSettings;
     pageSEO?: PageSEO;
+    breadcrumbItems?: BreadcrumbItem[];
 }
 
 const SEOHead: React.FC<SEOHeadProps> = ({
@@ -31,8 +37,14 @@ const SEOHead: React.FC<SEOHeadProps> = ({
     nofollow = false,
     structuredData,
     seoSettings,
-    pageSEO
+    pageSEO,
+    breadcrumbItems
 }) => {
+    // Canonical URL: önce sayfa özel canonical, sonra genel canonical_url + window.location
+    const baseUrl = seoSettings?.canonical_url || '';
+    const currentPath = typeof window !== 'undefined' ? window.location.hash.replace('#', '') || '/' : '/';
+    const finalCanonicalUrl = canonicalUrl || pageSEO?.canonical_url || (baseUrl ? `${baseUrl.replace(/\/$/, '')}${currentPath}` : '');
+
     // Sayfa özel SEO verilerini önceliklendir, yoksa genel ayarları kullan
     const finalTitle = pageTitle || pageSEO?.page_title || seoSettings?.site_title || 'Akaydın Tarım';
     const finalDescription = pageDescription || pageSEO?.meta_description || seoSettings?.site_description || '';
@@ -40,8 +52,7 @@ const SEOHead: React.FC<SEOHeadProps> = ({
     const finalOgTitle = ogTitle || pageSEO?.og_title || seoSettings?.og_title || finalTitle;
     const finalOgDescription = ogDescription || pageSEO?.og_description || seoSettings?.og_description || finalDescription;
     const finalOgImage = ogImage || pageSEO?.og_image || seoSettings?.og_image || '';
-    const finalOgUrl = ogUrl || seoSettings?.og_url || '';
-    const finalCanonicalUrl = canonicalUrl || pageSEO?.canonical_url || seoSettings?.canonical_url || '';
+    const finalOgUrl = ogUrl || seoSettings?.og_url || finalCanonicalUrl || '';
     const finalNoindex = noindex || pageSEO?.noindex || false;
     const finalNofollow = nofollow || pageSEO?.nofollow || false;
 
@@ -50,6 +61,29 @@ const SEOHead: React.FC<SEOHeadProps> = ({
     if (finalNoindex) robotsContent.push('noindex');
     if (finalNofollow) robotsContent.push('nofollow');
     if (robotsContent.length === 0) robotsContent.push('index', 'follow');
+
+    // BreadcrumbList structured data
+    const breadcrumbSchema = breadcrumbItems && breadcrumbItems.length > 0 ? {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        'itemListElement': breadcrumbItems.map((item, index) => ({
+            '@type': 'ListItem',
+            'position': index + 1,
+            'name': item.name,
+            'item': item.url
+        }))
+    } : null;
+
+    // Tüm structured data'ları birleştir
+    const allSchemas = [];
+    if (breadcrumbSchema) allSchemas.push(breadcrumbSchema);
+    if (structuredData) {
+        if (Array.isArray(structuredData)) {
+            allSchemas.push(...structuredData);
+        } else {
+            allSchemas.push(structuredData);
+        }
+    }
 
     return (
         <Helmet>
@@ -97,21 +131,15 @@ const SEOHead: React.FC<SEOHeadProps> = ({
                 <meta name="google-site-verification" content={seoSettings.google_search_console} />
             )}
 
-            {/* Structured Data — tek obje veya obje array */}
-            {structuredData && (
-                Array.isArray(structuredData) 
-                    ? structuredData.map((schema, i) => (
-                        <script key={i} type="application/ld+json">
-                            {JSON.stringify(schema)}
-                        </script>
-                    ))
-                    : <script type="application/ld+json">
-                        {JSON.stringify(structuredData)}
-                    </script>
-            )}
+            {/* Structured Data — Breadcrumb + page schemas */}
+            {allSchemas.length > 0 && allSchemas.map((schema, i) => (
+                <script key={i} type="application/ld+json">
+                    {JSON.stringify(schema)}
+                </script>
+            ))}
 
-            {/* Schema Organization */}
-            {seoSettings?.schema_organization && (
+            {/* Schema Organization (eğer ayrıca structuredData içinde yoksa) */}
+            {seoSettings?.schema_organization && !allSchemas.some(s => s['@type'] === 'Organization') && (
                 <script type="application/ld+json">
                     {seoSettings.schema_organization}
                 </script>

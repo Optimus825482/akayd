@@ -33,7 +33,11 @@ const ProductsPage: React.FC<ProductsPageProps> = ({ products, contactContent, s
             pageTitle="Ürünlerimiz | Fındık & Organomineral Gübre | Akaydın Tarım"
             pageDescription="Akaydın Tarım ürün kataloğu: organomineral gübreler, işlenmiş fındık çeşitleri ve tarımsal ürünler. Hendek/Sakarya'da kaliteli ve verimli tarım ürünleri."
             pageKeywords="ürünlerimiz, fındık, organomineral gübre, organik gübre, akaydın tarım, hendek, sakarya, fındık çeşitleri, tarım ürünleri"
-            structuredData={productsSchema} />
+            structuredData={productsSchema}
+            breadcrumbItems={[
+                { name: 'Ana Sayfa', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/' },
+                { name: 'Ürünlerimiz', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/urunler' }
+            ]} />
 
         {/* Hero */}
         <section className="relative py-20 md:py-28 overflow-hidden" style={{background:'linear-gradient(135deg, #0f1f10 0%, #142218 60%, #1a2a1a 100%)'}}>

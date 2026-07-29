@@ -189,7 +189,11 @@ const FindikIslemePage: React.FC<FindikIslemePageProps> = ({ contactContent, seo
       pageTitle="Hendek Fındık Kırma & Kavurma | Profesyonel Fındık İşleme | Akaydın Tarım"
       pageDescription="Hendek, Sakarya'da ev tipi fındık kırma ✓ kavurma ✓ vakumlu paketleme hizmeti. Saatte 5-10 kg kapasite, %98 hasarsız iç fındık. Hemen WhatsApp'tan bilgi alın!"
       pageKeywords="hendek fındık kırma, fındık kırma kavurma, fındık işleme sakarya, hendek fındık işleme, ev tipi fındık kırma, vakumlu paketleme, fındık kavurma hizmeti"
-      structuredData={[faqSchema, howToSchema, localBusinessSchema]} />
+      structuredData={[faqSchema, howToSchema, localBusinessSchema]}
+      breadcrumbItems={[
+        { name: 'Ana Sayfa', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/' },
+        { name: 'Fındık İşleme', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/findik-isleme' }
+      ]} />
 
     {/* ═══════════ HERO ═══════════ */}
     <section className="relative py-20 md:py-28 overflow-hidden" style={greenGradient}>

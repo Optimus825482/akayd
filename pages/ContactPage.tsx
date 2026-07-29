@@ -78,7 +78,11 @@ const ContactPage: React.FC<ContactPageProps> = ({ content, seoSettings }) => {
             pageTitle="İletişim | Akaydın Tarım | Hendek Fındık Kırma & İşleme"
             pageDescription="Akaydın Tarım iletişim bilgileri: Remzi Efendi Cd. No:24, Hendek/Sakarya. Fındık kırma, kavurma, organomineral gübre ve tarımsal danışmanlık için hemen ulaşın."
             pageKeywords="iletişim, akaydın tarım, hendek, sakarya, fındık kırma, adres, telefon, whatsapp, ulaşım"
-            structuredData={localBusinessSchema} />
+            structuredData={localBusinessSchema}
+            breadcrumbItems={[
+                { name: 'Ana Sayfa', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/' },
+                { name: 'İletişim', url: (seoSettings?.canonical_url || 'https://www.akaydintarim.com') + '/iletisim' }
+            ]} />
 
         {/* Hero */}
         <section className="relative py-20 md:py-28 overflow-hidden" style={{background:'linear-gradient(135deg, #0f1f10 0%, #142218 60%, #1a2a1a 100%)'}}>
