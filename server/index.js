@@ -640,7 +640,7 @@ app.put('/api/about', adminAuth, upload.array('images', 10), imageOptimizer, asy
       // Fiziksel dosyaları sil
       toDelete.forEach(imagePath => {
         if (imagePath.startsWith('/uploads/')) {
-          const fullPath = path.join(__dirname, '..', imagePath);
+          const fullPath = path.join(UPLOADS_DIR, path.basename(imagePath));
           if (fs.existsSync(fullPath)) {
             fs.unlinkSync(fullPath);
           }
@@ -705,7 +705,7 @@ app.delete('/api/about/image', adminAuth, async (req, res) => {
     
     // Fiziksel dosyayı sil
     if (imagePath.startsWith('/uploads/')) {
-      const fullPath = path.join(__dirname, '..', imagePath);
+      const fullPath = path.join(UPLOADS_DIR, path.basename(imagePath));
       if (fs.existsSync(fullPath)) {
         try {
           fs.unlinkSync(fullPath);

@@ -9,7 +9,16 @@
       "mcp__jcodemunch__get_file_content",
       "Shell(npx tsc --noEmit --jsx react-jsx 2 >& 1)",
       "powershell",
-      "mcp__jcodemunch__register_edit"
+      "mcp__jcodemunch__register_edit",
+      "mcp__pmb__workspace_info",
+      "mcp__pmb__record_batch",
+      "mcp__pmb__recall",
+      "mcp__pmb__overview",
+      "mcp__pmb__list_recent",
+      "mcp__pmb__recall_smart",
+      "mcp__pmb__stats",
+      "mcp__pmb__recent_activity",
+      "mcp__jcodemunch__search_symbols"
     ],
     "deny": [],
     "defaultMode": "default"
