@@ -62,6 +62,7 @@ coverage/
 # Database files (contains sensitive data)
 database/
 *.sql
+!docker/init/*.sql
 
 # Temporary files
 *.tmp
