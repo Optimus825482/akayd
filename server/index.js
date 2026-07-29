@@ -1652,6 +1652,28 @@ app.get('/api/seo/robots', adminAuth, async (req, res) => {
   }
 });
 
+// Production modda Vite build çıktısını serve et
+if (process.env.NODE_ENV === 'production') {
+  const distPath = path.join(__dirname, '../dist');
+  
+  // Statik dosyalar (JS, CSS, resimler)
+  app.use(express.static(distPath, {
+    maxAge: '30d',
+    setHeaders: (res) => {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+    }
+  }));
+
+  // Tüm route'ları index.html'e yönlendir (SPA client-side routing)
+  app.get('*', (req, res, next) => {
+    // API route'larını skip et
+    if (req.path.startsWith('/api/') || req.path.startsWith('/uploads/')) {
+      return next();
+    }
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+
 app.listen(PORT, () => {
   console.log(`Akaydın Tarım sunucusu port ${PORT} üzerinde çalışıyor.`);
   console.log(`Admin paneli: http://localhost:${PORT}/admin`);
