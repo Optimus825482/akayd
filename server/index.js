@@ -1129,6 +1129,8 @@ app.put('/api/seo/settings', adminAuth, async (req, res) => {
     }
     
     res.json({ message: 'SEO ayarları güncellendi' });
+    // Canonical URL değiştiyse sitemap'i yenile
+    generateSitemap().catch(() => {});
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'SEO ayarları güncellenirken hata oluştu' });

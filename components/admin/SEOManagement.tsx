@@ -327,7 +327,18 @@ const SEOManagement: React.FC<SEOManagementProps> = ({ addNotification }) => {
                             </div>
                         </div>
 
-                        {/* Robots.txt */}
+                        {/* Canonical URL ve Robots.txt */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">🔗 Canonical URL</label>
+                            <input
+                                type="url"
+                                value={seoSettings.canonical_url || ''}
+                                onChange={(e) => setSeoSettings({ ...seoSettings, canonical_url: e.target.value })}
+                                className="border border-gray-300 rounded-lg px-4 py-3 w-full focus:ring-2 focus:ring-blue-500"
+                                placeholder="https://www.akaydintarim.com.tr"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Sitemap bu URL'yi baz alır. Doğru domain yazdığınızdan emin olun.</p>
+                        </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">🤖 Robots.txt İçeriği</label>
                             <textarea
