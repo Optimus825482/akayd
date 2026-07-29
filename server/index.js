@@ -1067,7 +1067,8 @@ app.put('/api/seo/settings', adminAuth, async (req, res) => {
           canonical_url, robots_txt,
           google_analytics_id, google_search_console, facebook_pixel_id,
           schema_organization, sitemap_enabled) 
-      `,
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+        `,
         [
           site_title, site_description, site_keywords, site_author,
           og_title, og_description, og_image, og_url,
