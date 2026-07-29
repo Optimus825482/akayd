@@ -1,5 +1,0 @@
-- generic [ref=e4]:
-  - generic [ref=e5]: ⚠️
-  - generic [ref=e6]: Bir hata oluştu
-  - generic [ref=e7]: Veriler yüklenemedi. Lütfen sayfayı yenileyin veya daha sonra tekrar deneyin.
-  - button "Tekrar Dene" [ref=e8] [cursor=pointer]
