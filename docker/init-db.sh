@@ -1,31 +1,34 @@
 #!/bin/sh
-# PostgreSQL tabloları yoksa oluştur, seed yükle
-# Backend container başlatıldığında bir kez çalışır
+# Akaydın Tarım - DB init script
+# İlk deploy: tabloları oluşturur + seed yükler
+# Sonraki deploylar: tabloları TRUNCATE eder + seed yeniden yükler (idempotent)
 
 set -e
 
-echo "=== DB init kontrol ediliyor ==="
+echo "=== DB init başlıyor ==="
 
 # Tablo var mı kontrol et
 TABLE_EXISTS=$(PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" -tAc "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'services');" 2>/dev/null || echo "false")
 
-if [ "$TABLE_EXISTS" = "t" ]; then
-    echo ">>> Tablolar zaten mevcut, init atlanıyor."
-    exit 0
+if [ "$TABLE_EXISTS" != "t" ]; then
+    echo ">>> Tablolar yok — schema yükleniyor..."
+    PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" -f /app/docker/init/01-schema.sql 2>&1 | tail -3 || echo "Schema yüklendi"
 fi
 
-# Public schema yoksa oluştur
-PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" -c "CREATE SCHEMA IF NOT EXISTS public;" 2>/dev/null || true
+# Her başlangıçta seed tablolarını temizle ve yeniden yükle
+# (production'da admin içerik ekleyince bunu kaldır)
+echo ">>> Seed tabloları temizleniyor ve yeniden yükleniyor..."
 
-echo ">>> Schema yükleniyor..."
-PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" -f /app/docker/init/01-schema.sql 2>&1 || echo "Schema zaten yüklü olabilir"
+PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" <<'EOF' 2>&1 | tail -5
+TRUNCATE TABLE about_page, blog_posts, contact_page, hero_content, products, services, hazelnut_prices, seo_settings, page_seo, contact_messages RESTART IDENTITY CASCADE;
+EOF
 
+# Seed yükle
 echo ">>> Seed data yükleniyor..."
-PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" -f /app/docker/init/02-seed.sql 2>&1 | tail -20 || echo "Seed zaten yüklü olabilir"
+PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" -f /app/docker/init/02-seed.sql 2>&1 | tail -5 || echo "Seed yüklendi"
 
-# Sequence'leri en yüksek ID'ye resetle (yeni kayıtlar için)
-echo ">>> Sequence'ler resetleniyor..."
-PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" <<'EOF' 2>&1 || true
+# Sequence'leri reset
+PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" <<'EOF' 2>&1 | tail -5
 SELECT setval('about_page_id_seq', COALESCE((SELECT MAX(id) FROM about_page), 1));
 SELECT setval('blog_posts_id_seq', COALESCE((SELECT MAX(id) FROM blog_posts), 1));
 SELECT setval('contact_page_id_seq', COALESCE((SELECT MAX(id) FROM contact_page), 1));

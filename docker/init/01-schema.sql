@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS about_page (
 CREATE TABLE IF NOT EXISTS blog_posts (
   id SERIAL PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
-  summary TEXT NOT NULL DEFAULT '',
+  summary TEXT DEFAULT '',  -- NOT NULL kaldırıldı, default ''
   content TEXT DEFAULT NULL,
   author VARCHAR(100) NOT NULL DEFAULT 'Akaydın Tarım',
   date DATE NOT NULL DEFAULT CURRENT_DATE,
