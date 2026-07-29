@@ -1,6 +1,7 @@
 # ============================================
 # Akaydın Tarım — Coolify 3-Container Compose
-# Her servis (postgres + backend + frontend) ayrı container
+#   postgres (db) | backend (api) | frontend (nginx + static)
+# Coolify traefik ile domain yönetimi yapar.
 # ============================================
 
 services:
@@ -45,8 +46,6 @@ services:
         condition: service_healthy
     networks:
       - akaydin_net
-    expose:
-      - "3003"
 
   frontend:
     build:
@@ -62,8 +61,13 @@ services:
       - backend
     networks:
       - akaydin_net
-    ports:
-      - "${FRONTEND_PORT:-80}:80"
+    # Coolify bu servisi Traefik üzerinden akaydintarim.com.tr'ye yönlendirir
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.akaydin-frontend.rule=Host(`akaydintarim.com.tr`) || Host(`www.akaydintarim.com.tr`)"
+      - "traefik.http.routers.akaydin-frontend.entrypoints=websecure"
+      - "traefik.http.routers.akaydin-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.akaydin-frontend.loadbalancer.server.port=80"
 
 volumes:
   pg_data:
