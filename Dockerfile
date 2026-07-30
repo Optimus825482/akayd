@@ -1,14 +1,14 @@
 # ============================================
 # Akaydın Tarım — Backend Dockerfile
-# - Node 20 Alpine
+# - Node 22 Alpine
 # - Vite build (dist/)
 # - Express API (server/index.js)
 # - Vite SPA serve (production modda)
 # ============================================
 
-FROM node:20-alpine
+FROM node:22-alpine
 # postgresql-client backend'in tablo oluşturması için gerekli
-RUN apk add --no-cache tini postgresql16-client
+RUN apk add --no-cache tini postgresql-client
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
