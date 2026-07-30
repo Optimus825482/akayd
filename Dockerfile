@@ -13,7 +13,8 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --ignore-scripts && pnpm rebuild esbuild
+# pnpm supply-chain politikasını Docker build'de devre dışı bırak (yeni paket sürümleri build engellemesin)
+RUN pnpm config set verify-deps-before-run false && pnpm install --ignore-scripts && pnpm rebuild esbuild
 
 # Frontend build
 COPY tsconfig.json vite.config.ts tailwind.config.js postcss.config.js index.html vite-env.d.ts ./
