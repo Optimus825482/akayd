@@ -5,10 +5,9 @@
 
 # ---- Stage 1: Vite Build ----
 FROM node:22-alpine AS builder
-RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
-COPY package.json pnpm-lock.yaml .npmrc-docker ./
-RUN cat .npmrc-docker >> .npmrc 2>/dev/null; pnpm install --ignore-scripts && pnpm rebuild esbuild
+COPY package.json ./
+RUN npm install --ignore-scripts && npm rebuild esbuild
 
 COPY tsconfig.json vite.config.ts tailwind.config.js postcss.config.js index.html vite-env.d.ts ./
 COPY index.tsx App.tsx constants.tsx types.ts ./
@@ -18,7 +17,7 @@ COPY hooks/ ./hooks/
 COPY services/ ./services/
 COPY public/ ./public/
 COPY index.css ./
-RUN pnpm build
+RUN npm run build
 
 # ---- Stage 2: Nginx Serve ----
 FROM nginx:alpine

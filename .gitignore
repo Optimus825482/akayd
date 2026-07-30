@@ -9,3 +9,12 @@ pnpm-debug.log*
 # Hassas dosyalar — asla commit etme!
 gsc-key.json
 *-key.json
+
+# Geçici migration script'leri
+data/migrate_*.mjs
+data/migrate_*.cjs
+data/fix_*.mjs
+data/fix_*.cjs
+
+# Docker build artıkları
+.npmrc-docker
