@@ -3,17 +3,14 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { serpAPI } from '../../services/api';
 import type { SerpRankingCurrent, SerpKeyword, Notification } from '../../types';
 
-const ENGINE_ICONS: Record<string, string> = {
-  google: '🔴',
-  yandex: '🟡',
-  bing: '🔵',
-};
+const ENGINE_ICONS: Record<string, string> = { google: '🔴', yandex: '🟡', bing: '🔵' };
+const ENGINE_LABELS: Record<string, string> = { google: 'Google', yandex: 'Yandex', bing: 'Bing' };
 
-const ENGINE_LABELS: Record<string, string> = {
-  google: 'Google',
-  yandex: 'Yandex',
-  bing: 'Bing',
-};
+const DOMAINS = [
+  { key: '', label: '🌐 Tümü' },
+  { key: 'akaydintarim.com.tr', label: '🌿 Akaydın Tarım' },
+  { key: 'hendekfindikkirma.com', label: '🥜 Hendek Fındık Kırma' },
+];
 
 function getPositionColor(pos: number): string {
   if (pos === 0) return 'text-red-500';
@@ -37,13 +34,13 @@ interface SerpRankTrackerProps {
 
 const SerpRankTracker: React.FC<SerpRankTrackerProps> = ({ addNotification }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'graphs' | 'table'>('dashboard');
+  const [activeDomain, setActiveDomain] = useState('');
   const [currentData, setCurrentData] = useState<SerpRankingCurrent[]>([]);
   const [keywords, setKeywords] = useState<SerpKeyword[]>([]);
   const [history, setHistory] = useState<SerpRankingCurrent[]>([]);
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
 
-  // Graph filters
   const [selectedKeyword, setSelectedKeyword] = useState('');
   const [selectedEngine, setSelectedEngine] = useState('');
   const [selectedDays, setSelectedDays] = useState(30);
@@ -51,7 +48,7 @@ const SerpRankTracker: React.FC<SerpRankTrackerProps> = ({ addNotification }) =>
   const loadData = useCallback(async () => {
     try {
       const [current, kwList] = await Promise.all([
-        serpAPI.getCurrent(),
+        serpAPI.getCurrent(activeDomain || undefined),
         serpAPI.getKeywords(),
       ]);
       setCurrentData(current);
@@ -64,7 +61,7 @@ const SerpRankTracker: React.FC<SerpRankTrackerProps> = ({ addNotification }) =>
     } finally {
       setLoading(false);
     }
-  }, [selectedKeyword]);
+  }, [selectedKeyword, activeDomain]);
 
   const loadHistory = useCallback(async () => {
     if (!selectedKeyword) return;
@@ -73,22 +70,21 @@ const SerpRankTracker: React.FC<SerpRankTrackerProps> = ({ addNotification }) =>
         keyword: selectedKeyword,
         engine: selectedEngine || undefined,
         days: selectedDays,
+        domain: activeDomain || undefined,
       });
       setHistory(data);
     } catch (err) {
       console.error('SERP geçmiş yükleme hatası:', err);
     }
-  }, [selectedKeyword, selectedEngine, selectedDays]);
+  }, [selectedKeyword, selectedEngine, selectedDays, activeDomain]);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
+  useEffect(() => { loadData(); }, [activeDomain]);
 
   useEffect(() => {
     if (activeTab === 'graphs') loadHistory();
   }, [activeTab, loadHistory]);
 
-  // Auto-refresh every 5 minutes
   useEffect(() => {
     const interval = setInterval(loadData, 5 * 60 * 1000);
     return () => clearInterval(interval);
@@ -98,25 +94,22 @@ const SerpRankTracker: React.FC<SerpRankTrackerProps> = ({ addNotification }) =>
     setChecking(true);
     try {
       await serpAPI.triggerCheck();
-      addNotification?.('success', 'Kontrol Başlatıldı', 'Tüm keyword\'ler için SERP kontrolü başlatıldı. Sonuçlar birkaç dakika içinde görünecek.');
-      setTimeout(() => {
-        loadData();
-        setChecking(false);
-      }, 5000);
+      addNotification?.('success', 'Kontrol Başlatıldı', 'Tüm keyword\'ler için SERP kontrolü başlatıldı.');
+      setTimeout(() => { loadData(); setChecking(false); }, 5000);
     } catch {
       addNotification?.('error', 'Hata', 'SERP kontrolü başlatılamadı.');
       setChecking(false);
     }
   };
 
-  // Group current data by keyword
   const groupedData: Record<string, Record<string, SerpRankingCurrent>> = {};
   for (const row of currentData) {
-    if (!groupedData[row.keyword]) groupedData[row.keyword] = {};
-    groupedData[row.keyword][row.engine] = row;
+    const domainKey = row.domain || 'akaydintarim.com.tr';
+    const key = `${row.keyword}@${domainKey}`;
+    if (!groupedData[key]) groupedData[key] = {};
+    groupedData[key][row.engine] = row;
   }
 
-  // Chart data transformation
   const chartDataMap: Record<string, { date: string; [engine: string]: number | string }> = {};
   for (const row of history) {
     const date = new Date(row.checked_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
@@ -133,22 +126,43 @@ const SerpRankTracker: React.FC<SerpRankTrackerProps> = ({ addNotification }) =>
     );
   }
 
+  // Build keyword+domain list from current data
+  const keywordDomainPairs = [...new Set(currentData.map(r => ({ 
+    keyword: r.keyword, 
+    domain: r.domain || 'akaydintarim.com.tr' 
+  })))];
+
   return (
     <div className="space-y-6">
-      {/* Tab Navigation */}
+      {/* Domain Tabs */}
+      <div className="flex items-center space-x-2 bg-white rounded-lg p-2 shadow-sm">
+        {DOMAINS.map(d => (
+          <button
+            key={d.key}
+            onClick={() => setActiveDomain(d.key)}
+            className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              activeDomain === d.key
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            {d.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Sub Tabs + Manual Check */}
       <div className="flex space-x-2 bg-white rounded-lg p-1 shadow-sm">
         {[
-          { id: 'dashboard' as const, label: '📊 Dashboard', name: 'Dashboard' },
-          { id: 'graphs' as const, label: '📈 Grafikler', name: 'Grafikler' },
-          { id: 'table' as const, label: '📋 Detay Tablo', name: 'Detay Tablo' },
+          { id: 'dashboard' as const, label: '📊 Dashboard' },
+          { id: 'graphs' as const, label: '📈 Grafikler' },
+          { id: 'table' as const, label: '📋 Detay Tablo' },
         ].map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`flex-1 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
-              activeTab === tab.id
-                ? 'bg-green-600 text-white shadow-md'
-                : 'text-gray-600 hover:bg-gray-100'
+              activeTab === tab.id ? 'bg-green-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
             {tab.label}
@@ -163,29 +177,31 @@ const SerpRankTracker: React.FC<SerpRankTrackerProps> = ({ addNotification }) =>
         </button>
       </div>
 
-      {/* DASHBOARD TAB */}
+      {/* DASHBOARD */}
       {activeTab === 'dashboard' && (
         <div className="space-y-6">
           <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-xl shadow-lg p-6">
             <h2 className="text-xl font-bold mb-2">📊 Arama Motoru Sıralama Takibi</h2>
             <p className="text-blue-100">
-              {keywords.length} anahtar kelime Google, Yandex ve Bing'de günde 2 kez (00:00 / 12:00) kontrol ediliyor.
+              {keywords.length} anahtar kelime Google, Yandex ve Bing'de takip ediliyor.
+              {activeDomain && <> — Alan: <strong>{activeDomain}</strong></>}
             </p>
           </div>
 
-          {/* Keyword Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {keywords.map(kw => {
-              const engines = groupedData[kw.keyword] || {};
+            {keywordDomainPairs.map(pair => {
+              const key = `${pair.keyword}@${pair.domain}`;
+              const engines = groupedData[key] || {};
               const lastCheck = Object.values(engines)[0]?.checked_at;
-              const bestPos = Math.min(
-                ...Object.values(engines).map(e => e.position === 0 ? 999 : e.position)
-              );
+              const bestPos = Math.min(...Object.values(engines).map(e => e.position === 0 ? 999 : e.position));
 
               return (
-                <div key={kw.id} className="bg-white rounded-xl shadow-lg p-6 border-t-4 border-green-500">
+                <div key={key} className="bg-white rounded-xl shadow-lg p-6 border-t-4 border-green-500">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-lg text-gray-900">{kw.keyword}</h3>
+                    <div>
+                      <h3 className="font-bold text-lg text-gray-900">{pair.keyword}</h3>
+                      <span className="text-xs text-gray-400">{pair.domain}</span>
+                    </div>
                     {bestPos < 999 && (
                       <span className={`px-3 py-1 rounded-full text-sm font-bold ${getPositionBg(bestPos)} ${getPositionColor(bestPos)} border`}>
                         En İyi: #{bestPos}
@@ -218,31 +234,20 @@ const SerpRankTracker: React.FC<SerpRankTrackerProps> = ({ addNotification }) =>
         </div>
       )}
 
-      {/* GRAPHS TAB */}
+      {/* GRAPHS */}
       {activeTab === 'graphs' && (
         <div className="space-y-6">
-          {/* Filters */}
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex flex-wrap gap-4 items-end">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Anahtar Kelime</label>
-                <select
-                  value={selectedKeyword}
-                  onChange={e => setSelectedKeyword(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                >
-                  {keywords.map(kw => (
-                    <option key={kw.id} value={kw.keyword}>{kw.keyword}</option>
-                  ))}
+                <select value={selectedKeyword} onChange={e => setSelectedKeyword(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                  {keywords.map(kw => (<option key={kw.id} value={kw.keyword}>{kw.keyword}</option>))}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Arama Motoru</label>
-                <select
-                  value={selectedEngine}
-                  onChange={e => setSelectedEngine(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                >
+                <select value={selectedEngine} onChange={e => setSelectedEngine(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
                   <option value="">Tümü</option>
                   <option value="google">Google</option>
                   <option value="yandex">Yandex</option>
@@ -251,45 +256,26 @@ const SerpRankTracker: React.FC<SerpRankTrackerProps> = ({ addNotification }) =>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Zaman Aralığı</label>
-                <select
-                  value={selectedDays}
-                  onChange={e => setSelectedDays(Number(e.target.value))}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                >
-                  <option value={7}>7 gün</option>
-                  <option value={14}>14 gün</option>
-                  <option value={30}>30 gün</option>
-                  <option value={90}>90 gün</option>
+                <select value={selectedDays} onChange={e => setSelectedDays(Number(e.target.value))} className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                  <option value={7}>7 gün</option><option value={14}>14 gün</option><option value={30}>30 gün</option><option value={90}>90 gün</option>
                 </select>
               </div>
             </div>
           </div>
 
-          {/* Chart */}
           <div className="bg-white rounded-xl shadow-lg p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">
-              Sıralama Geçmişi — "{selectedKeyword}"
-            </h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Sıralama Geçmişi — "{selectedKeyword}"</h3>
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                   <YAxis reversed domain={[1, 50]} tick={{ fontSize: 12 }} label={{ value: 'Pozisyon', angle: -90, position: 'insideLeft' }} />
-                  <Tooltip
-                    formatter={(value: any) => [value ? `#${value}` : 'Sıralama dışı', '']}
-                    labelFormatter={(label) => `Tarih: ${label}`}
-                  />
+                  <Tooltip formatter={(value: any) => [value ? `#${value}` : 'Sıralama dışı', '']} labelFormatter={(label) => `Tarih: ${label}`} />
                   <Legend />
-                  {(selectedEngine === '' || selectedEngine === 'google') && (
-                    <Line type="monotone" dataKey="google" stroke="#EA4335" strokeWidth={2} dot={{ r: 3 }} name="Google" connectNulls={false} />
-                  )}
-                  {(selectedEngine === '' || selectedEngine === 'yandex') && (
-                    <Line type="monotone" dataKey="yandex" stroke="#FFCC00" strokeWidth={2} dot={{ r: 3 }} name="Yandex" connectNulls={false} />
-                  )}
-                  {(selectedEngine === '' || selectedEngine === 'bing') && (
-                    <Line type="monotone" dataKey="bing" stroke="#008AD7" strokeWidth={2} dot={{ r: 3 }} name="Bing" connectNulls={false} />
-                  )}
+                  {(!selectedEngine || selectedEngine === 'google') && <Line type="monotone" dataKey="google" stroke="#EA4335" strokeWidth={2} dot={{ r: 3 }} name="Google" connectNulls={false} />}
+                  {(!selectedEngine || selectedEngine === 'yandex') && <Line type="monotone" dataKey="yandex" stroke="#FFCC00" strokeWidth={2} dot={{ r: 3 }} name="Yandex" connectNulls={false} />}
+                  {(!selectedEngine || selectedEngine === 'bing') && <Line type="monotone" dataKey="bing" stroke="#008AD7" strokeWidth={2} dot={{ r: 3 }} name="Bing" connectNulls={false} />}
                 </LineChart>
               </ResponsiveContainer>
             ) : (
@@ -302,24 +288,26 @@ const SerpRankTracker: React.FC<SerpRankTrackerProps> = ({ addNotification }) =>
         </div>
       )}
 
-      {/* TABLE TAB */}
+      {/* TABLE */}
       {activeTab === 'table' && (
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Anahtar Kelime</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Google</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Yandex</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Bing</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">En İyi</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Son Kontrol</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Anahtar Kelime</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Site</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Google</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Yandex</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Bing</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">En İyi</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Son Kontrol</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {keywords.map(kw => {
-                  const engines = groupedData[kw.keyword] || {};
+                {keywordDomainPairs.map(pair => {
+                  const key = `${pair.keyword}@${pair.domain}`;
+                  const engines = groupedData[key] || {};
                   const positions = {
                     google: engines['google']?.position || 0,
                     yandex: engines['yandex']?.position || 0,
@@ -329,14 +317,13 @@ const SerpRankTracker: React.FC<SerpRankTrackerProps> = ({ addNotification }) =>
                   const lastCheck = Object.values(engines)[0]?.checked_at;
 
                   return (
-                    <tr key={kw.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{kw.keyword}</td>
+                    <tr key={key} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{pair.keyword}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{pair.domain}</td>
                       {(['google', 'yandex', 'bing'] as const).map(eng => (
                         <td key={eng} className="px-6 py-4 whitespace-nowrap text-center">
                           {positions[eng] > 0 ? (
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-bold ${getPositionBg(positions[eng])} ${getPositionColor(positions[eng])} border`}>
-                              #{positions[eng]}
-                            </span>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-bold ${getPositionBg(positions[eng])} ${getPositionColor(positions[eng])} border`}>#{positions[eng]}</span>
                           ) : (
                             <span className="text-sm text-gray-400">—</span>
                           )}
@@ -344,15 +331,13 @@ const SerpRankTracker: React.FC<SerpRankTrackerProps> = ({ addNotification }) =>
                       ))}
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {bestPos < 999 ? (
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-bold ${getPositionBg(bestPos)} ${getPositionColor(bestPos)} border`}>
-                            #{bestPos}
-                          </span>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-bold ${getPositionBg(bestPos)} ${getPositionColor(bestPos)} border`}>#{bestPos}</span>
                         ) : (
                           <span className="text-sm text-red-400">Sıralama dışı</span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
-                        {lastCheck ? new Date(lastCheck).toLocaleString('tr-TR') : 'Henüz kontrol edilmedi'}
+                        {lastCheck ? new Date(lastCheck).toLocaleString('tr-TR') : '—'}
                       </td>
                     </tr>
                   );

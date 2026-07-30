@@ -232,11 +232,12 @@ export const seoAPI = {
 
 // SERP Rank Tracker API
 export const serpAPI = {
-  getCurrent: () => apiCall("/serp-rankings/current"),
-  getHistory: (params: { keyword?: string; engine?: string; days?: number }) => {
+  getCurrent: (domain?: string) => domain ? apiCall(`/serp-rankings/current?domain=${encodeURIComponent(domain)}`) : apiCall("/serp-rankings/current"),
+  getHistory: (params: { keyword?: string; engine?: string; days?: number; domain?: string }) => {
     const qs = new URLSearchParams();
     if (params.keyword) qs.set('keyword', params.keyword);
     if (params.engine) qs.set('engine', params.engine);
+    if (params.domain) qs.set('domain', params.domain);
     qs.set('days', String(params.days || 30));
     return apiCall(`/serp-rankings/history?${qs.toString()}`);
   },

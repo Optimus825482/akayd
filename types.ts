@@ -334,5 +334,6 @@ export interface SerpRankingCurrent {
   engine: string;
   position: number;
   url?: string;
+  domain?: string;
   checked_at: string;
 }

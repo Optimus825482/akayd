@@ -1546,15 +1546,23 @@ app.delete('/api/serp-rankings/keywords/:id', adminAuth, async (req, res) => {
   }
 });
 
-// Tüm keyword'lerin son durumu
+// Tüm keyword'lerin son durumu (domain ile birlikte)
 app.get('/api/serp-rankings/current', adminAuth, async (req, res) => {
   try {
-    const { rows } = await db.query(`
-      SELECT DISTINCT ON (r.keyword, r.engine)
-        r.keyword, r.engine, r.position, r.url, r.checked_at
+    const { domain } = req.query;
+    let query = `
+      SELECT DISTINCT ON (r.keyword, r.engine, COALESCE(r.domain, 'akaydintarim.com.tr'))
+        r.keyword, r.engine, r.position, r.url, r.checked_at,
+        COALESCE(r.domain, 'akaydintarim.com.tr') as domain
       FROM serp_rankings r
-      ORDER BY r.keyword, r.engine, r.checked_at DESC
-    `);
+    `;
+    const params = [];
+    if (domain) {
+      query += ' WHERE COALESCE(r.domain, \'akaydintarim.com.tr\') = $1';
+      params.push(domain);
+    }
+    query += ' ORDER BY r.keyword, r.engine, COALESCE(r.domain, \'akaydintarim.com.tr\'), r.checked_at DESC';
+    const { rows } = await db.query(query, params);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1564,19 +1572,14 @@ app.get('/api/serp-rankings/current', adminAuth, async (req, res) => {
 // Geçmiş veriler
 app.get('/api/serp-rankings/history', adminAuth, async (req, res) => {
   try {
-    const { keyword, engine, days } = req.query;
-    const sinceDays = parseInt(days) || 30;
-    let query = 'SELECT * FROM serp_rankings WHERE checked_at >= NOW() - INTERVAL \'' + sinceDays + ' DAYS\'';
-    const params = [];
+    const { keyword, engine, days, domain } = req.query;
+    const sinceDays = Math.max(1, Math.min(365, parseInt(days) || 30));
+    const params = [sinceDays];
+    let query = `SELECT * FROM serp_rankings WHERE checked_at >= NOW() - INTERVAL '1 DAY' * $1`;
 
-    if (keyword) {
-      params.push(keyword);
-      query += ` AND keyword = $${params.length}`;
-    }
-    if (engine) {
-      params.push(engine);
-      query += ` AND engine = $${params.length}`;
-    }
+    if (keyword) { params.push(keyword); query += ` AND keyword = $${params.length}`; }
+    if (engine) { params.push(engine); query += ` AND engine = $${params.length}`; }
+    if (domain) { params.push(domain); query += ` AND COALESCE(domain, 'akaydintarim.com.tr') = $${params.length}`; }
     query += ' ORDER BY checked_at ASC';
 
     const { rows } = await db.query(query, params);
