@@ -16,7 +16,9 @@ if [ "$TABLE_EXISTS" != "t" ]; then
     PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" -c "\i /app/docker/init/02-seed.sql" 2>&1 | tail -10
     echo ">>> İlk kurulum tamamlandı."
 else
-    echo ">>> Tablolar mevcut — seed verisi kontrol ediliyor (veri silinmeden)..."
+    echo ">>> Tablolar mevcut — eksik şema nesneleri kontrol ediliyor..."
+    PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" -f /app/docker/init/01-schema.sql 2>&1 | tail -20
+    echo ">>> Seed verisi kontrol ediliyor (veri silinmeden)..."
     # Eksik kayıtları INSERT ... ON CONFLICT DO NOTHING ile ekle
     PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" -c "\i /app/docker/init/02-seed.sql" 2>&1 | tail -10 || echo ">>> Seed kontrolü yapıldı (bazı kayıtlar zaten mevcut olabilir)"
 fi
@@ -32,6 +34,8 @@ SELECT setval('services_id_seq', COALESCE((SELECT MAX(id) FROM services), 1));
 SELECT setval('seo_settings_id_seq', COALESCE((SELECT MAX(id) FROM seo_settings), 1));
 SELECT setval('page_seo_id_seq', COALESCE((SELECT MAX(id) FROM page_seo), 1));
 SELECT setval('contact_messages_id_seq', COALESCE((SELECT MAX(id) FROM contact_messages), 1));
+SELECT setval('serp_keywords_id_seq', COALESCE((SELECT MAX(id) FROM serp_keywords), 1));
+SELECT setval('serp_rankings_id_seq', COALESCE((SELECT MAX(id) FROM serp_rankings), 1));
 EOF
 
 echo "=== DB init tamamlandı ==="
