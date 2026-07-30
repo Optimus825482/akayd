@@ -18,14 +18,6 @@ mkdir -p /app/public
 chown -R 1000:1000 /app/public 2>/dev/null || true
 chmod 755 /app/public 2>/dev/null || true
 
-# GSC key'in bind-mount'tan veya docker cp'den kopyalanması
-# docker-compose mount /etc/gsc-key → /app/gsc-key.json (read-only mount sorunu için)
-if [ -f /etc/gsc-key.json ] && [ ! -f /app/gsc-key.json ]; then
-  cp /etc/gsc-key.json /app/gsc-key.json
-  chmod 400 /app/gsc-key.json
-  echo ">>> GSC key kopyalandı"
-fi
-
 echo ">>> Container başlatılıyor — uploads izinleri düzeltildi"
 echo ">>> DB init başlatılıyor (node kullanıcısı ile)..."
 

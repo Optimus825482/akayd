@@ -3,8 +3,10 @@
  *
  * Kurulum:
  * 1. https://console.cloud.google.com → Search Console API'yi etkinleştir
- * 2. Service Account oluştur → JSON key indir → proje köküne gsc-key.json olarak kaydet
- * 3. Google Search Console'da siteni ekle → Ayarlar → Kullanıcılar → service account email'ini ekle (Tam yetki)
+ * 2. Service Account oluştur → JSON key indir
+ * 3. JSON içeriğini Coolify Environment: GSC_KEY_JSON='{...}' olarak ekle (tek satır)
+ *    Veya sunucuda dosya olarak: /data/akaydin/gsc-key.json
+ * 4. Google Search Console'da siteni ekle → Kullanıcılar → service account email'ini ekle
  *
  * Ücretsiz. Günlük 2000 sorgu limiti.
  */
@@ -15,10 +17,10 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Service account key dosyası
+// Service account key: önce env, sonra dosya yolu
 const KEY_FILE = process.env.GSC_KEY_FILE || path.join(__dirname, '..', 'gsc-key.json');
 
-// Site URL (Search Console'da kayıtlı property)
+// Site URL
 const SITE_URL = process.env.GSC_SITE_URL || 'https://www.akaydintarim.com.tr';
 
 let auth = null;
@@ -31,13 +33,23 @@ function getAuth() {
   if (auth) return auth;
 
   try {
-    if (!fs.existsSync(KEY_FILE)) {
-      console.warn('[GSC] gsc-key.json bulunamadı — Google scraping fallback kullanılacak.');
-      console.warn('[GSC] Kurulum: Google Cloud Console → Service Account → JSON key indir → gsc-key.json olarak kaydet');
+    let keyData = null;
+
+    // 1. GSC_KEY_JSON env değişkeninden (önerilen)
+    if (process.env.GSC_KEY_JSON) {
+      keyData = JSON.parse(process.env.GSC_KEY_JSON);
+      console.log('[GSC] Env değişkeninden auth başarılı (GSC_KEY_JSON).');
+    }
+    // 2. Dosyadan (fallback)
+    else if (fs.existsSync(KEY_FILE)) {
+      keyData = JSON.parse(fs.readFileSync(KEY_FILE, 'utf8'));
+      console.log('[GSC] Dosyadan auth başarılı (' + KEY_FILE + ').');
+    }
+    // 3. Hiçbiri yok → scrape fallback
+    else {
+      console.warn('[GSC] GSC_KEY_JSON env veya gsc-key.json bulunamadı — Google scraping fallback kullanılacak.');
       return null;
     }
-
-    const keyData = JSON.parse(fs.readFileSync(KEY_FILE, 'utf8'));
     auth = new google.auth.GoogleAuth({
       credentials: keyData,
       scopes: ['https://www.googleapis.com/auth/webmasters.readonly'],
