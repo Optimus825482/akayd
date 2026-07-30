@@ -1,5 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { checkGSC, isGSCAvailable } from './gscClient.js';
 
 const USER_AGENTS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -24,6 +25,17 @@ function sleep(ms) {
 }
 
 async function scrapeGoogle(query, domain) {
+  // Google Search Console API mevcutsa onu kullan (daha güvenilir, ücretsiz)
+  if (isGSCAvailable()) {
+    try {
+      const result = await checkGSC(query);
+      if (result !== null) return result;
+    } catch (err) {
+      console.warn(`[SERP] GSC hatası, scraping fallback kullanılıyor:`, err.message);
+    }
+  }
+
+  // Fallback: HTML scraping
   const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&hl=tr&gl=TR&num=50`;
   try {
     const { data } = await axios.get(url, {

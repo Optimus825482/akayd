@@ -40,6 +40,7 @@ services:
       - PORT=3003
     volumes:
       - /data/akaydin/uploads:/app/uploads
+      - ${GSC_KEY_FILE:-./gsc-key.json}:/app/gsc-key.json:ro
     depends_on:
       postgres:
         condition: service_healthy

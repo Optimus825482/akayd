@@ -498,10 +498,20 @@ app.post('/api/blog-posts', adminAuth, upload.single('image'), imageOptimizer, a
     const { title, content, excerpt, author, seo_title, seo_description, seo_keywords } = req.body;
     const imageUrl = req.file ? `/uploads/${req.file.filename}` : '';
     const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-    
+
+    // -- SEO otomatik doldurma: bos alanlari title/content'ten turet --
+    var stripHtml = function(html) { return (html || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim(); };
+    var finalSeoTitle = seo_title || stripHtml(title);
+    var finalSeoDescription = seo_description || (excerpt || '').substring(0, 160);
+    var finalSeoKeywords = seo_keywords;
+    if (!seo_keywords && title) {
+      var stops = new Set(['ve','veya','ile','icin','bir','bu','da','de','ki','ise','ama','fakat','cok','daha','olarak','gibi','kadar','sonra','once','her','su','o','ne','nasil','nerede','hangi','kim','neden']);
+      finalSeoKeywords = title.toLowerCase().split(/[\s,.;:!?()]+/).filter(function(w) { return w.length > 2 && !stops.has(w); }).slice(0, 5).join(', ');
+    }
+
     const result = await db.query(
       'INSERT INTO blog_posts (title, summary, content, excerpt, author, date, image_url, views, seo_title, seo_description, seo_keywords, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, 0, $8, $9, $10, NOW()) RETURNING id',
-      [title, excerpt || '', content || '', excerpt || '', author || 'Akaydın Tarım', currentDate, imageUrl, seo_title || null, seo_description || null, seo_keywords || null]
+      [title, excerpt || '', content || '', excerpt || '', author || 'Akaydın Tarım', currentDate, imageUrl, finalSeoTitle || null, finalSeoDescription || null, finalSeoKeywords || null]
     );
     // Blog yazısı eklendi, sitemap'i arka planda yenile
     generateSitemap().catch(() => {});
@@ -516,10 +526,9 @@ app.post('/api/blog-posts', adminAuth, upload.single('image'), imageOptimizer, a
       image_url: imageUrl,
       image: req.file ? req.file.filename : null,
       views: 0,
-      seo_title: seo_title || null,
-      seo_description: seo_description || null,
-      seo_keywords: seo_keywords || null,
-      created_at: new Date()
+      seo_title: finalSeoTitle || null,
+      seo_description: finalSeoDescription || null,
+      seo_keywords: finalSeoKeywords || null
     });
   } catch (error) {
     console.error(error);
@@ -542,12 +551,22 @@ app.put('/api/blog-posts/:id', adminAuth, upload.single('image'), imageOptimizer
     if (req.file) {
       imageUrl = `/uploads/${req.file.filename}`;
     }
-    
-    await db.query(
+
+    // -- SEO otomatik doldurma: bos alanlari title/content'ten turet --
+    var stripHtml2 = function(html) { return (html || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim(); };
+    var fSeoTitle = seo_title || stripHtml2(title);
+    var fSeoDesc = seo_description || (excerpt || '').substring(0, 160);
+    var fSeoKeys = seo_keywords;
+    if (!seo_keywords && title) {
+      var stops2 = new Set(['ve','veya','ile','icin','bir','bu','da','de','ki','ise','ama','fakat','cok','daha','olarak','gibi','kadar','sonra','once','her','su','o','ne','nasil','nerede','hangi','kim','neden']);
+      fSeoKeys = title.toLowerCase().split(/[\s,.;:!?()]+/).filter(function(w) { return w.length > 2 && !stops2.has(w); }).slice(0, 5).join(', ');
+    }
+
+await db.query(
       'UPDATE blog_posts SET title = $1, summary = $2, content = $3, excerpt = $4, author = $5, image_url = $6, seo_title = $7, seo_description = $8, seo_keywords = $9, updated_at = NOW() WHERE id = $10',
-      [title, excerpt || '', content || '', excerpt || '', author || 'Akaydın Tarım', imageUrl, seo_title || null, seo_description || null, seo_keywords || null, id]
+      [title, excerpt || '', content || '', excerpt || '', author || 'Akaydın Tarım', imageUrl, fSeoTitle || null, fSeoDesc || null, fSeoKeys || null, id]
     );
-    
+
     // Blog yazısı güncellendi, sitemap'i arka planda yenile
     generateSitemap().catch(() => {});
     res.json({ 
@@ -561,9 +580,9 @@ app.put('/api/blog-posts/:id', adminAuth, upload.single('image'), imageOptimizer
       image_url: imageUrl,
       image: req.file ? req.file.filename : null,
       views: existing.rows[0].views || 0,
-      seo_title: seo_title || null,
-      seo_description: seo_description || null,
-      seo_keywords: seo_keywords || null
+      seo_title: fSeoTitle || null,
+      seo_description: fSeoDesc || null,
+      seo_keywords: fSeoKeys || null
     });
   } catch (error) {
     console.error(error);
