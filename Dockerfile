@@ -12,8 +12,8 @@ RUN apk add --no-cache tini postgresql-client
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --minimum-release-age=0
+COPY package.json pnpm-lock.yaml .npmrc ./
+RUN pnpm install
 
 # Frontend build
 COPY tsconfig.json vite.config.ts tailwind.config.js postcss.config.js index.html vite-env.d.ts ./
