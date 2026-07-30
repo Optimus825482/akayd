@@ -40,6 +40,7 @@ services:
       - PORT=3003
     volumes:
       - /data/akaydin/uploads:/app/uploads
+      - /data/akaydin/gsc-key.json:/etc/gsc-key.json:ro
     depends_on:
       postgres:
         condition: service_healthy
