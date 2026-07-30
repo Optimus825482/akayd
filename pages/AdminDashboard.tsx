@@ -148,6 +148,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     src="/akaylogo.png"
                                     alt="Akaydın Tarım Logo"
                                     className="w-8 h-8 object-contain"
+                                    onError={(e) => {
+                                        const target = e.currentTarget;
+                                        target.onerror = null;
+                                        target.style.display = 'none';
+                                        const parent = target.parentElement;
+                                        if (parent) {
+                                            const span = document.createElement('span');
+                                            span.textContent = '🌱';
+                                            span.className = 'w-8 h-8 text-xl flex items-center justify-center';
+                                            parent.prepend(span);
+                                        }
+                                    }}
                                 />
                                 <span className="font-bold text-lg">Akaydın Tarım</span>
                             </div>

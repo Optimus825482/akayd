@@ -15,6 +15,12 @@ import BlogPage from './pages/BlogPage';
 import ContactPage from './pages/ContactPage';
 import FindikIslemePage from './pages/FindikIslemePage';
 
+// API yanıt tipleri (frontend tiplerine dönüştürmeden önceki ham veri)
+interface ApiService { id: number; title: string; description: string; icon_name: string; }
+interface ApiProduct { id: number; name: string; description: string; category: string; price: number; is_featured: number; image_url: string; images: string[]; }
+interface ApiBlogPost { id: number; title: string; excerpt: string; summary: string; content: string; author: string; created_at: string; views: number; image_url: string; seo_title: string; seo_description: string; seo_keywords: string; }
+interface ApiHero { id: number; ID: number; title: string; subtitle: string; description: string; cta: string; background_gradient: string; background_image: string; is_active: boolean; order_index: number; }
+
 const STATIC_BASE_URL = import.meta.env.VITE_STATIC_URL
   || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3003');
 const img = (p: string) => {
@@ -50,14 +56,14 @@ function App(): React.ReactNode {
         seoAPI.getSettings().catch(() => null) // SEO verisi yoksa null döndür
       ]);
 
-      setServices(servicesData.map((service: any) => ({
+      setServices(servicesData.map((service: ApiService) => ({
         id: service.id.toString(),
         title: service.title,
         description: service.description,
         iconName: service.icon_name || 'Consulting'
       })));
 
-      setProducts(productsData.map((product: any) => ({
+      setProducts(productsData.map((product: ApiProduct) => ({
         id: product.id.toString(),
         name: product.name,
         description: product.description,
@@ -70,7 +76,7 @@ function App(): React.ReactNode {
           : []
       })));
 
-      setBlogPosts(blogPostsData.map((post: any) => ({
+      setBlogPosts(blogPostsData.map((post: ApiBlogPost) => ({
         id: post.id.toString(),
         title: post.title,
         summary: post.excerpt || post.summary || post.content,
@@ -116,7 +122,7 @@ function App(): React.ReactNode {
 
       // Hero verilerini işle
       if (heroData && heroData.length > 0) {
-        setHeroContents(heroData.map((hero: any) => ({
+        setHeroContents(heroData.map((hero: ApiHero) => ({
           id: hero.id?.toString() || hero.ID?.toString() || String(hero.order_index || 1),
           title: hero.title,
           subtitle: hero.subtitle,

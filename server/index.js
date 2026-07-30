@@ -9,6 +9,8 @@ const { Pool } = pkg;
 import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
+import rateLimit from 'express-rate-limit';
 
 // Import multer immediately
 import multer from 'multer';
@@ -54,7 +56,11 @@ if (ADMIN_PASSWORD) {
   });
 }
 
-const adminTokens = new Set();
+// JWT Secret — sunucu restart'ında geçersiz olmaması için env'den al
+const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
+if (!process.env.JWT_SECRET) {
+  console.warn('UYARI: JWT_SECRET ayarlanmadı, geçici anahtar kullanılıyor. Sunucu restart\'ında tüm oturumlar sonlanır.');
+}
 
 // Yardımcı: boolean/string değerleri PostgreSQL smallint için 0/1 integer'a çevir
 const toSmallInt = (val) => {
@@ -64,10 +70,15 @@ const toSmallInt = (val) => {
 
 const adminAuth = (req, res, next) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token || !adminTokens.has(token)) {
+  if (!token) {
     return res.status(401).json({ error: 'Yetkisiz erişim' });
   }
-  next();
+  try {
+    jwt.verify(token, JWT_SECRET);
+    next();
+  } catch {
+    return res.status(401).json({ error: 'Geçersiz veya süresi dolmuş token' });
+  }
 };
 
 // Middleware
@@ -127,39 +138,27 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
-// Rate limiting
-const rateLimit = new Map();
-const RATE_LIMIT_WINDOW = 60 * 1000;
-const RATE_LIMIT_MAX = 100;
-
-// Periyodik temizlik: süresi dolmuş timestamp'leri filtrele, boş kalan IP'leri sil
-const RATE_LIMIT_CLEANUP_INTERVAL = 10 * 60 * 1000; // 10 dakika
-setInterval(() => {
-  const now = Date.now();
-  for (const [ip, timestamps] of rateLimit) {
-    const valid = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW);
-    if (valid.length === 0) {
-      rateLimit.delete(ip);
-    } else {
-      rateLimit.set(ip, valid);
-    }
-  }
-}, RATE_LIMIT_CLEANUP_INTERVAL);
-
-app.use((req, res, next) => {
-  const ip = req.ip;
-  const now = Date.now();
-  if (!rateLimit.has(ip)) {
-    rateLimit.set(ip, []);
-  }
-  const timestamps = rateLimit.get(ip).filter(t => now - t < RATE_LIMIT_WINDOW);
-  if (timestamps.length >= RATE_LIMIT_MAX) {
-    return res.status(429).json({ error: 'Çok fazla istek, lütfen bekleyin' });
-  }
-  timestamps.push(now);
-  rateLimit.set(ip, timestamps);
-  next();
+// Rate limiting (express-rate-limit ile — bellek tabanlı, tek instance için yeterli)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 dakika
+  max: 100, // her IP için maksimum 100 istek
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Çok fazla istek, lütfen 15 dakika sonra tekrar deneyin' },
 });
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 dakika
+  max: 10, // auth endpoint'leri için daha sıkı limit
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Çok fazla giriş denemesi, lütfen 15 dakika sonra tekrar deneyin' },
+});
+
+// Genel rate limit: API rotalarında
+app.use('/api', limiter);
+// Auth giriş endpoint'ine daha sıkı limit
+app.use('/api/admin/login', authLimiter);
 
 // PostgreSQL bağlantısı (retry ile)
 if (!process.env.DB_USER || !process.env.DB_PASSWORD) {
@@ -265,14 +264,12 @@ app.post('/api/admin/login', async (req, res) => {
     // bcrypt karşılaştırma hatası durumunda düz metin karşılaştırmaya geri dön
     if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Hatalı şifre' });
   }
-  const token = crypto.randomBytes(32).toString('hex');
-  adminTokens.add(token);
-  setTimeout(() => adminTokens.delete(token), 24 * 60 * 60 * 1000);
+  const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '24h' });
   res.json({ token, message: 'Giriş başarılı' });
 });
 
 app.post('/api/admin/logout', adminAuth, (req, res) => {
-  adminTokens.delete(req.headers.authorization?.replace('Bearer ', ''));
+  // JWT stateless — client token'ı siler
   res.json({ message: 'Çıkış başarılı' });
 });
 
@@ -300,7 +297,7 @@ app.post('/api/services', adminAuth, async (req, res) => {
       [title, description, iconName]
     );
     // İçerik değişti, sitemap'i arka planda yenile
-    generateSitemap().catch(() => {});
+    generateSitemap().catch(err => console.error('[Sitemap] Yenileme hatası:', err.message));
     res.json({ id: result.rows[0].id, title, description, iconName });
   } catch (error) {
     console.error(error);
@@ -316,7 +313,7 @@ app.put('/api/services/:id', adminAuth, async (req, res) => {
       'UPDATE services SET title = $1, description = $2, icon_name = $3 WHERE id = $4',
       [title, description, iconName, id]
     );
-    generateSitemap().catch(() => {});
+    generateSitemap().catch(err => console.error('[Sitemap] Yenileme hatası:', err.message));
     res.json({ id, title, description, iconName });
   } catch (error) {
     console.error(error);
@@ -328,7 +325,7 @@ app.delete('/api/services/:id', adminAuth, async (req, res) => {
   try {
     const { id } = req.params;
     await db.query('DELETE FROM services WHERE id = $1', [id]);
-    generateSitemap().catch(() => {});
+    generateSitemap().catch(err => console.error('[Sitemap] Yenileme hatası:', err.message));
     res.json({ message: 'Hizmet başarıyla silindi' });
   } catch (error) {
     console.error(error);
@@ -374,7 +371,7 @@ app.post('/api/products', adminAuth, upload.array('images', 10), imageOptimizer,
       [name, description, category, imageUrl, imagesJson, isFeatured]
     );
     // Yeni ürün eklendi, sitemap'i arka planda yenile
-    generateSitemap().catch(() => {});
+    generateSitemap().catch(err => console.error('[Sitemap] Yenileme hatası:', err.message));
     res.json({ 
       id: result.rows[0].id, 
       name, 
@@ -450,7 +447,7 @@ app.put('/api/products/:id', adminAuth, upload.array('images', 10), imageOptimiz
       [name, description, category, imageUrl, imagesJson, isFeatured, id]
     );
     // Ürün güncellendi, sitemap'i arka planda yenile
-    generateSitemap().catch(() => {});
+    generateSitemap().catch(err => console.error('[Sitemap] Yenileme hatası:', err.message));
     res.json({ 
       id, 
       name, 
@@ -469,9 +466,22 @@ app.put('/api/products/:id', adminAuth, upload.array('images', 10), imageOptimiz
 app.delete('/api/products/:id', adminAuth, async (req, res) => {
   try {
     const { id } = req.params;
+    // Dosya ve DB'den sil
+    const existing = await db.query('SELECT * FROM products WHERE id = $1', [id]);
+    if (existing.rows.length > 0) {
+      // Fiziksel resim dosyalarını sil
+      let images = [];
+      try { images = JSON.parse(existing.rows[0].images || '[]'); } catch {}
+      images.forEach(imagePath => {
+        if (imagePath.startsWith('/uploads/')) {
+          const fullPath = path.join(UPLOADS_DIR, path.basename(imagePath));
+          try { if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath); } catch {}
+        }
+      });
+    }
     await db.query('DELETE FROM products WHERE id = $1', [id]);
     // Ürün silindi, sitemap'i arka planda yenile
-    generateSitemap().catch(() => {});
+    generateSitemap().catch(err => console.error('[Sitemap] Yenileme hatası:', err.message));
     res.json({ message: 'Ürün başarıyla silindi' });
   } catch (error) {
     console.error(error);
@@ -495,17 +505,19 @@ app.post('/api/blog-posts', adminAuth, upload.single('image'), imageOptimizer, a
     const { title, content, excerpt, author, seo_title, seo_description, seo_keywords } = req.body;
     const imageUrl = req.file ? `/uploads/${req.file.filename}` : '';
     const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    // summary: content'in HTML etiketlerinden arındırılmış ilk 200 karakterlik özeti
+    const summary = (content || excerpt || '').replace(/<[^>]*>/g, '').substring(0, 200);
     
     const result = await db.query(
       'INSERT INTO blog_posts (title, summary, content, excerpt, author, date, image_url, views, seo_title, seo_description, seo_keywords, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, 0, $8, $9, $10, NOW()) RETURNING id',
-      [title, excerpt || '', content || '', excerpt || '', author || 'Akaydın Tarım', currentDate, imageUrl, seo_title || null, seo_description || null, seo_keywords || null]
+      [title, summary, content || '', excerpt || null, author || 'Akaydın Tarım', currentDate, imageUrl, finalSeoTitle || null, finalSeoDescription || null, finalSeoKeywords || null]
     );
     // Blog yazısı eklendi, sitemap'i arka planda yenile
-    generateSitemap().catch(() => {});
+    generateSitemap().catch(err => console.error('[Sitemap] Yenileme hatası:', err.message));
     res.json({ 
       id: result.rows[0].id, 
       title, 
-      summary: excerpt || '',
+      summary: summary,
       content: content || '', 
       excerpt: excerpt || '',
       author: author || 'Akaydın Tarım',
@@ -540,17 +552,579 @@ app.put('/api/blog-posts/:id', adminAuth, upload.single('image'), imageOptimizer
       imageUrl = `/uploads/${req.file.filename}`;
     }
     
-    await db.query(
+    // summary: content'in HTML etiketlerinden arındırılmış ilk 200 karakterlik özeti
+    const summary = (content || excerpt || '').replace(/<[^>]*>/g, '').substring(0, 200);
+    
+await db.query(
       'UPDATE blog_posts SET title = $1, summary = $2, content = $3, excerpt = $4, author = $5, image_url = $6, seo_title = $7, seo_description = $8, seo_keywords = $9, updated_at = NOW() WHERE id = $10',
-      [title, excerpt || '', content || '', excerpt || '', author || 'Akaydın Tarım', imageUrl, seo_title || null, seo_description || null, seo_keywords || null, id]
+      [title, summary, content || '', excerpt || null, author || 'Akaydın Tarım', import 'dotenv/config';
+// Memory-optimized imports
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import bcrypt from 'bcryptjs';
+import pkg from 'pg';
+const { Pool } = pkg;
+import path from 'path';
+import { fileURLToPath } from 'url';
+import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
+import rateLimit from 'express-rate-limit';
+
+// Import multer immediately
+import multer from 'multer';
+import cron from 'node-cron';
+import axios from 'axios';
+import { imageOptimizer } from './imageProcessor.js';
+import { checkAllRankings, checkSingleKeyword } from './serpChecker.js';
+
+import fs from 'fs';
+import compression from 'compression';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Kalıcı uploads klasörü — deploy'da silinmeyen bir konum
+const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, '../uploads');
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  console.log(`Uploads klasörü oluşturuldu: ${UPLOADS_DIR}`);
+}
+// Bind mount için yazma izni kontrolü
+try {
+  fs.accessSync(UPLOADS_DIR, fs.constants.W_OK);
+} catch {
+  console.warn(`UYARI: ${UPLOADS_DIR} yazılabilir değil! chmod 777 veya chown node yapın.`);
+}
+
+const app = express();
+const PORT = process.env.PORT || 3003;
+
+// Admin Auth
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const SALT_ROUNDS = 10;
+let ADMIN_PASSWORD_HASH = null;
+
+// Admin şifresini hash'le (sunucu başlangıcında)
+if (ADMIN_PASSWORD) {
+  bcrypt.hash(ADMIN_PASSWORD, SALT_ROUNDS).then(hash => {
+    ADMIN_PASSWORD_HASH = hash;
+    console.log('Admin şifresi hash\'lendi.');
+  }).catch(err => {
+    console.error('Şifre hashleme hatası:', err);
+  });
+}
+
+// JWT Secret — sunucu restart'ında geçersiz olmaması için env'den al
+const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
+if (!process.env.JWT_SECRET) {
+  console.warn('UYARI: JWT_SECRET ayarlanmadı, geçici anahtar kullanılıyor. Sunucu restart\'ında tüm oturumlar sonlanır.');
+}
+
+// Yardımcı: boolean/string değerleri PostgreSQL smallint için 0/1 integer'a çevir
+const toSmallInt = (val) => {
+  if (val === true || val === 1 || val === 'true' || val === '1') return 1;
+  return 0;
+};
+
+const adminAuth = (req, res, next) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) {
+    return res.status(401).json({ error: 'Yetkisiz erişim' });
+  }
+  try {
+    jwt.verify(token, JWT_SECRET);
+    next();
+  } catch {
+    return res.status(401).json({ error: 'Geçersiz veya süresi dolmuş token' });
+  }
+};
+
+// Middleware
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',')
+  : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'];
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
+app.use(compression({ threshold: 1024 }));
+app.use(express.json({ limit: '1mb' }));
+
+// /akaydin-tarim prefix temizleyici
+app.use('/uploads', (req, res, next) => {
+  // Dosya istekleri için CORS header'ları ekle
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  // URL temizleme: çift slash'ları tek slash yap, /akaydin-tarim prefix'ini kaldır
+  req.url = req.url.replace(/\/akaydin-tarim\//g, '/').replace(/\/+/g, '/');
+  next();
+}, express.static(UPLOADS_DIR, {
+  maxAge: '7d',
+  setHeaders: (res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  }
+}));
+
+// Cache middleware
+app.use((req, res, next) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api/admin')) {
+    res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
+  }
+  next();
+});
+
+// Multer hata handler
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ error: 'Dosya boyutu çok büyük. Maksimum 10MB yüklenebilir.' });
+    }
+    return res.status(400).json({ error: `Dosya yükleme hatası: ${err.message}` });
+  }
+  if (err.message && err.message.includes('Desteklenmeyen dosya türü')) {
+    return res.status(400).json({ error: err.message });
+  }
+  next(err);
+});
+
+// Rate limiting (express-rate-limit ile — bellek tabanlı, tek instance için yeterli)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 dakika
+  max: 100, // her IP için maksimum 100 istek
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Çok fazla istek, lütfen 15 dakika sonra tekrar deneyin' },
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 dakika
+  max: 10, // auth endpoint'leri için daha sıkı limit
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Çok fazla giriş denemesi, lütfen 15 dakika sonra tekrar deneyin' },
+});
+
+// Genel rate limit: API rotalarında
+app.use('/api', limiter);
+// Auth giriş endpoint'ine daha sıkı limit
+app.use('/api/admin/login', authLimiter);
+
+// PostgreSQL bağlantısı (retry ile)
+if (!process.env.DB_USER || !process.env.DB_PASSWORD) {
+  console.error('HATA: DB_USER ve DB_PASSWORD environment variable zorunludur');
+  process.exit(1);
+}
+
+async function createPool(retries = 5, delay = 5000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const pool = new Pool({
+        host: process.env.DB_HOST || 'localhost',
+        port: parseInt(process.env.DB_PORT) || 5432,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME || 'akaydin_tarim',
+        max: 10,
+        idleTimeoutMillis: 30000,
+      });
+      // Test bağlantısı
+      const client = await pool.connect();
+      client.release();
+      console.log('Veritabanı bağlantısı başarılı.');
+      return pool;
+    } catch (err) {
+      console.error(`DB bağlantı hatası (deneme ${i + 1}/${retries}):`, err.message);
+      if (i === retries - 1) throw err;
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+}
+
+const db = await createPool();
+
+function formatError(err) {
+  if (err instanceof Error) {
+    return `${err.name}: ${err.message}${err.code ? ` (code: ${err.code})` : ''}`;
+  }
+  return typeof err === 'string' ? err : JSON.stringify(err) || 'Bilinmeyen hata';
+}
+
+checkAllRankings(db).catch(err => console.error('[SERP] Başlangıç kontrol hatası:', formatError(err)));
+
+// Günde 2 kez: 00:00 ve 12:00
+cron.schedule('0 0 * * *', () => {
+  console.log('[CRON] 00:00 — SERP kontrolü başlatılıyor...');
+  checkAllRankings(db).catch(err => console.error('[CRON] 00:00 hatası:', formatError(err)));
+});
+
+cron.schedule('0 12 * * *', () => {
+  console.log('[CRON] 12:00 — SERP kontrolü başlatılıyor...');
+  checkAllRankings(db).catch(err => console.error('[CRON] 12:00 hatası:', formatError(err)));
+});
+
+// DB hata event handler
+db.on('error', (err) => {
+  console.error('Veritabanı havuz hatası:', err.message);
+});
+
+// Multer configuration
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg', 'image/jpg', 'image/png', 'image/x-png',
+  'image/gif', 'image/webp', 'image/svg+xml',
+  'image/avif', 'image/bmp'
+];
+const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.avif', '.bmp'];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, UPLOADS_DIR);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  const ext = path.extname(file.originalname).toLowerCase();
+  // Önce MIME tipine bak, başarısız olursa uzantıya göre karar ver (bazı tarayıcılar PNG'yi yanlış MIME ile gönderir)
+  if (ALLOWED_MIME_TYPES.includes(file.mimetype) || ALLOWED_EXTENSIONS.includes(ext)) {
+    cb(null, true);
+  } else {
+    cb(new Error(`Desteklenmeyen dosya türü: ${file.mimetype} (${ext}). JPEG, PNG, GIF, WebP, SVG, AVIF ve BMP kabul edilir.`), false);
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: { fileSize: MAX_FILE_SIZE }
+});
+
+// Admin login/logout
+app.post('/api/admin/login', async (req, res) => {
+  const { password } = req.body;
+  if (!ADMIN_PASSWORD_HASH) return res.status(500).json({ error: 'Admin şifresi yapılandırılmamış' });
+  try {
+    const match = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
+    if (!match) return res.status(401).json({ error: 'Hatalı şifre' });
+  } catch {
+    // bcrypt karşılaştırma hatası durumunda düz metin karşılaştırmaya geri dön
+    if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Hatalı şifre' });
+  }
+  const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '24h' });
+  res.json({ token, message: 'Giriş başarılı' });
+});
+
+app.post('/api/admin/logout', adminAuth, (req, res) => {
+  // JWT stateless — client token'ı siler
+  res.json({ message: 'Çıkış başarılı' });
+});
+
+// Admin token doğrulama
+app.get('/api/admin/verify', adminAuth, (req, res) => {
+  res.json({ valid: true });
+});
+
+// SERVICES API
+app.get('/api/services', async (req, res) => {
+  try {
+    const rows = await db.query('SELECT * FROM services ORDER BY id DESC');
+    res.json(rows.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Hizmetler alınırken hata oluştu' });
+  }
+});
+
+app.post('/api/services', adminAuth, async (req, res) => {
+  try {
+    const { title, description, iconName } = req.body;
+    const result = await db.query(
+      'INSERT INTO services (title, description, icon_name) VALUES ($1, $2, $3) RETURNING id',
+      [title, description, iconName]
+    );
+    // İçerik değişti, sitemap'i arka planda yenile
+    generateSitemap().catch(err => console.error('[Sitemap] Yenileme hatası:', err.message));
+    res.json({ id: result.rows[0].id, title, description, iconName });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Hizmet eklenirken hata oluştu' });
+  }
+});
+
+app.put('/api/services/:id', adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, description, iconName } = req.body;
+    await db.query(
+      'UPDATE services SET title = $1, description = $2, icon_name = $3 WHERE id = $4',
+      [title, description, iconName, id]
+    );
+    generateSitemap().catch(err => console.error('[Sitemap] Yenileme hatası:', err.message));
+    res.json({ id, title, description, iconName });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Hizmet güncellenirken hata oluştu' });
+  }
+});
+
+app.delete('/api/services/:id', adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await db.query('DELETE FROM services WHERE id = $1', [id]);
+    generateSitemap().catch(err => console.error('[Sitemap] Yenileme hatası:', err.message));
+    res.json({ message: 'Hizmet başarıyla silindi' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Hizmet silinirken hata oluştu' });
+  }
+});
+
+// PRODUCTS API
+app.get('/api/products', async (req, res) => {
+  try {
+    const rows = await db.query('SELECT * FROM products ORDER BY id DESC');
+    
+    // Images alanını parse et ve is_featured'ı boolean'a çevir
+    const processedRows = rows.rows.map(row => ({
+      ...row,
+      images: row.images ? JSON.parse(row.images) : [],
+      isFeatured: Boolean(row.is_featured) // Veritabanından gelen tinyint'i boolean'a çevir
+    }));
+    
+    res.json(processedRows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Ürünler alınırken hata oluştu' });
+  }
+});
+
+app.post('/api/products', adminAuth, upload.array('images', 10), imageOptimizer, async (req, res) => {
+  try {
+    const { name, description, category, is_featured } = req.body;
+    const uploadedFiles = req.files || [];
+    
+    // Ana resim (ilk yüklenen resim)
+    const imageUrl = uploadedFiles.length > 0 ? `/uploads/${uploadedFiles[0].filename}` : '';
+    
+    // Tüm resimlerin yollarını JSON olarak sakla
+    const images = uploadedFiles.map(file => `/uploads/${file.filename}`);
+    const imagesJson = JSON.stringify(images);
+    
+    const isFeatured = toSmallInt(is_featured);
+
+    const result = await db.query(
+      'INSERT INTO products (name, description, category, image_url, images, is_featured) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+      [name, description, category, imageUrl, imagesJson, isFeatured]
+    );
+    // Yeni ürün eklendi, sitemap'i arka planda yenile
+    generateSitemap().catch(err => console.error('[Sitemap] Yenileme hatası:', err.message));
+    res.json({ 
+      id: result.rows[0].id, 
+      name, 
+      description, 
+      category, 
+      image_url: imageUrl,
+      images: images,
+      isFeatured: isFeatured
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Ürün eklenirken hata oluştu' });
+  }
+});
+
+app.put('/api/products/:id', adminAuth, upload.array('images', 10), imageOptimizer, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description, category, is_featured, deletedImages, keepExistingImages } = req.body;
+    const uploadedFiles = req.files || [];
+    
+    // Mevcut images'ları al
+    const existing = await db.query('SELECT * FROM products WHERE id = $1', [id]);
+    let currentImages = [];
+    
+    if (existing.rows.length > 0 && existing.rows[0].images) {
+      try {
+        currentImages = JSON.parse(existing.rows[0].images);
+      } catch {
+        currentImages = [];
+      }
+    }
+    
+    let allImages = [];
+
+    // Silinen görselleri işle (her durumda çalışır)
+    const normalizePath = (img) => {
+      const match = img.match(/\/uploads\/.+$/);
+      return match ? match[0] : img;
+    };
+
+    let updatedImages = currentImages;
+    if (deletedImages) {
+      const toDeleteRaw = JSON.parse(deletedImages);
+      const toDelete = toDeleteRaw.map(normalizePath);
+      updatedImages = currentImages.filter(img => !toDelete.includes(normalizePath(img)));
+
+      // Fiziksel dosyaları sil
+      toDelete.forEach(imagePath => {
+        const tryPaths = [imagePath, `/akaydin-tarim${imagePath}`];
+        for (const p of tryPaths) {
+          const fullPath = path.join(__dirname, '..', p);
+          if (fs.existsSync(fullPath)) {
+            fs.unlinkSync(fullPath);
+            break;
+          }
+        }
+      });
+    }
+
+    // Yeni yüklenen görselleri ekle
+    const newImages = uploadedFiles.map(file => `/uploads/${file.filename}`);
+    allImages = [...updatedImages, ...newImages];
+    
+    // Ana resim (ilk resim)
+    const imageUrl = allImages.length > 0 ? allImages[0] : existing.rows[0]?.image_url || '';
+    const imagesJson = JSON.stringify(allImages);
+    
+    const isFeatured = toSmallInt(is_featured);
+    
+    await db.query(
+      'UPDATE products SET name = $1, description = $2, category = $3, image_url = $4, images = $5, is_featured = $6 WHERE id = $7',
+      [name, description, category, imageUrl, imagesJson, isFeatured, id]
+    );
+    // Ürün güncellendi, sitemap'i arka planda yenile
+    generateSitemap().catch(err => console.error('[Sitemap] Yenileme hatası:', err.message));
+    res.json({ 
+      id, 
+      name, 
+      description, 
+      category, 
+      image_url: imageUrl,
+      images: allImages,
+      isFeatured: isFeatured
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Ürün güncellenirken hata oluştu' });
+  }
+});
+
+app.delete('/api/products/:id', adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    // Dosya ve DB'den sil
+    const existing = await db.query('SELECT * FROM products WHERE id = $1', [id]);
+    if (existing.rows.length > 0) {
+      // Fiziksel resim dosyalarını sil
+      let images = [];
+      try { images = JSON.parse(existing.rows[0].images || '[]'); } catch {}
+      images.forEach(imagePath => {
+        if (imagePath.startsWith('/uploads/')) {
+          const fullPath = path.join(UPLOADS_DIR, path.basename(imagePath));
+          try { if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath); } catch {}
+        }
+      });
+    }
+    await db.query('DELETE FROM products WHERE id = $1', [id]);
+    // Ürün silindi, sitemap'i arka planda yenile
+    generateSitemap().catch(err => console.error('[Sitemap] Yenileme hatası:', err.message));
+    res.json({ message: 'Ürün başarıyla silindi' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Ürün silinirken hata oluştu' });
+  }
+});
+
+// BLOG POSTS API
+app.get('/api/blog-posts', async (req, res) => {
+  try {
+    const rows = await db.query('SELECT * FROM blog_posts ORDER BY id DESC');
+    res.json(rows.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Blog yazıları alınırken hata oluştu' });
+  }
+});
+
+app.post('/api/blog-posts', adminAuth, upload.single('image'), imageOptimizer, async (req, res) => {
+  try {
+    const { title, content, excerpt, author, seo_title, seo_description, seo_keywords } = req.body;
+    const imageUrl = req.file ? `/uploads/${req.file.filename}` : '';
+    const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    // summary: content'in HTML etiketlerinden arındırılmış ilk 200 karakterlik özeti
+    const summary = (content || excerpt || '').replace(/<[^>]*>/g, '').substring(0, 200);
+    
+    const result = await db.query(
+      'INSERT INTO blog_posts (title, summary, content, excerpt, author, date, image_url, views, seo_title, seo_description, seo_keywords, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, 0, $8, $9, $10, NOW()) RETURNING id',
+      [title, summary, content || '', excerpt || null, author || 'Akaydın Tarım', currentDate, imageUrl, finalSeoTitle || null, finalSeoDescription || null, finalSeoKeywords || null]
+    );
+    // Blog yazısı eklendi, sitemap'i arka planda yenile
+    generateSitemap().catch(err => console.error('[Sitemap] Yenileme hatası:', err.message));
+    res.json({ 
+      id: result.rows[0].id, 
+      title, 
+      summary: summary,
+      content: content || '', 
+      excerpt: excerpt || '',
+      author: author || 'Akaydın Tarım',
+      date: currentDate,
+      image_url: imageUrl,
+      image: req.file ? req.file.filename : null,
+      views: 0,
+      seo_title: seo_title || null,
+      seo_description: seo_description || null,
+      seo_keywords: seo_keywords || null,
+      created_at: new Date()
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Blog yazısı eklenirken hata oluştu' });
+  }
+});
+
+app.put('/api/blog-posts/:id', adminAuth, upload.single('image'), imageOptimizer, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, content, excerpt, author, seo_title, seo_description, seo_keywords } = req.body;
+    
+    // Mevcut kayıt bilgilerini al
+    const existing = await db.query('SELECT * FROM blog_posts WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Blog yazısı bulunamadı' });
+    }
+    
+    let imageUrl = existing.rows[0].image_url || '';
+    if (req.file) {
+      imageUrl = `/uploads/${req.file.filename}`;
+    }
+    
+    // summary: content'in HTML etiketlerinden arındırılmış ilk 200 karakterlik özeti
+    const summary = (content || excerpt || '').replace(/<[^>]*>/g, '').substring(0, 200);
+    
+await db.query(
+      'UPDATE blog_posts SET title = $1, summary = $2, content = $3, excerpt = $4, author = $5, image_url = $6, seo_title = $7, seo_description = $8, seo_keywords = $9, updated_at = NOW() WHERE id = $10',
+      [title, summary, content || '', excerpt || null, author || 'Akaydın Tarım', imageUrl, seo_title || null, seo_description || null, seo_keywords || null, id]
     );
     
     // Blog yazısı güncellendi, sitemap'i arka planda yenile
-    generateSitemap().catch(() => {});
+    generateSitemap().catch(err => console.error('[Sitemap] Yenileme hatası:', err.message));
     res.json({ 
       id: parseInt(id), 
       title, 
-      summary: excerpt || '',
+      summary: summary,
       content: content || '', 
       excerpt: excerpt || '',
       author: author || 'Akaydın Tarım',
@@ -571,9 +1145,22 @@ app.put('/api/blog-posts/:id', adminAuth, upload.single('image'), imageOptimizer
 app.delete('/api/blog-posts/:id', adminAuth, async (req, res) => {
   try {
     const { id } = req.params;
+    // Silmeden önce mevcut kaydı al (resim temizliği için)
+    const existing = await db.query('SELECT * FROM blog_posts WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Blog yazısı bulunamadı' });
+    }
     await db.query('DELETE FROM blog_posts WHERE id = $1', [id]);
+    // Blog yazısına ait resmi sil
+    if (existing.rows.length > 0 && existing.rows[0].image_url) {
+      const imgPath = existing.rows[0].image_url;
+      if (imgPath.startsWith('/uploads/')) {
+        const fullPath = path.join(UPLOADS_DIR, path.basename(imgPath));
+        try { if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath); } catch {}
+      }
+    }
     // Blog yazısı silindi, sitemap'i arka planda yenile
-    generateSitemap().catch(() => {});
+    generateSitemap().catch(err => console.error('[Sitemap] Yenileme hatası:', err.message));
     res.json({ message: 'Blog yazısı başarıyla silindi' });
   } catch (error) {
     console.error(error);
@@ -1157,7 +1744,7 @@ app.put('/api/seo/settings', adminAuth, async (req, res) => {
     
     res.json({ message: 'SEO ayarları güncellendi' });
     // Canonical URL değiştiyse sitemap'i yenile
-    generateSitemap().catch(() => {});
+    generateSitemap().catch(err => console.error('[Sitemap] Yenileme hatası:', err.message));
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'SEO ayarları güncellenirken hata oluştu' });
@@ -1176,7 +1763,7 @@ app.get('/api/seo/pages', async (req, res) => {
     } else {
       // Admin-only: tüm sayfa SEO listesi (token kontrolü)
       const token = req.headers.authorization?.replace('Bearer ', '');
-      if (!token || !adminTokens.has(token)) {
+      if (!token || !false) {
         return res.status(401).json({ error: 'Yetkisiz erişim' });
       }
       const rows = await db.query('SELECT * FROM page_seo ORDER BY page_path');
@@ -1543,9 +2130,9 @@ app.get('/api/serp-rankings/current', adminAuth, async (req, res) => {
 app.get('/api/serp-rankings/history', adminAuth, async (req, res) => {
   try {
     const { keyword, engine, days } = req.query;
-    const sinceDays = parseInt(days) || 30;
-    let query = 'SELECT * FROM serp_rankings WHERE checked_at >= NOW() - INTERVAL \'' + sinceDays + ' DAYS\'';
-    const params = [];
+    const sinceDays = Math.max(1, Math.min(365, parseInt(days) || 30)); // 1-365 gün aralığı
+    const params = [sinceDays];
+    let query = `SELECT * FROM serp_rankings WHERE checked_at >= NOW() - INTERVAL '1 DAY' * $1`;
 
     if (keyword) {
       params.push(keyword);

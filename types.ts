@@ -179,7 +179,12 @@ export interface SEOAnalysis {
   recommendations: string[];
 }
 
-// Visitor Analytics Interfaces
+// ═══════════════════════════════════════════════
+// Visitor Analytics Interfaces (ŞEMA HAZIR, IMPLEMENTASYON BEKLİYOR)
+// Bu tipler veritabanı şemasında tanımlı ancak henüz API/frontend'de kullanılmıyor.
+// Gelecek sürümde analytics modülü ile aktif edilecek.
+// ═══════════════════════════════════════════════
+/** @deprecated Analytics modülü henüz implemente edilmedi */
 export interface VisitorSession {
   id: number;
   session_id: string;

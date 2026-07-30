@@ -1,3 +1,4 @@
+/** @deprecated Henüz kullanılmıyor - ileride aktif edilecek */
 
 import React, { useMemo } from 'react';
 

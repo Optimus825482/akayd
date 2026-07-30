@@ -13,7 +13,7 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml ./
-RUN rm -f pnpm-lock.yaml && printf "minimum-release-age=0\n" > .npmrc && pnpm install --ignore-scripts && pnpm rebuild esbuild
+RUN pnpm install --frozen-lockfile --ignore-scripts && pnpm rebuild esbuild
 
 # Frontend build
 COPY tsconfig.json vite.config.ts tailwind.config.js postcss.config.js index.html vite-env.d.ts ./

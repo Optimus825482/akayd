@@ -10,19 +10,22 @@ interface AboutManagementProps {
     setAboutContent: React.Dispatch<React.SetStateAction<AboutPageContent>>;
     addNotification: (type: Notification['type'], title: string, message: string) => void;
     onSave?: () => Promise<void>;
+    loading?: boolean;
 }
 
 const AboutManagement: React.FC<AboutManagementProps> = ({
     aboutContent,
     setAboutContent,
     addNotification,
-    onSave
+    onSave,
+    loading: externalLoading
 }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [aboutForm, setAboutForm] = useState<AboutPageContent>(aboutContent);
     const [aboutImages, setAboutImages] = useState<File[]>([]);
     const [deletedImages, setDeletedImages] = useState<string[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [localLoading, setLocalLoading] = useState(false);
+    const isLoading = externalLoading || localLoading;
 
     // AboutForm'u aboutContent ile senkronize et
     useEffect(() => {
@@ -36,7 +39,7 @@ const AboutManagement: React.FC<AboutManagementProps> = ({
 
     const handleAboutSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
+        setLocalLoading(true);
         try {
             const formData = new FormData();
             formData.append('title', aboutForm.title || 'Akaydın Tarım');
@@ -73,7 +76,7 @@ const AboutManagement: React.FC<AboutManagementProps> = ({
             console.error('Hakkımızda sayfası güncellenirken hata:', error);
             addNotification('error', 'Hata!', 'Hakkımızda sayfası güncellenirken hata oluştu.');
         }
-        setLoading(false);
+        setLocalLoading(false);
     };
 
     return (
@@ -210,10 +213,20 @@ const AboutManagement: React.FC<AboutManagementProps> = ({
 
                     <button
                         type="submit"
-                        disabled={loading}
-                        className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium transition-colors"
+                        disabled={isLoading}
+                        className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium transition-colors flex items-center gap-2"
                     >
-                        {loading ? '⏳ Güncelleniyor...' : '✅ Hakkımızda Sayfasını Güncelle'}
+                        {isLoading ? (
+                            <>
+                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Güncelleniyor...
+                            </>
+                        ) : (
+                            '✅ Hakkımızda Sayfasını Güncelle'
+                        )}
                     </button>
                 </form>
             </div>

@@ -245,3 +245,23 @@ sakarya fındık üreticisi, organomineral gübre fındık
 ---
 
 > **Not:** Bu plan yaşayan bir dokümandır. Her hafta Search Console verilerine göre güncellenmelidir. SEO sabır işidir — hemen sonuç beklemeyin, 4-12 hafta arası etkiler görülmeye başlar.
+
+---
+
+## ✅ 30.07.2026 — SEO İyileştirme Güncellemesi
+
+### Teknik Altyapı İyileştirmeleri:
+- ✅ Blog yazılarında `summary` alanı content'ten otomatik türetiliyor (HTML etiketleri temizlenmiş ilk 200 karakter)
+- ✅ Blog SEO: `seo_title` boşsa title kullanılıyor, `seo_description` boşsa summary kullanılıyor
+- ✅ SERP rank tracker endpoint'i SQL injection'a karşı korumalı
+- ✅ Sitemap hataları loglanıyor (sessizce yutulmuyor)
+- ✅ Nginx: `client_max_body_size 20M` + uploads için `proxy_buffering off`
+- ✅ Rate limiting: express-rate-limit ile IP bazlı (genel 100/15dk, auth 10/15dk)
+- ✅ Blog kartlarında Article schema markup eklendi
+- ✅ Blog sayfasında breadcrumb schema eklendi
+- ✅ Blog yönetim panelinde boş SEO alanları için uyarı toast'ı eklendi
+
+### Tamamlanan SEO Planı Maddeleri:
+- [x] Blog içeriklerinde SEO alanları otomatik doldurma
+- [x] Schema markup (Article, BreadcrumbList)
+- [x] Blog yönetim SEO iyileştirmeleri
