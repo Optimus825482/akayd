@@ -36,20 +36,6 @@ try {
   console.warn(`UYARI: ${UPLOADS_DIR} yazılabilir değil! chmod 777 veya chown node yapın.`);
 }
 
-// Server başlangıcında hemen bir kontrol yap (ilk veri noktası için)
-checkAllRankings().catch(err => console.error('[SERP] Başlangıç kontrol hatası:', err.message));
-
-// Günde 2 kez: 00:00 ve 12:00
-cron.schedule('0 0 * * *', () => {
-  console.log('[CRON] 00:00 — SERP kontrolü başlatılıyor...');
-  checkAllRankings().catch(err => console.error('[CRON] 00:00 hatası:', err.message));
-});
-
-cron.schedule('0 12 * * *', () => {
-  console.log('[CRON] 12:00 — SERP kontrolü başlatılıyor...');
-  checkAllRankings().catch(err => console.error('[CRON] 12:00 hatası:', err.message));
-});
-
 const app = express();
 const PORT = process.env.PORT || 3003;
 
@@ -207,6 +193,26 @@ async function createPool(retries = 5, delay = 5000) {
 }
 
 const db = await createPool();
+
+function formatError(err) {
+  if (err instanceof Error) {
+    return `${err.name}: ${err.message}${err.code ? ` (code: ${err.code})` : ''}`;
+  }
+  return typeof err === 'string' ? err : JSON.stringify(err) || 'Bilinmeyen hata';
+}
+
+checkAllRankings(db).catch(err => console.error('[SERP] Başlangıç kontrol hatası:', formatError(err)));
+
+// Günde 2 kez: 00:00 ve 12:00
+cron.schedule('0 0 * * *', () => {
+  console.log('[CRON] 00:00 — SERP kontrolü başlatılıyor...');
+  checkAllRankings(db).catch(err => console.error('[CRON] 00:00 hatası:', formatError(err)));
+});
+
+cron.schedule('0 12 * * *', () => {
+  console.log('[CRON] 12:00 — SERP kontrolü başlatılıyor...');
+  checkAllRankings(db).catch(err => console.error('[CRON] 12:00 hatası:', formatError(err)));
+});
 
 // DB hata event handler
 db.on('error', (err) => {
@@ -1487,7 +1493,7 @@ app.get('/api/seo/robots', adminAuth, async (req, res) => {
 // Anahtar kelime listesi
 app.get('/api/serp-rankings/keywords', adminAuth, async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT * FROM serp_keywords ORDER BY id');
+    const { rows } = await db.query('SELECT * FROM serp_keywords ORDER BY id');
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1498,7 +1504,7 @@ app.get('/api/serp-rankings/keywords', adminAuth, async (req, res) => {
 app.post('/api/serp-rankings/keywords', adminAuth, async (req, res) => {
   try {
     const { keyword, domain } = req.body;
-    const { rows } = await pool.query(
+    const { rows } = await db.query(
       'INSERT INTO serp_keywords (keyword, domain) VALUES ($1, $2) ON CONFLICT (keyword) DO UPDATE SET is_active = true RETURNING *',
       [keyword, domain || 'akaydintarim.com.tr']
     );
@@ -1511,7 +1517,7 @@ app.post('/api/serp-rankings/keywords', adminAuth, async (req, res) => {
 // Keyword sil
 app.delete('/api/serp-rankings/keywords/:id', adminAuth, async (req, res) => {
   try {
-    await pool.query('DELETE FROM serp_keywords WHERE id = $1', [req.params.id]);
+    await db.query('DELETE FROM serp_keywords WHERE id = $1', [req.params.id]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1521,7 +1527,7 @@ app.delete('/api/serp-rankings/keywords/:id', adminAuth, async (req, res) => {
 // Tüm keyword'lerin son durumu
 app.get('/api/serp-rankings/current', adminAuth, async (req, res) => {
   try {
-    const { rows } = await pool.query(`
+    const { rows } = await db.query(`
       SELECT DISTINCT ON (r.keyword, r.engine)
         r.keyword, r.engine, r.position, r.url, r.checked_at
       FROM serp_rankings r
@@ -1551,7 +1557,7 @@ app.get('/api/serp-rankings/history', adminAuth, async (req, res) => {
     }
     query += ' ORDER BY checked_at ASC';
 
-    const { rows } = await pool.query(query, params);
+    const { rows } = await db.query(query, params);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1561,13 +1567,13 @@ app.get('/api/serp-rankings/history', adminAuth, async (req, res) => {
 // Manuel kontrol tetikle (tüm keyword'ler)
 app.post('/api/serp-rankings/check', adminAuth, async (req, res) => {
   res.json({ message: 'SERP kontrolü başlatıldı' });
-  checkAllRankings().catch(err => console.error('[SERP] Manuel kontrol hatası:', err.message));
+  checkAllRankings(db).catch(err => console.error('[SERP] Manuel kontrol hatası:', formatError(err)));
 });
 
 // Manuel kontrol tetikle (tek keyword)
 app.post('/api/serp-rankings/check/:keywordId', adminAuth, async (req, res) => {
   res.json({ message: 'SERP kontrolü başlatıldı' });
-  checkSingleKeyword(req.params.keywordId).catch(err => console.error('[SERP] Tekli kontrol hatası:', err.message));
+  checkSingleKeyword(db, req.params.keywordId).catch(err => console.error('[SERP] Tekli kontrol hatası:', formatError(err)));
 });
 
 // Production modda Vite build çıktısını serve et

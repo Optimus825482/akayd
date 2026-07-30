@@ -1,12 +1,5 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import pkg from 'pg';
-const { Pool } = pkg;
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-});
 
 const USER_AGENTS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -52,7 +45,7 @@ async function scrapeGoogle(query, domain) {
     }
     return { position: 0, url: null };
   } catch (err) {
-    console.error(`[SERP] Google scrape error for "${query}":`, err.message);
+    console.error(`[SERP] Google scrape error for "${query}":`, formatError(err));
     return null;
   }
 }
@@ -85,7 +78,7 @@ async function scrapeYandex(query, domain) {
     }
     return { position: 0, url: null };
   } catch (err) {
-    console.error(`[SERP] Yandex scrape error for "${query}":`, err.message);
+    console.error(`[SERP] Yandex scrape error for "${query}":`, formatError(err));
     return null;
   }
 }
@@ -118,12 +111,12 @@ async function scrapeBing(query, domain) {
     }
     return { position: 0, url: null };
   } catch (err) {
-    console.error(`[SERP] Bing scrape error for "${query}":`, err.message);
+    console.error(`[SERP] Bing scrape error for "${query}":`, formatError(err));
     return null;
   }
 }
 
-async function checkKeyword(keyword, engine, domain) {
+async function checkKeyword(db, keyword, engine, domain) {
   let result;
   switch (engine) {
     case 'google': result = await scrapeGoogle(keyword, domain); break;
@@ -134,22 +127,22 @@ async function checkKeyword(keyword, engine, domain) {
 
   if (result) {
     try {
-      await pool.query(
+      await db.query(
         'INSERT INTO serp_rankings (keyword, engine, position, url) VALUES ($1, $2, $3, $4)',
         [keyword, engine, result.position, result.url]
       );
       console.log(`[SERP] ${engine}: "${keyword}" → #${result.position || 'sıralama dışı'}`);
     } catch (dbErr) {
-      console.error(`[SERP] DB insert error for "${keyword}" ${engine}:`, dbErr.message);
+      console.error(`[SERP] DB insert error for "${keyword}" ${engine}:`, formatError(dbErr));
     }
   }
   return result;
 }
 
-export async function checkAllRankings() {
+export async function checkAllRankings(db) {
   console.log('[SERP] Kontrol başladı...');
   try {
-    const { rows: keywords } = await pool.query(
+    const { rows: keywords } = await db.query(
       'SELECT id, keyword, domain FROM serp_keywords WHERE is_active = true ORDER BY id'
     );
     const engines = ['google', 'yandex', 'bing'];
@@ -157,28 +150,30 @@ export async function checkAllRankings() {
 
     for (const kw of keywords) {
       for (const engine of engines) {
-        await checkKeyword(kw.keyword, engine, kw.domain);
+        await checkKeyword(db, kw.keyword, engine, kw.domain);
         await sleep(3000 + Math.random() * 2000); // 3-5 saniye bekleme
         checked++;
       }
     }
     console.log(`[SERP] Kontrol tamamlandı. ${checked} sorgu yapıldı.`);
   } catch (err) {
-    console.error('[SERP] Kontrol hatası:', err.message);
+    console.error('[SERP] Kontrol hatası:', formatError(err));
+    throw err;
   }
 }
 
-export async function checkSingleKeyword(keywordId) {
+export async function checkSingleKeyword(db, keywordId) {
   try {
-    const { rows } = await pool.query('SELECT id, keyword, domain FROM serp_keywords WHERE id = $1', [keywordId]);
+    const { rows } = await db.query('SELECT id, keyword, domain FROM serp_keywords WHERE id = $1', [keywordId]);
     if (rows.length === 0) return;
 
     const kw = rows[0];
     for (const engine of ['google', 'yandex', 'bing']) {
-      await checkKeyword(kw.keyword, engine, kw.domain);
+      await checkKeyword(db, kw.keyword, engine, kw.domain);
       await sleep(3000 + Math.random() * 2000);
     }
   } catch (err) {
-    console.error('[SERP] Tekli kontrol hatası:', err.message);
+    console.error('[SERP] Tekli kontrol hatası:', formatError(err));
+    throw err;
   }
 }
