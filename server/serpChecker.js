@@ -28,8 +28,15 @@ async function scrapeGoogle(query, domain) {
   // Google Search Console API mevcutsa onu kullan (daha güvenilir, ücretsiz)
   if (isGSCAvailable()) {
     try {
-      // Domain'i GSC site URL'ine çevir (akaydintarim.com.tr → https://www.akaydintarim.com.tr)
-      const siteUrl = domain.includes('://') ? domain : `https://www.${domain}`;
+      // Domain'i GSC site URL'ine çevir
+      let siteUrl;
+      if (domain.includes('://')) {
+        siteUrl = domain;
+      } else if (domain === 'hendekfindikkirma.com') {
+        siteUrl = 'https://hendekfindikkirma.com'; // www yok!
+      } else {
+        siteUrl = `https://www.${domain}`;
+      }
       const result = await checkGSC(query, siteUrl);
       if (result !== null) return result;
     } catch (err) {
