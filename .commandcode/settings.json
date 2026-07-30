@@ -18,7 +18,8 @@
       "mcp__pmb__recall_smart",
       "mcp__pmb__stats",
       "mcp__pmb__recent_activity",
-      "mcp__jcodemunch__search_symbols"
+      "mcp__jcodemunch__search_symbols",
+      "mcp__jcodemunch__get_file_tree"
     ],
     "deny": [],
     "defaultMode": "default"
