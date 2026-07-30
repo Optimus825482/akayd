@@ -12,9 +12,8 @@ RUN apk add --no-cache tini postgresql-client
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml ./
-# pnpm supply-chain politikasını Docker build'de devre dışı bırak (yeni paket sürümleri build engellemesin)
-RUN pnpm config set verify-deps-before-run false && pnpm install --ignore-scripts && pnpm rebuild esbuild
+COPY package.json pnpm-lock.yaml .npmrc-docker ./
+RUN cat .npmrc-docker >> .npmrc 2>/dev/null; pnpm install --ignore-scripts && pnpm rebuild esbuild
 
 # Frontend build
 COPY tsconfig.json vite.config.ts tailwind.config.js postcss.config.js index.html vite-env.d.ts ./
