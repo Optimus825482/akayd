@@ -9,11 +9,11 @@
 FROM node:20-alpine
 # postgresql-client backend'in tablo oluşturması için gerekli
 RUN apk add --no-cache tini postgresql16-client
+RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev 2>/dev/null || npm install --omit=dev
-RUN npm install --include=dev 2>/dev/null || true
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
 # Frontend build
 COPY tsconfig.json vite.config.ts tailwind.config.js postcss.config.js index.html vite-env.d.ts ./
@@ -24,7 +24,7 @@ COPY hooks/ ./hooks/
 COPY services/ ./services/
 COPY public/ ./public/
 COPY index.css ./
-RUN npx vite build && npm prune --omit=dev
+RUN pnpm build && pnpm prune --prod
 
 # Backend server + init scripts
 COPY server/ ./server/
