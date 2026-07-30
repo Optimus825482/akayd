@@ -3,6 +3,18 @@
 import React from 'react';
 import type { BlogPost } from '../types';
 
+/** Generate Article schema.org JSON-LD */
+const articleSchema = (post: BlogPost): Record<string, unknown> => ({
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: post.title,
+  description: post.summary || post.excerpt || '',
+  image: post.imageUrl,
+  datePublished: post.date,
+  author: { '@type': 'Person', name: post.author },
+  publisher: { '@type': 'Organization', name: 'Akaydin Tarim' }
+});
+
 interface BlogPostCardProps {
     post: BlogPost;
     onReadMore?: () => void;
@@ -11,6 +23,7 @@ interface BlogPostCardProps {
 const BlogPostCard: React.FC<BlogPostCardProps> = ({ post, onReadMore }) => {
     return (
         <div className="bg-surface rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group border border-rule">
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema(post)) }} />
             {/* Image Container */}
             <div className="relative overflow-hidden">
                 <img

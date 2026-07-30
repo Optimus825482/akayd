@@ -265,3 +265,30 @@ sakarya fındık üreticisi, organomineral gübre fındık
 - [x] Blog içeriklerinde SEO alanları otomatik doldurma
 - [x] Schema markup (Article, BreadcrumbList)
 - [x] Blog yönetim SEO iyileştirmeleri
+
+
+---
+
+## 📝 30.07.2026 - Blog SEO Iyilestirmeleri
+
+### Yapilan Degisiklikler
+
+1. **Sunucu tarafi otomatik SEO doldurma** (`server/index.js`):
+   - Blog POST ve PUT endpoint'lerinde `seo_title`, `seo_description`, `seo_keywords` bos birakildiginda otomatik doldurma eklendi
+   - `seo_title` → basliktan uretilir (HTML etiketleri temizlenir)
+   - `seo_description` → ozet'in ilk 160 karakteri kullanilir
+   - `seo_keywords` → basliktan Turkce stop words filtrelenerek ilk 5 anlamli kelime cikarilir
+
+2. **Admin panel SEO uyarilari** (`components/admin/BlogManagement.tsx`):
+   - SEO alanlari placeholder'lari "Otomatik doldurulacak" olarak guncellendi
+   - Form submit edilirken bos SEO alanlari icin warning toast'i eklendi (oneridir, engellemez)
+
+3. **Schema.org yapisal veri iyilestirmeleri**:
+   - `components/BlogPostCard.tsx`: Her blog kartina **Article** schema markup eklendi
+   - `pages/BlogPage.tsx`: Blog yazisi modal goruntulemede **BlogPosting** schema eklendi
+   - Breadcrumb schema zaten `SEOHead` component'inde mevcut
+
+### Beklenen Etki
+- Arama motorlari blog icerigini daha iyi anlayacak
+- Google'da zengin sonuclar (rich snippets) gorunme olasiligi artacak
+- SEO alanlari bos birakilsa bile temel meta bilgileri eksik kalmayacak

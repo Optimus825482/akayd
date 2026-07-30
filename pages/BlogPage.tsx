@@ -58,6 +58,16 @@ const BlogPage: React.FC<BlogPageProps> = ({ blogPosts, seoSettings }) => {
             <div className="fixed inset-0 z-50 bg-ink/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={()=>setSelected(null)}>
                 <div className="bg-surface rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-xl" onClick={e=>e.stopPropagation()}>
                     {selected.imageUrl && <img src={selected.imageUrl} alt={selected.title} className="w-full h-48 md:h-64 object-cover" />}
+                    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+                        '@context': 'https://schema.org',
+                        '@type': 'BlogPosting',
+                        headline: selected.title,
+                        description: selected.summary || selected.excerpt || '',
+                        image: selected.imageUrl,
+                        datePublished: selected.date,
+                        author: { '@type': 'Person', name: selected.author },
+                        publisher: { '@type': 'Organization', name: 'Akaydin Tarim' }
+                    }) }} />
                     <div className="p-8">
                         <div className="flex items-center gap-3 text-xs text-ink-3 mb-4">
                             <span>{selected.author}</span><span>·</span><span>{selected.date}</span>
