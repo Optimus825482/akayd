@@ -21,7 +21,7 @@ const Footer: React.FC<FooterProps> = ({ content }) => {
                     {/* Brand */}
                     <div className="col-span-2 md:col-span-1 space-y-4">
                         <Link to="/" className="flex items-center gap-3">
-                            <img src="/akaylogo.png" alt="Logo" className="w-11 h-11 object-contain brightness-200" />
+                            <img src="/akaylogo.png" alt="Logo" className="w-11 h-11 object-contain brightness-100" />
                             <span className="text-xl font-bold font-[family-name:var(--font-display)] text-white">Akaydın Tarım</span>
                         </Link>
                         <p className="text-sm leading-relaxed max-w-52" style={{color:'rgba(255,255,255,0.5)'}}>

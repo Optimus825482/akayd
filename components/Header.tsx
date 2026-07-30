@@ -55,7 +55,7 @@ const Header: React.FC<HeaderProps> = ({ contactContent }) => {
                     <img
                         src="/akaylogo.png"
                         alt="Akaydın Tarım"
-                        className="w-9 h-9 object-contain group-hover:scale-105 transition-transform duration-200"
+                        className="w-10 h-10 sm:w-9 sm:h-9 object-contain group-hover:scale-105 transition-transform duration-200"
                     />
                     <div className="hidden sm:block">
                         <span className="text-base font-bold font-[family-name:var(--font-display)] text-ink tracking-tight">
