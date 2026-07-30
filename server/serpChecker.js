@@ -12,6 +12,13 @@ function randomUA() {
   return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
 }
 
+function formatError(err) {
+  if (err instanceof Error) {
+    return `${err.name}: ${err.message}${err.code ? ` (code: ${err.code})` : ''}`;
+  }
+  return typeof err === 'string' ? err : JSON.stringify(err) || 'Bilinmeyen hata';
+}
+
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
