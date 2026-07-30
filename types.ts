@@ -209,6 +209,7 @@ export interface VisitorSession {
   updated_at: string;
 }
 
+/** @deprecated Analytics modülü henüz implemente edilmedi */
 export interface PageView {
   id: number;
   session_id: string;
@@ -221,6 +222,7 @@ export interface PageView {
   viewed_at: string;
 }
 
+/** @deprecated Analytics modülü henüz implemente edilmedi */
 export interface VisitorAction {
   id: number;
   session_id: string;
@@ -239,6 +241,7 @@ export interface VisitorAction {
   action_at: string;
 }
 
+/** @deprecated Analytics modülü henüz implemente edilmedi */
 export interface DailyAnalytics {
   id: number;
   date: string;
@@ -256,6 +259,7 @@ export interface DailyAnalytics {
   updated_at: string;
 }
 
+/** @deprecated Analytics modülü henüz implemente edilmedi */
 export interface PopularPage {
   id: number;
   page_path: string;
@@ -267,6 +271,7 @@ export interface PopularPage {
   last_updated: string;
 }
 
+/** @deprecated Analytics modülü henüz implemente edilmedi */
 export interface ActiveVisitor {
   id: number;
   session_id: string;
@@ -274,6 +279,7 @@ export interface ActiveVisitor {
   last_activity: string;
 }
 
+/** @deprecated Analytics modülü henüz implemente edilmedi */
 export interface AnalyticsSettings {
   id: number;
   analytics_enabled: boolean;
@@ -287,6 +293,7 @@ export interface AnalyticsSettings {
 }
 
 // Analytics Dashboard Stats
+/** @deprecated Analytics modülü henüz implemente edilmedi */
 export interface AnalyticsStats {
   total_sessions: number;
   unique_visitors: number;

@@ -97,6 +97,16 @@ const BlogManagement: React.FC<BlogManagementProps> = ({
 
     const handleBlogSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // -- SEO alanlari bossa oneri toast'i goster --
+        var missingSeo = [];
+        if (!blogForm.seo_title.trim()) missingSeo.push("SEO Basligi");
+        if (!blogForm.seo_description.trim()) missingSeo.push("SEO Aciklamasi");
+        if (!blogForm.seo_keywords.trim()) missingSeo.push("SEO Anahtar Kelimeleri");
+        if (missingSeo.length > 0) {
+            addNotification("warning", "SEO Onerisi", missingSeo.join(", ") + " alanlari bos. Sunucu otomatik dolduracak, ancak manuel girmeniz onerilir.");
+        }
+
         setLoading(true);
         try {
             const formData = new FormData();
@@ -453,7 +463,7 @@ const BlogManagement: React.FC<BlogManagementProps> = ({
                                             </label>
                                             <input
                                                 type="text"
-                                                placeholder="SEO başlığı (60 karakter)"
+                                                placeholder="Otomatik doldurulacak - SEO başlığı (60 karakter)"
                                                 value={blogForm.seo_title}
                                                 onChange={(e) => { seoTouched.current.title = true; setBlogForm({ ...blogForm, seo_title: e.target.value }); }}
                                                 className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -466,7 +476,7 @@ const BlogManagement: React.FC<BlogManagementProps> = ({
                                                 {!seoTouched.current.desc && blogForm.seo_description && <span className="text-green-500 ml-1 text-[10px]">(oto)</span>}
                                             </label>
                                             <textarea
-                                                placeholder="SEO açıklaması (160 karakter)"
+                                                placeholder="Otomatik doldurulacak - SEO açıklaması (160 karakter)"
                                                 value={blogForm.seo_description}
                                                 onChange={(e) => { seoTouched.current.desc = true; setBlogForm({ ...blogForm, seo_description: e.target.value }); }}
                                                 className="w-full border border-gray-300 rounded-lg px-4 py-2 h-16 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -480,7 +490,7 @@ const BlogManagement: React.FC<BlogManagementProps> = ({
                                             </label>
                                             <input
                                                 type="text"
-                                                placeholder="fındık, tarım, hendek"
+                                                placeholder="Otomatik doldurulacak - fındık, tarım, hendek"
                                                 value={blogForm.seo_keywords}
                                                 onChange={(e) => { seoTouched.current.keywords = true; setBlogForm({ ...blogForm, seo_keywords: e.target.value }); }}
                                                 className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
