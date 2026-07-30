@@ -28,7 +28,9 @@ async function scrapeGoogle(query, domain) {
   // Google Search Console API mevcutsa onu kullan (daha güvenilir, ücretsiz)
   if (isGSCAvailable()) {
     try {
-      const result = await checkGSC(query);
+      // Domain'i GSC site URL'ine çevir (akaydintarim.com.tr → https://www.akaydintarim.com.tr)
+      const siteUrl = domain.includes('://') ? domain : `https://www.${domain}`;
+      const result = await checkGSC(query, siteUrl);
       if (result !== null) return result;
     } catch (err) {
       console.warn(`[SERP] GSC hatası, scraping fallback kullanılıyor:`, err.message);
@@ -147,16 +149,21 @@ async function checkKeyword(db, keyword, engine, domain) {
   if (result) {
     try {
       await db.query(
-        'INSERT INTO serp_rankings (keyword, engine, position, url) VALUES ($1, $2, $3, $4)',
-        [keyword, engine, result.position, result.url]
+        'INSERT INTO serp_rankings (keyword, engine, position, url, domain) VALUES ($1, $2, $3, $4, $5)',
+        [keyword, engine, result.position, result.url, domain]
       );
-      console.log(`[SERP] ${engine}: "${keyword}" → #${result.position || 'sıralama dışı'}`);
+      console.log(`[SERP:${domain}] ${engine}: "${keyword}" → #${result.position || 'sıralama dışı'}`);
     } catch (dbErr) {
       console.error(`[SERP] DB insert error for "${keyword}" ${engine}:`, formatError(dbErr));
     }
   }
   return result;
 }
+
+// Hendek Fındık Kırma mikro sitesi için ek domain
+const EXTRA_DOMAINS = process.env.SERP_EXTRA_DOMAINS 
+  ? process.env.SERP_EXTRA_DOMAINS.split(',').map(d => d.trim())
+  : ['hendekfindikkirma.com'];
 
 export async function checkAllRankings(db) {
   console.log('[SERP] Kontrol başladı...');
@@ -169,9 +176,19 @@ export async function checkAllRankings(db) {
 
     for (const kw of keywords) {
       for (const engine of engines) {
+        // 1. Keyword'ün kendi domain'i için kontrol
         await checkKeyword(db, kw.keyword, engine, kw.domain);
-        await sleep(3000 + Math.random() * 2000); // 3-5 saniye bekleme
+        await sleep(3000 + Math.random() * 2000);
         checked++;
+        
+        // 2. Ek domain'ler için de aynı keyword'ü kontrol et
+        for (const extraDomain of EXTRA_DOMAINS) {
+          if (extraDomain !== kw.domain) {
+            await checkKeyword(db, kw.keyword, engine, extraDomain);
+            await sleep(2000 + Math.random() * 1000);
+            checked++;
+          }
+        }
       }
     }
     console.log(`[SERP] Kontrol tamamlandı. ${checked} sorgu yapıldı.`);

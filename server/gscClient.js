@@ -20,8 +20,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Service account key: önce env, sonra dosya yolu
 const KEY_FILE = process.env.GSC_KEY_FILE || path.join(__dirname, '..', 'gsc-key.json');
 
-// Site URL
-const SITE_URL = process.env.GSC_SITE_URL || 'https://www.akaydintarim.com.tr';
+// Varsayılan site URL'leri (virgülle ayrılmış)
+const GSC_SITES = (process.env.GSC_SITES || 'https://www.akaydintarim.com.tr,https://www.hendekfindikkirma.com').split(',').map(s => s.trim());
 
 let auth = null;
 
@@ -65,21 +65,24 @@ function getAuth() {
 /**
  * Search Console API ile belirli bir keyword'ün sıralamasını sorgular.
  *
- * @returns {{ position: number, url: string | null }} veya null (hata/sıralama dışı)
+ * @param {string} keyword - Aranacak anahtar kelime
+ * @param {string} [siteUrl] - Site URL (boşsa GSC_SITES'teki ilk site)
+ * @returns {{ position: number, url: string | null, site: string }} veya null
  */
-export async function checkGSC(keyword) {
+export async function checkGSC(keyword, siteUrl) {
   const client = getAuth();
   if (!client) return null;
+
+  const site = siteUrl || GSC_SITES[0];
 
   try {
     const searchconsole = google.searchconsole({ version: 'v1', auth: client });
 
-    // Son 7 günlük veri
     const endDate = new Date().toISOString().split('T')[0];
     const startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
     const response = await searchconsole.searchanalytics.query({
-      siteUrl: SITE_URL,
+      siteUrl: site,
       requestBody: {
         startDate,
         endDate,
@@ -98,16 +101,14 @@ export async function checkGSC(keyword) {
     const rows = response.data.rows || [];
     if (rows.length > 0) {
       const position = Math.round(rows[0].keys[0] === keyword ? rows[0].position : 0);
-      const impressions = rows[0].impressions || 0;
-      console.log(`[GSC] "${keyword}" → #${position > 0 ? position : 'sıralama dışı'} (${impressions} görüntülenme)`);
-      // GSC pozisyon veriyor ama URL vermiyor — URL için ana sayfayı dön
-      return { position: position > 0 ? position : 0, url: position > 0 ? SITE_URL : null };
+      console.log(`[GSC:${new URL(site).hostname}] "${keyword}" → #${position > 0 ? position : 'sıralama dışı'}`);
+      return { position: position > 0 ? position : 0, url: position > 0 ? site : null, site };
     }
 
-    console.log(`[GSC] "${keyword}" → veri yok (sıralama dışı)`);
-    return { position: 0, url: null };
+    console.log(`[GSC:${new URL(site).hostname}] "${keyword}" → veri yok`);
+    return { position: 0, url: null, site };
   } catch (err) {
-    console.error(`[GSC] "${keyword}" sorgu hatası:`, err.message);
+    console.error(`[GSC:${site}] "${keyword}" sorgu hatası:`, err.message);
     return null;
   }
 }

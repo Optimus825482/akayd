@@ -165,6 +165,7 @@ CREATE TABLE IF NOT EXISTS serp_rankings (
   engine VARCHAR(20) NOT NULL CHECK (engine IN ('google', 'yandex', 'bing')),
   position INTEGER NOT NULL DEFAULT 0,
   url VARCHAR(500) DEFAULT NULL,
+  domain VARCHAR(255) DEFAULT 'akaydintarim.com.tr',
   checked_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
