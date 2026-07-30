@@ -13,6 +13,7 @@ import ContactPageManagement from '../components/admin/ContactPageManagement';
 import HeroManagement from '../components/admin/HeroManagement';
 import AboutManagement from '../components/admin/AboutManagement';
 import SEOManagement from '../components/admin/SEOManagement';
+import SerpRankTracker from '../components/admin/SerpRankTracker';
 
 
 interface AdminDashboardProps {
@@ -130,7 +131,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         { id: 'about', name: 'Hakkımızda', icon: 'ℹ️' },
         { id: 'contact-page', name: 'İletişim Sayfası', icon: '📧' },
         { id: 'contact-messages', name: 'İletişim Mesajları', icon: '💬' },
-        { id: 'seo', name: 'SEO Yönetimi', icon: '🔍' }
+        { id: 'seo', name: 'SEO Yönetimi', icon: '🔍' },
+        { id: 'serp-rankings', name: 'Rank Takip', icon: '📈' }
     ];
 
     return (
@@ -209,6 +211,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 {activeSection === 'contact-page' && 'İletişim sayfası bilgilerini güncelleyin'}
                                 {activeSection === 'contact-messages' && 'Gelen mesajları görüntüleyin'}
                                 {activeSection === 'seo' && 'SEO ayarları ve optimizasyonlarını yönetin'}
+                                {activeSection === 'serp-rankings' && 'Arama motoru sıralama takibi ve analizi'}
                             </p>
                         </div>
                         <div className="flex items-center space-x-4">
@@ -301,6 +304,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                     {activeSection === 'seo' && (
                         <SEOManagement
+                            addNotification={addNotification}
+                        />
+                    )}
+
+                    {activeSection === 'serp-rankings' && (
+                        <SerpRankTracker
                             addNotification={addNotification}
                         />
                     )}

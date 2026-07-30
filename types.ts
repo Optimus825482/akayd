@@ -298,3 +298,29 @@ export interface AnalyticsStats {
   daily_sessions: { date: string; sessions: number }[];
   daily_page_views: { date: string; views: number }[];
 }
+
+// SERP Rank Tracker Types
+export interface SerpRanking {
+  id: number;
+  keyword: string;
+  engine: 'google' | 'yandex' | 'bing';
+  position: number;
+  url?: string;
+  checked_at: string;
+}
+
+export interface SerpKeyword {
+  id: number;
+  keyword: string;
+  is_active: boolean;
+  domain: string;
+  created_at: string;
+}
+
+export interface SerpRankingCurrent {
+  keyword: string;
+  engine: string;
+  position: number;
+  url?: string;
+  checked_at: string;
+}

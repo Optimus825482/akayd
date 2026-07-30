@@ -151,6 +151,26 @@ CREATE TABLE IF NOT EXISTS seo_settings (
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS serp_keywords (
+  id SERIAL PRIMARY KEY,
+  keyword VARCHAR(255) NOT NULL UNIQUE,
+  is_active BOOLEAN DEFAULT true,
+  domain VARCHAR(255) DEFAULT 'akaydintarim.com.tr',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS serp_rankings (
+  id SERIAL PRIMARY KEY,
+  keyword VARCHAR(255) NOT NULL,
+  engine VARCHAR(20) NOT NULL CHECK (engine IN ('google', 'yandex', 'bing')),
+  position INTEGER NOT NULL DEFAULT 0,
+  url VARCHAR(500) DEFAULT NULL,
+  checked_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_serp_keyword ON serp_rankings(keyword);
+CREATE INDEX IF NOT EXISTS idx_serp_checked_at ON serp_rankings(checked_at);
+
 CREATE TABLE IF NOT EXISTS services (
   id SERIAL PRIMARY KEY,
   title VARCHAR(255) NOT NULL,

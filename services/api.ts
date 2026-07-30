@@ -230,6 +230,26 @@ export const seoAPI = {
   getRobots: () => apiCall("/seo/robots"),
 };
 
+// SERP Rank Tracker API
+export const serpAPI = {
+  getCurrent: () => apiCall("/serp-rankings/current"),
+  getHistory: (params: { keyword?: string; engine?: string; days?: number }) => {
+    const qs = new URLSearchParams();
+    if (params.keyword) qs.set('keyword', params.keyword);
+    if (params.engine) qs.set('engine', params.engine);
+    qs.set('days', String(params.days || 30));
+    return apiCall(`/serp-rankings/history?${qs.toString()}`);
+  },
+  getKeywords: () => apiCall("/serp-rankings/keywords"),
+  addKeyword: (keyword: string, domain?: string) =>
+    apiCall("/serp-rankings/keywords", { method: 'POST', body: JSON.stringify({ keyword, domain }) }),
+  deleteKeyword: (id: number) =>
+    apiCall(`/serp-rankings/keywords/${id}`, { method: 'DELETE' }),
+  triggerCheck: () => apiCall("/serp-rankings/check", { method: 'POST' }),
+  triggerCheckKeyword: (keywordId: number) =>
+    apiCall(`/serp-rankings/check/${keywordId}`, { method: 'POST' }),
+};
+
 export default {
   servicesAPI,
   productsAPI,
@@ -239,4 +259,5 @@ export default {
   heroAPI,
   contactMessagesAPI,
   seoAPI,
+  serpAPI,
 };
