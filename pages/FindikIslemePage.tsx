@@ -258,7 +258,6 @@ const FindikIslemePage: React.FC<FindikIslemePageProps> = ({ contactContent, seo
   };
 
   const greenGradient = { background: 'linear-gradient(135deg, #0f1f10 0%, #142218 60%, #1a2a1a 100%)' };
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   return (<>
     <SEOHead seoSettings={seoSettings || undefined} pageSEO={pageSEO || undefined}
