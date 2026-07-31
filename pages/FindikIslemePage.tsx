@@ -540,7 +540,9 @@ const FindikIslemePage: React.FC<FindikIslemePageProps> = ({ contactContent, seo
                 </span>
               </button>
               <div className={`overflow-hidden transition-all duration-300 ${openFaq === i ? 'max-h-96 pb-5 px-5' : 'max-h-0'}`}>
-                <p className="text-sm text-ink-2 leading-relaxed">{item.a}</p>
+                <p className="text-sm text-ink-2 leading-relaxed">
+                  {item.a.replace('+90 539 775 1517', contactContent.whatsapp_phone || '+90 539 775 1517')}
+                </p>
               </div>
             </div>
           ))}
@@ -624,7 +626,9 @@ const FindikIslemePage: React.FC<FindikIslemePageProps> = ({ contactContent, seo
                 </span>
               </button>
               <div className={`overflow-hidden transition-all duration-300 ${openSeoFaq === i ? 'max-h-96 pb-5 px-5' : 'max-h-0'}`}>
-                <p className="text-sm text-ink-2 leading-relaxed">{item.a}</p>
+                <p className="text-sm text-ink-2 leading-relaxed">
+                  {item.a.replace('+90 539 775 1517', contactContent.whatsapp_phone || '+90 539 775 1517')}
+                </p>
               </div>
             </div>
           ))}
