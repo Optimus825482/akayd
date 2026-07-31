@@ -24,7 +24,7 @@ const localBusinessSchema = {
   "priceRange": "₺"
 };
 
-const faqSchema = {
+const seoFaqSchema = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
   "mainEntity": [
@@ -35,6 +35,11 @@ const faqSchema = {
     { "@type": "Question", "name": "Fındık işleme için randevu gerekiyor mu?", "acceptedAnswer": { "@type": "Answer", "text": "Yoğun sezonda randevu önerilir. Diğer zamanlarda doğrudan tesisimize getirebilirsiniz. WhatsApp hattımızdan kolayca randevu alabilirsiniz." } }
   ]
 };
+
+const seoFaqItems = seoFaqSchema.mainEntity.map(item => ({
+  q: item.name,
+  a: item.acceptedAnswer.text
+}));
 
 interface FindikIslemePageProps { contactContent: ContactPageContent; seoSettings?: SEOSettings | null; }
 
@@ -164,6 +169,7 @@ const galleryImages = [
 const FindikIslemePage: React.FC<FindikIslemePageProps> = ({ contactContent, seoSettings }) => {
   const [pageSEO, setPageSEO] = useState<PageSEO | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [openSeoFaq, setOpenSeoFaq] = useState<number | null>(null);
   useEffect(() => { seoAPI.getPageSEO('/findik-isleme').then(setPageSEO).catch(() => {}); }, []);
 
   const wp = contactContent.whatsapp_phone || contactContent.phone?.replace(/[^\d]/g, '') || '905397751517';
@@ -527,8 +533,10 @@ const FindikIslemePage: React.FC<FindikIslemePageProps> = ({ contactContent, seo
                 className="w-full flex items-center justify-between p-5 text-left hover:bg-paper-2 transition-colors"
               >
                 <span className="font-semibold text-ink pr-4">{item.q}</span>
-                <span className={`shrink-0 text-lg transition-transform duration-300 ${openFaq === i ? 'rotate-45' : ''}`} style={{ color: '#1a6532' }}>
-                  {openFaq === i ? '✕' : '+'}
+                <span className={`shrink-0 text-accent transition-transform duration-300 ${openFaq === i ? 'rotate-180' : ''}`}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </span>
               </button>
               <div className={`overflow-hidden transition-all duration-300 ${openFaq === i ? 'max-h-96 pb-5 px-5' : 'max-h-0'}`}>
@@ -587,6 +595,36 @@ const FindikIslemePage: React.FC<FindikIslemePageProps> = ({ contactContent, seo
               </div>
               <div className="absolute inset-0 bg-accent/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <span className="text-white text-sm font-semibold bg-accent/80 px-3 py-1 rounded-full">{img.label}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    {/* ═══════════ SSS (SEO) ═══════════ */}
+    <section className="section bg-paper">
+      <div className="container">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-5xl font-[family-name:var(--font-display)] font-bold text-ink mb-4">❓ Sık Sorulan Sorular</h2>
+          <p className="text-ink-2 max-w-xl mx-auto">Fındık işleme hizmetimiz hakkında en çok merak edilenler.</p>
+        </div>
+        <div className="max-w-3xl mx-auto space-y-3">
+          {seoFaqItems.map((item, i) => (
+            <div key={i} className="rounded-xl border border-rule bg-paper-2 overflow-hidden">
+              <button
+                onClick={() => setOpenSeoFaq(openSeoFaq === i ? null : i)}
+                className="w-full flex items-center justify-between p-5 text-left hover:bg-paper/50 transition-colors"
+              >
+                <span className="font-semibold text-ink pr-4">{item.q}</span>
+                <span className={`shrink-0 text-accent transition-transform duration-300 ${openSeoFaq === i ? 'rotate-180' : ''}`}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </span>
+              </button>
+              <div className={`overflow-hidden transition-all duration-300 ${openSeoFaq === i ? 'max-h-96 pb-5 px-5' : 'max-h-0'}`}>
+                <p className="text-sm text-ink-2 leading-relaxed">{item.a}</p>
               </div>
             </div>
           ))}

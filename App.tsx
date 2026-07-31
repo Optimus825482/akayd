@@ -14,6 +14,8 @@ import ProductDetailPage from './pages/ProductDetailPage';
 import BlogPage from './pages/BlogPage';
 import ContactPage from './pages/ContactPage';
 import FindikIslemePage from './pages/FindikIslemePage';
+import NotFoundPage from './pages/NotFoundPage';
+import WhatsAppFloat from './components/WhatsAppFloat';
 
 // API yanıt tipleri (frontend tiplerine dönüştürmeden önceki ham veri)
 interface ApiService { id: number; title: string; description: string; icon_name: string; }
@@ -209,7 +211,7 @@ function App(): React.ReactNode {
             {/* Regular Routes - With Header/Footer */}
             <Route path="/*" element={
               <div className="flex flex-col min-h-screen bg-paper text-ink">
-                <Header contactContent={contactContent} />
+                <Header contactContent={contactContent} products={products} blogPosts={blogPosts} />
                 <main className="flex-grow">
                   <Routes>
                     <Route path="/" element={<HomePage services={services.slice(0, 3)} products={products.filter(p => p.isFeatured).slice(0, 4)} heroContents={heroContents} contactContent={contactContent} seoSettings={seoSettings} />} />
@@ -220,9 +222,11 @@ function App(): React.ReactNode {
                     <Route path="/blog" element={<BlogPage blogPosts={blogPosts} seoSettings={seoSettings} />} />
                     <Route path="/iletisim" element={<ContactPage content={contactContent} seoSettings={seoSettings} />} />
                     <Route path="/findik-isleme" element={<FindikIslemePage contactContent={contactContent} seoSettings={seoSettings} />} />
+                    <Route path="*" element={<NotFoundPage />} />
                   </Routes>
                 </main>
                 <Footer content={contactContent} />
+                <WhatsAppFloat />
               </div>
             } />
         </Routes>

@@ -110,9 +110,40 @@
   from { opacity: 0; }
   to { opacity: 1; }
 }
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+main { animation: pageEnter 0.35s ease-out; }
 .animate-fade-in-up {
   animation: fadeInUp 0.5s ease-out both;
 }
+/* ============================================================
+   DARK MODE
+   ============================================================ */
+.dark {
+  --color-paper: oklch(18% 0.01 98);
+  --color-paper-2: oklch(22% 0.01 98);
+  --color-paper-3: oklch(30% 0.01 98);
+  --color-ink: oklch(90% 0.01 98);
+  --color-ink-2: oklch(78% 0.01 98);
+  --color-ink-3: oklch(62% 0.01 98);
+  --color-accent: oklch(60% 0.16 148);
+  --color-accent-2: oklch(68% 0.14 148);
+  --color-accent-bg: oklch(24% 0.04 148);
+  --color-earth: oklch(62% 0.10 85);
+  --color-earth-bg: oklch(24% 0.03 85);
+  --color-sky: oklch(58% 0.14 260);
+  --color-sky-bg: oklch(24% 0.03 260);
+  --color-surface: oklch(22% 0.005 98);
+  --color-rule: oklch(32% 0.01 120);
+}
+
+.dark body {
+  color: var(--color-ink);
+  background: var(--color-paper);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import type { ContactPageContent } from '../types';
+import type { ContactPageContent, Product, BlogPost } from '../types';
+import { useDarkMode } from '../hooks/useDarkMode';
+import SearchModal from './SearchModal';
 
 const NavItem: React.FC<{ to: string; children: React.ReactNode; onClick?: () => void }> = ({ to, children, onClick }) => (
     <NavLink
@@ -18,12 +20,15 @@ const NavItem: React.FC<{ to: string; children: React.ReactNode; onClick?: () =>
     </NavLink>
 );
 
-interface HeaderProps { contactContent: ContactPageContent; }
+interface HeaderProps { contactContent: ContactPageContent; products?: Product[]; blogPosts?: BlogPost[]; }
 
-const Header: React.FC<HeaderProps> = ({ contactContent }) => {
+const Header: React.FC<HeaderProps> = ({ contactContent, products = [], blogPosts = [] }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [searchOpen, setSearchOpen] = useState(false);
+    const [isDark, toggleDark] = useDarkMode();
 
     return (
+        <>
         <header className="sticky top-0 z-50 bg-paper/90 backdrop-blur-md border-b border-rule">
             {/* Top bar — desktop */}
             <div className="hidden lg:block bg-accent text-white py-1.5 text-xs font-medium">
@@ -74,6 +79,25 @@ const Header: React.FC<HeaderProps> = ({ contactContent }) => {
                     <NavItem to="/urunler">Ürünler</NavItem>
                     <NavItem to="/blog">Blog</NavItem>
                     <NavItem to="/iletisim">İletişim</NavItem>
+                    {/* Search + Dark Mode */}
+                    <div className="flex items-center gap-1 ml-2 pl-2 border-l border-rule">
+                        <button
+                            onClick={() => setSearchOpen(true)}
+                            className="p-2 rounded-btn text-ink-2 hover:text-ink hover:bg-paper-2 transition-colors"
+                            aria-label="Ara"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
+                            </svg>
+                        </button>
+                        <button
+                            onClick={toggleDark}
+                            className="p-2 rounded-btn text-ink-2 hover:text-ink hover:bg-paper-2 transition-colors text-lg"
+                            aria-label={isDark ? 'Aydınlık mod' : 'Karanlık mod'}
+                        >
+                            {isDark ? '☀️' : '🌙'}
+                        </button>
+                    </div>
                 </nav>
 
                 {/* Mobile hamburger */}
@@ -122,10 +146,31 @@ const Header: React.FC<HeaderProps> = ({ contactContent }) => {
                                 {label}
                             </NavLink>
                         ))}
+                        {/* Mobile: Search + Dark Mode */}
+                        <div className="flex items-center gap-1 pt-2 border-t border-rule">
+                            <button
+                                onClick={() => { setSearchOpen(true); setIsOpen(false); }}
+                                className="flex items-center gap-2 px-4 py-2.5 rounded-btn text-sm font-medium text-ink-2 hover:text-ink hover:bg-paper-2 transition-colors w-full text-left"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
+                                </svg>
+                                Ara
+                            </button>
+                            <button
+                                onClick={toggleDark}
+                                className="px-4 py-2.5 rounded-btn text-ink-2 hover:text-ink hover:bg-paper-2 transition-colors text-lg"
+                                aria-label={isDark ? 'Aydınlık mod' : 'Karanlık mod'}
+                            >
+                                {isDark ? '☀️' : '🌙'}
+                            </button>
+                        </div>
                     </div>
                 </nav>
             )}
         </header>
+        <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} products={products} blogPosts={blogPosts} />
+        </>
     );
 };
 

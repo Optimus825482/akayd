@@ -158,16 +158,6 @@ const ContactPage: React.FC<ContactPageProps> = ({ content, seoSettings }) => {
                             ))}
                         </div>
 
-                        {/* Map */}
-                        <div className="rounded-2xl overflow-hidden border border-rule h-64">
-                            {content.map_embed ? (
-                                <div dangerouslySetInnerHTML={{__html:content.map_embed}} className="w-full h-full" />
-                            ) : (
-                                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1510.27850536581!2d30.74360289255156!3d40.793752100200535!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x409d8f614e52c30d%3A0x25ed3a760cc228ca!2zQWtheWTEsW4gdGFyxLFt!5e0!3m2!1str!2str!4v1752202785920"
-                                    width="100%" height="100%" style={{border:0}} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" title="Konum" />
-                            )}
-                        </div>
-
                         {/* Social */}
                         {(content.facebook_url||content.instagram_url||content.youtube_url) && (
                             <div className="flex flex-wrap gap-2">
@@ -177,6 +167,28 @@ const ContactPage: React.FC<ContactPageProps> = ({ content, seoSettings }) => {
                             </div>
                         )}
                     </div>
+                </div>
+            </div>
+        </section>
+
+        {/* Map Section */}
+        <section className="section bg-surface">
+            <div className="container">
+                <h2 className="text-3xl font-[family-name:var(--font-display)] font-bold text-ink mb-6">📍 Bizi Ziyaret Edin</h2>
+                <div className="rounded-xl shadow-lg overflow-hidden" style={{height:'450px'}}>
+                    {content.map_embed ? (
+                        <div dangerouslySetInnerHTML={{__html:content.map_embed}} className="w-full h-full" />
+                    ) : (
+                        <iframe
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3023!2d30.748!3d40.7987!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDDCsDQ3JzU1LjMiTiAzMMKwNDQnNTIuOCJF!5e0!3m2!1str!2str!4v1620000000000"
+                            width="100%" height="450"
+                            style={{border:0}}
+                            allowFullScreen
+                            loading="lazy"
+                            referrerPolicy="no-referrer-when-downgrade"
+                            title="Akaydın Tarım Konum"
+                        />
+                    )}
                 </div>
             </div>
         </section>
