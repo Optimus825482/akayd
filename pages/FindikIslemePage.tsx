@@ -4,6 +4,38 @@ import type { ContactPageContent, SEOSettings, PageSEO } from '../types';
 import SEOHead from '../components/SEOHead';
 import { seoAPI } from '../services/api';
 
+const localBusinessSchema = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": "Akaydın Tarım Fındık İşleme Tesisi",
+  "description": "Hendek Sakarya'da profesyonel fındık kırma, kavurma ve vakumlu paketleme hizmeti. 25+ yıllık deneyim.",
+  "url": "https://www.akaydintarim.com.tr/findik-isleme",
+  "telephone": "+902641234567",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "Başpınar, Remzi Efendi Cd. No:24 D:b",
+    "addressLocality": "Hendek",
+    "addressRegion": "Sakarya",
+    "postalCode": "54300",
+    "addressCountry": "TR"
+  },
+  "geo": { "@type": "GeoCoordinates", "latitude": 40.7987, "longitude": 30.7480 },
+  "openingHours": "Mo-Sa 08:00-18:00",
+  "priceRange": "₺"
+};
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Fındık kırma işlemi ne kadar sürer?", "acceptedAnswer": { "@type": "Answer", "text": "Parti büyüklüğüne bağlı olarak 100 kg kabuklu fındık yaklaşık 1-2 saat içinde işlenir. Günlük 5 ton kapasitemiz mevcuttur." } },
+    { "@type": "Question", "name": "Fındık kırma ve kavurma fiyatları nedir?", "acceptedAnswer": { "@type": "Answer", "text": "Güncel fiyatlar için bizi arayın: +90 539 775 1517. Rekabetçi fiyatlarla hizmet vermekteyiz." } },
+    { "@type": "Question", "name": "Hendek'te fındık kırma hizmeti veriyor musunuz?", "acceptedAnswer": { "@type": "Answer", "text": "Evet, Hendek merkezde bulunan tesisimizde profesyonel fındık kırma, kavurma ve vakumlu paketleme hizmeti sunuyoruz." } },
+    { "@type": "Question", "name": "Kavrulmuş fındık nasıl saklanmalı?", "acceptedAnswer": { "@type": "Answer", "text": "Vakumlu paketlediğimiz kavrulmuş fındık, serin ve kuru ortamda 6 aya kadar tazeliğini korur. Açıldıktan sonra buzdolabında saklanması önerilir." } },
+    { "@type": "Question", "name": "Fındık işleme için randevu gerekiyor mu?", "acceptedAnswer": { "@type": "Answer", "text": "Yoğun sezonda randevu önerilir. Diğer zamanlarda doğrudan tesisimize getirebilirsiniz. WhatsApp hattımızdan kolayca randevu alabilirsiniz." } }
+  ]
+};
+
 interface FindikIslemePageProps { contactContent: ContactPageContent; seoSettings?: SEOSettings | null; }
 
 /* ──────────────── DATA ──────────────── */
