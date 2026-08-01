@@ -1218,7 +1218,7 @@ app.get('/api/seo/pages', async (req, res) => {
       res.json(rows.rows[0] || null);
     } else {
       // Admin-only: tüm sayfa SEO listesi (token kontrolü)
-      const token = req.headers.authorization?.replace('Bearer ', '');
+      const token = req.headers.authorization?.replace('Bearer ', '') || parseCookies(req).admin_token;
       if (!token || !adminTokens.has(token)) {
         return res.status(401).json({ error: 'Yetkisiz erişim' });
       }

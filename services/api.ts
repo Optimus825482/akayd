@@ -10,6 +10,7 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
 
   try {
     const response = await fetch(url, {
+      credentials: 'include',
       headers: {
         "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -45,6 +46,7 @@ async function uploadFile(
   try {
     const response = await fetch(url, {
       method,
+      credentials: 'include',
       body: formData,
       ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
     });
