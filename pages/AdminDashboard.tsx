@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { Service, Product, BlogPost, AboutPageContent, ContactPageContent, HeroContent } from '../types';
+import Icons from '../components/admin/AdminIcons';
 
 
 import ToastContainer from '../components/ToastContainer';
@@ -123,22 +124,39 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
 
     const menuItems = [
-        { id: 'dashboard', name: 'Kontrol Paneli', icon: '📊' },
-        { id: 'hero', name: 'Ana Sayfa Hero', icon: '🎬' },
-        { id: 'services', name: 'Hizmetler', icon: '🛠️' },
-        { id: 'products', name: 'Ürünler', icon: '📦' },
-        { id: 'blog', name: 'Blog', icon: '📝' },
-        { id: 'about', name: 'Hakkımızda', icon: 'ℹ️' },
-        { id: 'contact-page', name: 'İletişim Sayfası', icon: '📧' },
-        { id: 'contact-messages', name: 'İletişim Mesajları', icon: '💬' },
-        { id: 'seo', name: 'SEO Yönetimi', icon: '🔍' },
+        { id: 'dashboard', name: 'Kontrol Paneli', icon: {Icons.chart} },
+        { id: 'hero', name: 'Ana Sayfa Hero', icon: {Icons.search} },
+        { id: 'services', name: 'Hizmetler', icon: {Icons.wrench} },
+        { id: 'products', name: 'Ürünler', icon: {Icons.box} },
+        { id: 'blog', name: 'Blog', icon: {Icons.doc} },
+        { id: 'about', name: 'Hakkımızda', icon: {Icons.search} },
+        { id: 'contact-page', name: 'İletişim Sayfası', icon: {Icons.mail} },
+        { id: 'contact-messages', name: 'İletişim Mesajları', icon: {Icons.users} },
+        { id: 'seo', name: 'SEO Yönetimi', icon: {Icons.search} },
         { id: 'serp-rankings', name: 'Rank Takip', icon: '📈' }
     ];
 
     return (
-        <div className="min-h-screen bg-gray-100 flex">
+        <div className="min-h-screen bg-gray-100 flex flex-col lg:flex-row">
+            {/* Mobile hamburger */}
+            <button
+                className="lg:hidden fixed top-3 left-3 z-50 bg-gray-900 text-white p-2.5 rounded-xl shadow-lg"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                aria-label={sidebarOpen ? 'Menüyü kapat' : 'Menüyü aç'}
+            >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={sidebarOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
+                </svg>
+            </button>
+            {/* Sidebar overlay mobile */}
+            {sidebarOpen && (
+                <div className="lg:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setSidebarOpen(false)} />
+            )}
             {/* Sidebar */}
-            <div className={`${sidebarOpen ? 'w-64' : 'w-16'} bg-gradient-to-b from-gray-900 to-gray-800 text-white transition-all duration-300 flex flex-col`}>
+            <div className={`${sidebarOpen ? 'block' : 'hidden'} lg:block lg:flex flex-col fixed lg:static inset-y-0 left-0 z-40 w-64 lg:w-auto pt-14 lg:pt-0
+                ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+                bg-gradient-to-b from-gray-900 to-gray-800 text-white transition-all duration-300
+                ${sidebarOpen ? '' : 'lg:w-16'}`}>
                 {/* Logo & Toggle */}
                 <div className="p-4 border-b border-gray-700">
                     <div className="flex items-center justify-between">
@@ -165,6 +183,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </div>
                         )}
                         <button
+                            aria-label={sidebarOpen ? "Menüyü daralt" : "Menüyü genişlet"}
                             onClick={() => setSidebarOpen(!sidebarOpen)}
                             className="p-2 rounded-lg hover:bg-gray-700 transition-colors"
                         >

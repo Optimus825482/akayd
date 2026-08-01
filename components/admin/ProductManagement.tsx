@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Product, Notification } from '../../types';
 import { productsAPI } from '../../services/api';
+import ConfirmModal from '../ConfirmModal';
 
 const STATIC_URL = import.meta.env.VITE_STATIC_URL || (typeof window !== 'undefined' ? window.location.origin : '');
 const imgUrl = (path: string) => path ? `${STATIC_URL}${path}` : '';
@@ -30,6 +31,8 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
     const [productImages, setProductImages] = useState<File[]>([]);
     const [deletedImages, setDeletedImages] = useState<string[]>([]);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+    const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+    const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
     const handleProductSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -82,7 +85,7 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
                         ? {
                             ...updatedProduct,
                             id: updatedProduct.id.toString(),
-                            imageUrl: updatedProduct.image_url ? imgUrl(updatedProduct.image_url) : 'https://picsum.photos/300/200?random=1',
+                            imageUrl: updatedProduct.image_url ? imgUrl(updatedProduct.image_url) : '/placeholder.svg',
                             images: (updatedProduct.images || []).map((i: string) => imgUrl(i))
                         }
                         : p
@@ -93,7 +96,7 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
                 setProducts(prev => [...prev, {
                     ...newProduct,
                     id: newProduct.id.toString(),
-                    imageUrl: newProduct.image_url ? imgUrl(newProduct.image_url) : 'https://picsum.photos/300/200?random=1',
+                    imageUrl: newProduct.image_url ? imgUrl(newProduct.image_url) : '/placeholder.svg',
                     images: (newProduct.images || []).map((i: string) => imgUrl(i))
                 }]);
                 addNotification('success', 'Başarılı!', 'Yeni ürün eklendi.');
@@ -101,7 +104,7 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
 
             closeProductModal();
         } catch (error) {
-            console.error('Ürün kaydedilirken hata oluştu:', error);
+            addNotification('error', 'Hata!', 'Ürün kaydedilirken hata oluştu:');
             addNotification('error', 'Hata!', 'Ürün kaydedilirken hata oluştu.');
         }
         setLoading(false);
@@ -133,18 +136,23 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
         setIsProductModalOpen(false);
     };
 
-    const handleProductDelete = async (id: string) => {
-        if (confirm('Bu ürünü silmek istediğinizden emin misiniz?')) {
-            try {
-                await productsAPI.delete(Number(id));
-                setProducts(prev => prev.filter(p => p.id !== id));
-                addNotification('success', 'Başarılı!', 'Ürün silindi.');
-            } catch (error) {
-                console.error('Ürün silinirken hata oluştu:', error);
-                addNotification('error', 'Hata!', 'Ürün silinirken hata oluştu.');
-            }
-        }
+        const handleProductDelete = (id: string) => {
+        setDeleteConfirm(id);
     };
+
+    const confirmProductDelete = async () => {
+        if (!deleteConfirm) return;
+        try {
+                    await productsAPI.delete(Number(id));
+                    setProducts(prev => prev.filter(p => p.id !== id));
+                    addNotification('success', 'Başarılı!', 'Ürün silindi.');
+                } catch (error) {
+                    addNotification('error', 'Hata!', 'Ürün silinirken hata oluştu:');
+                    addNotification('error', 'Hata!', 'Ürün silinirken hata oluştu.');
+                }
+            
+        setDeleteConfirm(null);
+    };;
 
     return (
         <>
@@ -193,6 +201,7 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
                             </button>
                         </div>
                     ) : (
+                        {viewMode === 'grid' ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             {products.map((product) => (
                                 <div key={product.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300">
@@ -433,6 +442,13 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
                     </div>
                 </div>
             )}
+            <ConfirmModal
+                isOpen={deleteConfirm !== null}
+                title="Silme Onayı"
+                message="Bu ürünü silmek istediğinizden emin misiniz?"
+                onConfirm={confirmProductDelete}
+                onCancel={() => setDeleteConfirm(null)}
+            />
         </>
     );
 };

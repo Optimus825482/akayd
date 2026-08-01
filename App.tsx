@@ -16,6 +16,7 @@ import ContactPage from './pages/ContactPage';
 import FindikIslemePage from './pages/FindikIslemePage';
 import NotFoundPage from './pages/NotFoundPage';
 import WhatsAppFloat from './components/WhatsAppFloat';
+import Skeleton from './components/Skeleton';
 
 // API yanıt tipleri (frontend tiplerine dönüştürmeden önceki ham veri)
 interface ApiService { id: number; title: string; description: string; icon_name: string; }
@@ -72,7 +73,7 @@ function App(): React.ReactNode {
         category: product.category,
         price: product.price || 0,
         isFeatured: product.is_featured || false,
-        imageUrl: product.image_url ? img(product.image_url.startsWith('/uploads/') ? product.image_url : product.image_url) : 'https://picsum.photos/300/200?random=1',
+        imageUrl: product.image_url ? img(product.image_url.startsWith('/uploads/') ? product.image_url : product.image_url) : '/placeholder.svg',
         images: product.images && Array.isArray(product.images)
           ? product.images.map((imgPath: string) => img(imgPath))
           : []
@@ -87,7 +88,7 @@ function App(): React.ReactNode {
         author: post.author,
         date: new Date(post.created_at || Date.now()).toLocaleDateString('tr-TR'),
         views: post.views || 0,
-        imageUrl: post.image_url ? img(post.image_url) : 'https://picsum.photos/400/250?random=1',
+        imageUrl: post.image_url ? img(post.image_url) : '/placeholder.svg',
         seo_title: post.seo_title || '',
         seo_description: post.seo_description || '',
         seo_keywords: post.seo_keywords || ''
@@ -174,8 +175,13 @@ function App(): React.ReactNode {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-xl text-gray-600">Yükleniyor...</div>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="container mx-auto px-4">
+          <Skeleton variant="product-grid" count={4} />
+          <div className="mt-12">
+            <Skeleton variant="blog-list" count={2} />
+          </div>
+        </div>
       </div>
     );
   }
@@ -188,7 +194,7 @@ function App(): React.ReactNode {
             <Route
               path="/admin"
               element={
-                <React.Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="text-xl text-gray-600">Yükleniyor...</div></div>}>
+                <React.Suspense fallback={<div className="min-h-screen bg-gray-50 py-8"><div className="container mx-auto"><Skeleton variant="product-grid" count={3} /></div></div>}>
                   <AdminDashboard
                     services={services}
                     setServices={setServices}

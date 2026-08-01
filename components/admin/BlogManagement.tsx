@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { BlogPost, Notification } from '../../types';
 import { blogAPI } from '../../services/api';
+import ConfirmModal from '../ConfirmModal';
 
 const STATIC_URL = import.meta.env.VITE_STATIC_URL || 'http://localhost:3003';
 const imgUrl = (path: string) => path ? `${STATIC_URL}${path}` : '';
@@ -54,6 +55,7 @@ const BlogManagement: React.FC<BlogManagementProps> = ({
     });
     const [blogImage, setBlogImage] = useState<File | null>(null);
     const [isBlogModalOpen, setIsBlogModalOpen] = useState(false);
+    const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
     // SEO alanlarına manuel müdahale edildi mi?
     const seoTouched = useRef({ title: false, desc: false, keywords: false });
 
@@ -129,7 +131,7 @@ const BlogManagement: React.FC<BlogManagementProps> = ({
                         ? {
                             ...updatedPost,
                             id: updatedPost.id.toString(),
-                            imageUrl: updatedPost.image_url ? imgUrl(updatedPost.image_url) : 'https://picsum.photos/400/250?random=1'
+                            imageUrl: updatedPost.image_url ? imgUrl(updatedPost.image_url) : '/placeholder.svg'
                         }
                         : post
                 ));
@@ -139,14 +141,14 @@ const BlogManagement: React.FC<BlogManagementProps> = ({
                 setBlogPosts(prev => [...prev, {
                     ...newPost,
                     id: newPost.id.toString(),
-                    imageUrl: newPost.image_url ? imgUrl(newPost.image_url) : 'https://picsum.photos/400/250?random=1'
+                    imageUrl: newPost.image_url ? imgUrl(newPost.image_url) : '/placeholder.svg'
                 }]);
                 addNotification('success', 'Başarılı!', 'Yeni blog yazısı yayınlandı.');
             }
 
             closeBlogModal();
         } catch (error) {
-            console.error('Blog yazısı kaydedilirken hata oluştu:', error);
+            addNotification('error', 'Hata!', 'Blog yazısı kaydedilirken hata oluştu:');
             addNotification('error', 'Hata!', 'Blog yazısı kaydedilirken hata oluştu.');
         }
         setLoading(false);
@@ -185,18 +187,23 @@ const BlogManagement: React.FC<BlogManagementProps> = ({
         setIsBlogModalOpen(false);
     };
 
-    const handleBlogDelete = async (id: string) => {
-        if (confirm('Bu blog yazısını silmek istediğinizden emin misiniz?')) {
-            try {
-                await blogAPI.delete(Number(id));
-                setBlogPosts(prev => prev.filter(post => post.id !== id));
-                addNotification('success', 'Başarılı!', 'Blog yazısı silindi.');
-            } catch (error) {
-                console.error('Blog yazısı silinirken hata oluştu:', error);
-                addNotification('error', 'Hata!', 'Blog yazısı silinirken hata oluştu.');
-            }
-        }
+        const handleBlogDelete = (id: string) => {
+        setDeleteConfirm(id);
     };
+
+    const confirmBlogDelete = async () => {
+        if (!deleteConfirm) return;
+        try {
+                    await blogAPI.delete(Number(id));
+                    setBlogPosts(prev => prev.filter(post => post.id !== id));
+                    addNotification('success', 'Başarılı!', 'Blog yazısı silindi.');
+                } catch (error) {
+                    addNotification('error', 'Hata!', 'Blog yazısı silinirken hata oluştu:');
+                    addNotification('error', 'Hata!', 'Blog yazısı silinirken hata oluştu.');
+                }
+            
+        setDeleteConfirm(null);
+    };;
 
     return (
         <>
@@ -288,7 +295,7 @@ const BlogManagement: React.FC<BlogManagementProps> = ({
                                         {/* Blog Image */}
                                         <div className="lg:w-48 h-32 flex-shrink-0">
                                             <img
-                                                src={post.imageUrl || 'https://picsum.photos/400/250?random=1'}
+                                                src={post.imageUrl || '/placeholder.svg'}
                                                 alt={post.title}
                                                 className="w-full h-full object-cover rounded-lg"
                                             />
@@ -531,6 +538,13 @@ const BlogManagement: React.FC<BlogManagementProps> = ({
                     </div>
                 </div>
             )}
+            <ConfirmModal
+                isOpen={deleteConfirm !== null}
+                title="Silme Onayı"
+                message="Bu blog yazısını silmek istediğinizden emin misiniz?"
+                onConfirm={confirmBlogDelete}
+                onCancel={() => setDeleteConfirm(null)}
+            />
         </>
     );
 };

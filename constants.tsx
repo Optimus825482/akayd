@@ -69,28 +69,28 @@ export const INITIAL_PRODUCTS: Product[] = [
     id: 'p1',
     name: 'Yüksek Verim Organik Gübre',
     description: 'Azot, fosfor ve potasyum dengesiyle fındıkta kök gelişimini ve meyve tutumunu destekler.',
-    imageUrl: 'https://picsum.photos/400/300?random=10',
+    imageUrl: '/placeholder.svg',
     category: 'Gübre'
   },
   {
     id: 'p2',
     name: 'Kavrulmuş Giresun Fındığı',
     description: 'Giresun\'un en kaliteli fındıklarından özenle kavrulmuş, 500g vakumlu paketlerde.',
-    imageUrl: 'https://picsum.photos/400/300?random=11',
+    imageUrl: '/placeholder.svg',
     category: 'İşlenmiş Fındık'
   },
   {
     id: 'p3',
     name: 'Yaprak Gübresi Plus',
     description: 'Fotosentezi hızlandıran ve hastalıklara karşı direnci artıran mikro elementli yaprak gübresi.',
-    imageUrl: 'https://picsum.photos/400/300?random=12',
+    imageUrl: '/placeholder.svg',
     category: 'Bitki Besleme'
   },
   {
     id: 'p4',
     name: 'Çiğ İç Fındık',
     description: 'Kırma tesislerimizde taze olarak hazırlanan, 1kg paketlerde yüksek randımanlı iç fındık.',
-    imageUrl: 'https://picsum.photos/400/300?random=13',
+    imageUrl: '/placeholder.svg',
     category: 'İşlenmiş Fındık'
   }
 ];
@@ -100,7 +100,7 @@ export const INITIAL_BLOG_POSTS: BlogPost[] = [
     id: 'b1',
     title: 'Fındıkta Külleme Hastalığı ile Mücadele',
     summary: 'Külleme, fındık verimini önemli ölçüde etkileyen bir mantar hastalığıdır. Bu yazımızda, külleme ile mücadelede kültürel ve kimyasal yöntemleri ele alıyoruz.',
-    imageUrl: 'https://picsum.photos/400/250?random=20',
+    imageUrl: '/placeholder.svg',
     date: '15 Temmuz 2024',
     author: 'Ziraat Müh. Ali Veli'
   },
@@ -108,7 +108,7 @@ export const INITIAL_BLOG_POSTS: BlogPost[] = [
     id: 'b2',
     title: 'Doğru Gübreleme Zamanı Ne Zaman?',
     summary: 'Fındık bahçenizden maksimum verim almanın anahtarı doğru zamanda doğru gübreyi uygulamaktır. Toprak analizi sonuçlarına göre gübreleme takvimi...',
-    imageUrl: 'https://picsum.photos/400/250?random=21',
+    imageUrl: '/placeholder.svg',
     date: '28 Haziran 2024',
     author: 'Akaydın Tarım Ekibi'
   },
@@ -116,7 +116,7 @@ export const INITIAL_BLOG_POSTS: BlogPost[] = [
     id: 'b3',
     title: 'Vakumlu Paketlemenin Fındık Kalitesine Etkisi',
     summary: 'Fındığın raf ömrünü uzatmak ve tazeliğini korumak için vakumlu paketleme neden önemlidir? Oksidasyonu önleme ve lezzeti muhafaza etme üzerine...',
-    imageUrl: 'https://picsum.photos/400/250?random=22',
+    imageUrl: '/placeholder.svg',
     date: '10 Haziran 2024',
     author: 'Gıda Müh. Ayşe Yılmaz'
   }

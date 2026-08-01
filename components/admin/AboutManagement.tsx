@@ -73,7 +73,7 @@ const AboutManagement: React.FC<AboutManagementProps> = ({
             if (onSave) await onSave();
             addNotification('success', 'Başarılı!', 'Hakkımızda sayfası güncellendi.');
         } catch (error) {
-            console.error('Hakkımızda sayfası güncellenirken hata:', error);
+            addNotification('error', 'Hata!', 'Hakkımızda sayfası güncellenirken hata:');
             addNotification('error', 'Hata!', 'Hakkımızda sayfası güncellenirken hata oluştu.');
         }
         setLocalLoading(false);

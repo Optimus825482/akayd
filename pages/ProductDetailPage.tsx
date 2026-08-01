@@ -50,7 +50,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ contactContent, s
                         category: foundProduct.category,
                         price: foundProduct.price || 0,
                         isFeatured: foundProduct.is_featured || false,
-                        imageUrl: foundProduct.image_url ? imgUrl(foundProduct.image_url) : 'https://picsum.photos/600/400?random=1',
+                        imageUrl: foundProduct.image_url ? imgUrl(foundProduct.image_url) : '/placeholder.svg',
                         images: foundProduct.images && Array.isArray(foundProduct.images)
                             ? foundProduct.images.map((img: string) => imgUrl(img) || img)
                             : []

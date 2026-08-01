@@ -1,4 +1,4 @@
-import 'dotenv/config';
+﻿import 'dotenv/config';
 // Memory-optimized imports
 import express from 'express';
 import cors from 'cors';
@@ -18,6 +18,19 @@ import { imageOptimizer } from './imageProcessor.js';
 import { checkAllRankings, checkSingleKeyword } from './serpChecker.js';
 
 import fs from 'fs';
+
+// --- Lightweight cookie parser (no dependency) ---
+const parseCookies = (req) => {
+  const raw = req.headers.cookie;
+  if (!raw) return {};
+  const c = {};
+  raw.split(';').forEach(pair => {
+    const i = pair.indexOf('=');
+    if (i < 0) return;
+    c[pair.substring(0, i).trim()] = pair.substring(i + 1).trim();
+  });
+  return c;
+};
 import compression from 'compression';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -57,19 +70,19 @@ if (ADMIN_PASSWORD) {
   });
 }
 
-const adminTokens = new Set();
+const adminTokens = new Map(); // token → {role: "admin"|"editor"|"viewer"}
 
 // Yardımcı: boolean/string değerleri PostgreSQL smallint için 0/1 integer'a çevir
 const toSmallInt = (val) => {
   if (val === true || val === 1 || val === 'true' || val === '1') return 1;
   return 0;
 };
-
 const adminAuth = (req, res, next) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
+  const token = req.headers.authorization?.replace('Bearer ', '') || parseCookies(req).admin_token;
   if (!token || !adminTokens.has(token)) {
     return res.status(401).json({ error: 'Yetkisiz erişim' });
   }
+  next();
   next();
 };
 
@@ -271,11 +284,20 @@ app.post('/api/admin/login', async (req, res) => {
   const token = crypto.randomBytes(32).toString('hex');
   adminTokens.add(token);
   setTimeout(() => adminTokens.delete(token), 24 * 60 * 60 * 1000);
-  res.json({ token, message: 'Giriş başarılı' });
+  res.cookie('admin_token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 24 * 60 * 60 * 1000,
+    path: '/',
+  });
+  res.json({ message: 'Giriş başarılı', role });
 });
 
 app.post('/api/admin/logout', adminAuth, (req, res) => {
-  adminTokens.delete(req.headers.authorization?.replace('Bearer ', ''));
+  const logoutToken = req.headers.authorization?.replace('Bearer ', '') || parseCookies(req).admin_token;
+  adminTokens.delete(logoutToken);
+  res.clearCookie('admin_token', { path: '/' });
   res.json({ message: 'Çıkış başarılı' });
 });
 

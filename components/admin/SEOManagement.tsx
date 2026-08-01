@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { SEOSettings, PageSEO, SEOAnalysis } from '../../types';
 import { seoAPI } from '../../services/api';
+import ConfirmModal from '../ConfirmModal';
 
 interface SEOManagementProps {
     addNotification: (type: 'success' | 'error' | 'info', title: string, message: string) => void;
@@ -50,6 +51,7 @@ const SEOManagement: React.FC<SEOManagementProps> = ({ addNotification }) => {
     // SEO Analysis State
     const [analysisUrl, setAnalysisUrl] = useState('');
     const [analysisResult, setAnalysisResult] = useState<SEOAnalysis | null>(null);
+    const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
     // Load data
     useEffect(() => {
@@ -62,7 +64,7 @@ const SEOManagement: React.FC<SEOManagementProps> = ({ addNotification }) => {
             const data = await seoAPI.getSettings();
             setSeoSettings({ ...seoSettings, ...data });
         } catch (error) {
-            console.error('SEO ayarları yüklenirken hata:', error);
+            addNotification('error', 'Hata!', 'SEO ayarları yüklenirken hata:');
         }
     };
 
@@ -71,7 +73,7 @@ const SEOManagement: React.FC<SEOManagementProps> = ({ addNotification }) => {
             const data = await seoAPI.getAllPageSEO();
             setPageSEOList(data);
         } catch (error) {
-            console.error('Sayfa SEO verileri yüklenirken hata:', error);
+            addNotification('error', 'Hata!', 'Sayfa SEO verileri yüklenirken hata:');
         }
     };
 
@@ -469,7 +471,7 @@ const SEOManagement: React.FC<SEOManagementProps> = ({ addNotification }) => {
                                                         canonical_url: pageSEO.canonical_url,
                                                         noindex: pageSEO.noindex,
                                                         nofollow: pageSEO.nofollow
-                                                    });
+                                                    );
                                                     // Scroll to form
                                                     document.querySelector('form')?.scrollIntoView({ behavior: 'smooth' });
                                                 }}
@@ -664,5 +666,22 @@ const SEOManagement: React.FC<SEOManagementProps> = ({ addNotification }) => {
         </div>
     );
 };
+
+
+    const confirmSEODDelete = async () => {
+        if (!deleteConfirm) return;
+        await seoAPI.deletePageSEO(deleteConfirm);
+        loadPageSEO();
+        addNotification('success', 'Silindi', 'Sayfa SEO ayarı kaldırıldı.');
+        setDeleteConfirm(null);
+    };
+
+    <ConfirmModal
+                isOpen={deleteConfirm !== null}
+                title="Silme Onayı"
+                message="Bu SEO ayarını silmek istediğinize emin misiniz?"
+                onConfirm={confirmSEODDelete}
+                onCancel={() => setDeleteConfirm(null)}
+            />
 
 export default SEOManagement;

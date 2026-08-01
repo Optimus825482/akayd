@@ -158,10 +158,10 @@ const seasonInfo = [
 ];
 
 const galleryImages = [
-  { src: 'https://picsum.photos/seed/findik-makine/600/400', alt: 'Fındık kırma makinesi ön görünüm', label: 'Kırma Hattı' },
-  { src: 'https://picsum.photos/seed/findik-kalibrasyon/600/400', alt: 'Boyutlandırma ünitesi', label: 'Kalibrasyon' },
-  { src: 'https://picsum.photos/seed/findik-vakum/600/400', alt: 'Vakum paketleme makinesi', label: 'Vakumlama' },
-  { src: 'https://picsum.photos/seed/findik-sonuc/600/400', alt: 'İşlenmiş hazır fındık', label: 'Sonuç' },
+  { src: '/placeholder.svg', alt: 'Fındık kırma makinesi ön görünüm', label: 'Kırma Hattı' },
+  { src: '/placeholder.svg', alt: 'Boyutlandırma ünitesi', label: 'Kalibrasyon' },
+  { src: '/placeholder.svg', alt: 'Vakum paketleme makinesi', label: 'Vakumlama' },
+  { src: '/placeholder.svg', alt: 'İşlenmiş hazır fındık', label: 'Sonuç' },
 ];
 
 /* ──────────────── COMPONENT ──────────────── */

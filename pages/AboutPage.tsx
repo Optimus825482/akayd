@@ -25,7 +25,7 @@ const AboutPage: React.FC<AboutPageProps> = ({ content, seoSettings }) => {
     }, []);
 
     // Görsel slider otomatik geçiş
-    const imgs = content.images?.length ? content.images : ['https://picsum.photos/800/600?random=30'];
+    const imgs = content.images?.length ? content.images : ['/placeholder.svg'];
     useEffect(() => {
         if (imgs.length < 2) return;
         const t = setInterval(() => setImgIdx(p => (p+1) % imgs.length), 4000);
@@ -131,14 +131,12 @@ const AboutPage: React.FC<AboutPageProps> = ({ content, seoSettings }) => {
                         {imgs.length > 1 && (
                             <>
                                 <button
-                                    onClick={prevImg}
-                                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/35 text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+                                    onClick={prevImg} aria-label="Önceki"className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/35 text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
                                 >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>
                                 </button>
                                 <button
-                                    onClick={nextImg}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/35 text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+                                    onClick={nextImg} aria-label="Sonraki"className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/35 text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
                                 >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
                                 </button>

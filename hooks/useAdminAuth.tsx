@@ -1,32 +1,31 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
-const ADMIN_TOKEN_KEY = 'admin_token';
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3003/api';
 
+export type AdminRole = 'admin' | 'editor' | 'viewer';
+
 export const useAdminAuth = () => {
-    const [isAuthenticated, setIsAuthenticated] = useState(() => {
-        return !!localStorage.getItem(ADMIN_TOKEN_KEY);
-    });
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+    const [role, setRole] = useState<AdminRole>('viewer');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // Token doğrulama: sunucu restart sonrası geçersiz token'ları temizle
     useEffect(() => {
-        const token = localStorage.getItem(ADMIN_TOKEN_KEY);
-        if (!token) return;
-
         const verifyToken = async () => {
             try {
                 const response = await fetch(`${API_BASE}/admin/verify`, {
-                    headers: { 'Authorization': `Bearer ${token}` },
+                    credentials: 'include',
                 });
-                if (!response.ok) {
-                    localStorage.removeItem(ADMIN_TOKEN_KEY);
+                if (response.ok) {
+                    const data = await response.json();
+                    setRole(data.role || 'viewer');
+                    setIsAuthenticated(true);
+                } else {
                     setIsAuthenticated(false);
                 }
             } catch {
-                // Sunucuya ulaşılamazsa oturumu koru (offline durumu)
+                setIsAuthenticated(false);
             }
         };
         verifyToken();
@@ -40,11 +39,12 @@ export const useAdminAuth = () => {
             const response = await fetch(`${API_BASE}/admin/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ password }),
             });
             if (response.ok) {
                 const data = await response.json();
-                localStorage.setItem(ADMIN_TOKEN_KEY, data.token);
+                setRole(data.role || 'viewer');
                 setIsAuthenticated(true);
             } else {
                 const data = await response.json();
@@ -58,25 +58,35 @@ export const useAdminAuth = () => {
     };
 
     const handleLogout = async () => {
-        const token = localStorage.getItem(ADMIN_TOKEN_KEY);
-        if (token) {
-            try {
-                await fetch(`${API_BASE}/admin/logout`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
-                    },
-                });
-            } catch { /* ignore */ }
-        }
-        localStorage.removeItem(ADMIN_TOKEN_KEY);
+        try {
+            await fetch(`${API_BASE}/admin/logout`, {
+                method: 'POST',
+                credentials: 'include',
+            });
+        } catch { /* ignore */ }
         setIsAuthenticated(false);
+        setRole('viewer');
         setPassword('');
     };
 
+    const canWrite = role !== 'viewer';
+
+    if (isAuthenticated === null) {
+        return {
+            isAuthenticated: false,
+            isLoading: true,
+            role: 'viewer' as AdminRole,
+            canWrite: false,
+            password, setPassword, error, loading,
+            handleLogin, handleLogout
+        };
+    }
+
     return {
         isAuthenticated,
+        isLoading: false,
+        role,
+        canWrite,
         password,
         setPassword,
         error,

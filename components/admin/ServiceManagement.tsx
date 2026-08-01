@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Service, ServiceIconName, Notification } from '../../types';
 import { servicesAPI } from '../../services/api';
+import ConfirmModal from '../ConfirmModal';
 
 interface ServiceManagementProps {
     services: Service[];
@@ -57,7 +58,7 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({
             setCurrentService(null);
             setServiceForm({ title: '', description: '', iconName: 'Consulting' });
         } catch (error) {
-            console.error('Hizmet kaydedilirken hata oluştu:', error);
+            addNotification('error', 'Hata!', 'Hizmet kaydedilirken hata oluştu:');
             addNotification('error', 'Hata!', 'Hizmet kaydedilirken hata oluştu.');
         }
         setLoading(false);
@@ -72,18 +73,23 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({
         });
     };
 
-    const handleServiceDelete = async (id: string) => {
-        if (confirm('Bu hizmeti silmek istediğinizden emin misiniz?')) {
-            try {
-                await servicesAPI.delete(Number(id));
-                setServices(prev => prev.filter(s => s.id !== id));
-                addNotification('success', 'Başarılı!', 'Hizmet silindi.');
-            } catch (error) {
-                console.error('Hizmet silinirken hata oluştu:', error);
-                addNotification('error', 'Hata!', 'Hizmet silinirken hata oluştu.');
-            }
-        }
+        const handleServiceDelete = (id: string) => {
+        setDeleteConfirm(id);
     };
+
+    const confirmServiceDelete = async () => {
+        if (!deleteConfirm) return;
+        try {
+                    await servicesAPI.delete(Number(id));
+                    setServices(prev => prev.filter(s => s.id !== id));
+                    addNotification('success', 'Başarılı!', 'Hizmet silindi.');
+                } catch (error) {
+                    addNotification('error', 'Hata!', 'Hizmet silinirken hata oluştu:');
+                    addNotification('error', 'Hata!', 'Hizmet silinirken hata oluştu.');
+                }
+            
+        setDeleteConfirm(null);
+    };;
 
     return (
         <div className="space-y-6">
@@ -189,5 +195,14 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({
         </div>
     );
 };
+
+
+            <ConfirmModal
+                isOpen={deleteConfirm !== null}
+                title="Silme Onayı"
+                message="Bu hizmeti silmek istediğinizden emin misiniz?"
+                onConfirm={confirmServiceDelete}
+                onCancel={() => setDeleteConfirm(null)}
+            />
 
 export default ServiceManagement;

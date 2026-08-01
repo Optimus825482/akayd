@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import type { ContactMessage } from '../types';
 import { contactMessagesAPI } from '../services/api';
+import ConfirmModal from '../components/ConfirmModal';
 
 export const useContactMessages = () => {
     const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
     const [loadingMessages, setLoadingMessages] = useState(false);
     const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
     const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
     const loadContactMessages = async () => {
         setLoadingMessages(true);
@@ -34,7 +36,7 @@ export const useContactMessages = () => {
     };
 
     const handleDeleteMessage = async (messageId: string) => {
-        if (confirm('Bu mesajı silmek istediğinizden emin misiniz?')) {
+        setDeleteTarget(messageId);
             try {
                 await contactMessagesAPI.delete(Number(messageId));
                 setContactMessages(prev => prev.filter(msg => msg.id !== messageId));
@@ -46,6 +48,7 @@ export const useContactMessages = () => {
         }
     };
 
+    // Confirm modal state — rendered by ContactMessagesManagement
     return {
         contactMessages,
         setContactMessages,
@@ -54,6 +57,9 @@ export const useContactMessages = () => {
         setIsMessageModalOpen,
         selectedMessage,
         setSelectedMessage,
+        confirmDeleteMessage,
+        deleteTarget,
+        setDeleteTarget,
         loadContactMessages,
         handleMarkAsRead,
         handleDeleteMessage

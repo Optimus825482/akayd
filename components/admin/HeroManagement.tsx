@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { HeroContent, Notification } from '../../types';
 import { heroAPI } from '../../services/api';
+import ConfirmModal from '../ConfirmModal';
 
 const STATIC_URL = import.meta.env.VITE_STATIC_URL || (typeof window !== 'undefined' ? window.location.origin : '');
 const imgUrl = (path: string) => path ? `${STATIC_URL}${path}` : '';
@@ -32,6 +33,7 @@ const HeroManagement: React.FC<HeroManagementProps> = ({
     });
     const [editingHero, setEditingHero] = useState<string | null>(null);
     const [heroImagePreview, setHeroImagePreview] = useState<string>('');
+    const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
     const gradientOptions = [
         { value: 'from-green-600 via-green-700 to-blue-800', name: 'Yeşil-Mavi', preview: 'bg-gradient-to-r from-green-600 via-green-700 to-blue-800' },
@@ -95,7 +97,7 @@ const HeroManagement: React.FC<HeroManagementProps> = ({
             setEditingHero(null);
             setHeroImagePreview('');
         } catch (error) {
-            console.error('Hero içeriği kaydedilirken hata oluştu:', error);
+            addNotification('error', 'Hata!', 'Hero içeriği kaydedilirken hata oluştu:');
             addNotification('error', 'Hata!', 'Hero içeriği kaydedilirken hata oluştu.');
         }
         setLoading(false);
@@ -118,18 +120,23 @@ const HeroManagement: React.FC<HeroManagementProps> = ({
         }
     };
 
-    const handleHeroDelete = async (id: string) => {
-        if (confirm('Bu hero içeriğini silmek istediğinizden emin misiniz?')) {
-            try {
-                await heroAPI.delete(Number(id));
-                setHeroContents(prev => prev.filter(h => h.id !== id));
-                addNotification('success', 'Başarılı!', 'Hero içeriği silindi.');
-            } catch (error) {
-                console.error('Hero içeriği silinirken hata oluştu:', error);
-                addNotification('error', 'Hata!', 'Hero içeriği silinirken hata oluştu.');
-            }
-        }
+        const handleHeroDelete = (id: string) => {
+        setDeleteConfirm(id);
     };
+
+    const confirmHeroDelete = async () => {
+        if (!deleteConfirm) return;
+        try {
+                    await heroAPI.delete(Number(id));
+                    setHeroContents(prev => prev.filter(h => h.id !== id));
+                    addNotification('success', 'Başarılı!', 'Hero içeriği silindi.');
+                } catch (error) {
+                    addNotification('error', 'Hata!', 'Hero içeriği silinirken hata oluştu:');
+                    addNotification('error', 'Hata!', 'Hero içeriği silinirken hata oluştu.');
+                }
+            
+        setDeleteConfirm(null);
+    };;
 
     const handleHeroImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -381,5 +388,14 @@ const HeroManagement: React.FC<HeroManagementProps> = ({
         </div>
     );
 };
+
+
+            <ConfirmModal
+                isOpen={deleteConfirm !== null}
+                title="Silme Onayı"
+                message="Bu hero içeriğini silmek istediğinizden emin misiniz?"
+                onConfirm={confirmHeroDelete}
+                onCancel={() => setDeleteConfirm(null)}
+            />
 
 export default HeroManagement;
