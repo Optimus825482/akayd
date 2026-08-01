@@ -282,7 +282,7 @@ app.post('/api/admin/login', async (req, res) => {
     if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Hatalı şifre' });
   }
   const token = crypto.randomBytes(32).toString('hex');
-  adminTokens.add(token);
+  adminTokens.set(token, { role: 'admin' });
   setTimeout(() => adminTokens.delete(token), 24 * 60 * 60 * 1000);
   res.cookie('admin_token', token, {
     httpOnly: true,
@@ -291,7 +291,7 @@ app.post('/api/admin/login', async (req, res) => {
     maxAge: 24 * 60 * 60 * 1000,
     path: '/',
   });
-  res.json({ message: 'Giriş başarılı', role });
+  res.json({ message: 'Giriş başarılı', role: 'admin' });
 });
 
 app.post('/api/admin/logout', adminAuth, (req, res) => {
