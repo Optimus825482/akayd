@@ -97,6 +97,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <input
                                 id="password"
                                 type="password"
+                                autoComplete="new-password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent"

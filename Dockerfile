@@ -11,6 +11,10 @@ FROM node:22-alpine
 RUN apk add --no-cache tini postgresql-client
 WORKDIR /app
 
+# Coolify build-arg'lardan Vite env'lerini al
+ARG VITE_API_URL
+ARG VITE_STATIC_URL
+
 COPY package.json ./
 RUN npm install --ignore-scripts && npm rebuild esbuild
 
