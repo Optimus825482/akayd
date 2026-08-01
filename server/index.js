@@ -83,7 +83,6 @@ const adminAuth = (req, res, next) => {
     return res.status(401).json({ error: 'Yetkisiz erişim' });
   }
   next();
-  next();
 };
 
 // Middleware
