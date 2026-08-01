@@ -180,7 +180,7 @@ const ContactPage: React.FC<ContactPageProps> = ({ content, seoSettings }) => {
                         <div dangerouslySetInnerHTML={{__html:content.map_embed}} className="w-full h-full" />
                     ) : (
                         <iframe
-                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d12091!2d30.7521!3d40.7885!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14ccaf7eb5d0a2d5%3A0x0!2zNDDCsDQ3JzE4LjYiTiAzMMKwNDUnMDcuNiJF!5e0!3m2!1str!2str!4v1690000000000"
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3020.5254561481556!2d30.742233410796548!3d40.79444567126199!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x409d8f614e52c30d%3A0x25ed3a760cc228ca!2zQWtheWTEsW4gVGFyxLFt!5e0!3m2!1str!2str!4v1785626616650!5m2!1str!2str"
                             width="100%" height="450"
                             style={{border:0}}
                             allowFullScreen
