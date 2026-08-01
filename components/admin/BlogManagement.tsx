@@ -194,16 +194,14 @@ const BlogManagement: React.FC<BlogManagementProps> = ({
     const confirmBlogDelete = async () => {
         if (!deleteConfirm) return;
         try {
-                    await blogAPI.delete(Number(id));
-                    setBlogPosts(prev => prev.filter(post => post.id !== id));
-                    addNotification('success', 'Başarılı!', 'Blog yazısı silindi.');
-                } catch (error) {
-                    addNotification('error', 'Hata!', 'Blog yazısı silinirken hata oluştu:');
-                    addNotification('error', 'Hata!', 'Blog yazısı silinirken hata oluştu.');
-                }
-            
+            await blogAPI.delete(Number(deleteConfirm));
+            setBlogPosts(prev => prev.filter(post => post.id !== deleteConfirm));
+            addNotification('success', 'Başarılı!', 'Blog yazısı silindi.');
+        } catch (error) {
+            addNotification('error', 'Hata!', 'Blog yazısı silinirken hata oluştu.');
+        }
         setDeleteConfirm(null);
-    };;
+    };
 
     return (
         <>

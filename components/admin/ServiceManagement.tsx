@@ -24,6 +24,7 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({
         description: '',
         iconName: 'Consulting' as ServiceIconName
     });
+    const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
     const iconOptions: ServiceIconName[] = [
         'Consulting', 'Processing', 'Fertilizer', 'Nutrition'
@@ -73,26 +74,25 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({
         });
     };
 
-        const handleServiceDelete = (id: string) => {
+    const handleServiceDelete = (id: string) => {
         setDeleteConfirm(id);
     };
 
     const confirmServiceDelete = async () => {
         if (!deleteConfirm) return;
         try {
-                    await servicesAPI.delete(Number(id));
-                    setServices(prev => prev.filter(s => s.id !== id));
-                    addNotification('success', 'Başarılı!', 'Hizmet silindi.');
-                } catch (error) {
-                    addNotification('error', 'Hata!', 'Hizmet silinirken hata oluştu:');
-                    addNotification('error', 'Hata!', 'Hizmet silinirken hata oluştu.');
-                }
-            
+            await servicesAPI.delete(Number(deleteConfirm));
+            setServices(prev => prev.filter(s => s.id !== deleteConfirm));
+            addNotification('success', 'Başarılı!', 'Hizmet silindi.');
+        } catch (error) {
+            addNotification('error', 'Hata!', 'Hizmet silinirken hata oluştu.');
+        }
         setDeleteConfirm(null);
-    };;
+    };
 
     return (
-        <div className="space-y-6">
+        <>
+            <div className="space-y-6">
             {/* Header */}
             <div className="bg-white rounded-xl shadow-lg p-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-6">🛠️ Hizmet Yönetimi</h2>
@@ -192,11 +192,7 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({
                     </div>
                 )}
             </div>
-        </div>
-    );
-};
-
-
+            </div>
             <ConfirmModal
                 isOpen={deleteConfirm !== null}
                 title="Silme Onayı"
@@ -204,5 +200,8 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({
                 onConfirm={confirmServiceDelete}
                 onCancel={() => setDeleteConfirm(null)}
             />
+        </>
+    );
+};
 
 export default ServiceManagement;

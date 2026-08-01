@@ -1,5 +1,3 @@
-import React from 'react';
-
 // SVG icons for admin panel — replaces emoji icons for accessibility + professional look
 export const Icons = {
   wrench: (

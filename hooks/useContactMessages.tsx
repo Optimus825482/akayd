@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import type { ContactMessage } from '../types';
 import { contactMessagesAPI } from '../services/api';
-import ConfirmModal from '../components/ConfirmModal';
 
 export const useContactMessages = () => {
     const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
@@ -56,7 +55,6 @@ export const useContactMessages = () => {
         setIsMessageModalOpen,
         selectedMessage,
         setSelectedMessage,
-        confirmDeleteMessage,
         deleteTarget,
         setDeleteTarget,
         loadContactMessages,

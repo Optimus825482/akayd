@@ -135,23 +135,21 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
         setIsProductModalOpen(false);
     };
 
-        const handleProductDelete = (id: string) => {
+    const handleProductDelete = (id: string) => {
         setDeleteConfirm(id);
     };
 
     const confirmProductDelete = async () => {
         if (!deleteConfirm) return;
         try {
-                    await productsAPI.delete(Number(id));
-                    setProducts(prev => prev.filter(p => p.id !== id));
-                    addNotification('success', 'Başarılı!', 'Ürün silindi.');
-                } catch (error) {
-                    addNotification('error', 'Hata!', 'Ürün silinirken hata oluştu:');
-                    addNotification('error', 'Hata!', 'Ürün silinirken hata oluştu.');
-                }
-            
+            await productsAPI.delete(Number(deleteConfirm));
+            setProducts(prev => prev.filter(p => p.id !== deleteConfirm));
+            addNotification('success', 'Başarılı!', 'Ürün silindi.');
+        } catch (error) {
+            addNotification('error', 'Hata!', 'Ürün silinirken hata oluştu.');
+        }
         setDeleteConfirm(null);
-    };;
+    };
 
     return (
         <>

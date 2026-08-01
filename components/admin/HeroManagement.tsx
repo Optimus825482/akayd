@@ -127,16 +127,14 @@ const HeroManagement: React.FC<HeroManagementProps> = ({
     const confirmHeroDelete = async () => {
         if (!deleteConfirm) return;
         try {
-                    await heroAPI.delete(Number(id));
-                    setHeroContents(prev => prev.filter(h => h.id !== id));
-                    addNotification('success', 'Başarılı!', 'Hero içeriği silindi.');
-                } catch (error) {
-                    addNotification('error', 'Hata!', 'Hero içeriği silinirken hata oluştu:');
-                    addNotification('error', 'Hata!', 'Hero içeriği silinirken hata oluştu.');
-                }
-            
+            await heroAPI.delete(Number(deleteConfirm));
+            setHeroContents(prev => prev.filter(h => h.id !== deleteConfirm));
+            addNotification('success', 'Başarılı!', 'Hero içeriği silindi.');
+        } catch (error) {
+            addNotification('error', 'Hata!', 'Hero içeriği silinirken hata oluştu.');
+        }
         setDeleteConfirm(null);
-    };;
+    };
 
     const handleHeroImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -153,7 +151,8 @@ const HeroManagement: React.FC<HeroManagementProps> = ({
     const activeHeroCount = heroContents.filter(h => h.isActive).length;
 
     return (
-        <div className="space-y-6">
+        <>
+            <div className="space-y-6">
             {/* Header */}
             <div className="bg-white rounded-xl shadow-lg p-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-6">🎬 Hero İçeriği Yönetimi</h2>
@@ -385,11 +384,7 @@ const HeroManagement: React.FC<HeroManagementProps> = ({
                     </div>
                 )}
             </div>
-        </div>
-    );
-};
-
-
+            </div>
             <ConfirmModal
                 isOpen={deleteConfirm !== null}
                 title="Silme Onayı"
@@ -397,5 +392,8 @@ const HeroManagement: React.FC<HeroManagementProps> = ({
                 onConfirm={confirmHeroDelete}
                 onCancel={() => setDeleteConfirm(null)}
             />
+        </>
+    );
+};
 
 export default HeroManagement;
