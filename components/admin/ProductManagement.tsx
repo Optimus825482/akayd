@@ -32,7 +32,6 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
     const [deletedImages, setDeletedImages] = useState<string[]>([]);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-    const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
     const handleProductSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -201,8 +200,7 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
                             </button>
                         </div>
                     ) : (
-                        {viewMode === 'grid' ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             {products.map((product) => (
                                 <div key={product.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300">
                                     {/* Product Image */}
@@ -454,3 +452,4 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
 };
 
 export default ProductManagement;
+

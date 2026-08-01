@@ -471,7 +471,7 @@ const SEOManagement: React.FC<SEOManagementProps> = ({ addNotification }) => {
                                                         canonical_url: pageSEO.canonical_url,
                                                         noindex: pageSEO.noindex,
                                                         nofollow: pageSEO.nofollow
-                                                    );
+                                                    });
                                                     // Scroll to form
                                                     document.querySelector('form')?.scrollIntoView({ behavior: 'smooth' });
                                                 }}

@@ -37,14 +37,13 @@ export const useContactMessages = () => {
 
     const handleDeleteMessage = async (messageId: string) => {
         setDeleteTarget(messageId);
-            try {
-                await contactMessagesAPI.delete(Number(messageId));
-                setContactMessages(prev => prev.filter(msg => msg.id !== messageId));
-                setIsMessageModalOpen(false);
-                setSelectedMessage(null);
-            } catch (error) {
-                console.error('Mesaj silinirken hata oluştu:', error);
-            }
+        try {
+            await contactMessagesAPI.delete(Number(messageId));
+            setContactMessages(prev => prev.filter(msg => msg.id !== messageId));
+            setIsMessageModalOpen(false);
+            setSelectedMessage(null);
+        } catch (error) {
+            console.error('Mesaj silinirken hata oluştu:', error);
         }
     };
 

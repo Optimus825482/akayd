@@ -124,15 +124,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
 
     const menuItems = [
-        { id: 'dashboard', name: 'Kontrol Paneli', icon: {Icons.chart} },
-        { id: 'hero', name: 'Ana Sayfa Hero', icon: {Icons.search} },
-        { id: 'services', name: 'Hizmetler', icon: {Icons.wrench} },
-        { id: 'products', name: 'Ürünler', icon: {Icons.box} },
-        { id: 'blog', name: 'Blog', icon: {Icons.doc} },
-        { id: 'about', name: 'Hakkımızda', icon: {Icons.search} },
-        { id: 'contact-page', name: 'İletişim Sayfası', icon: {Icons.mail} },
-        { id: 'contact-messages', name: 'İletişim Mesajları', icon: {Icons.users} },
-        { id: 'seo', name: 'SEO Yönetimi', icon: {Icons.search} },
+        { id: 'dashboard', name: 'Kontrol Paneli', icon: Icons.chart },
+        { id: 'hero', name: 'Ana Sayfa Hero', icon: Icons.search },
+        { id: 'services', name: 'Hizmetler', icon: Icons.wrench },
+        { id: 'products', name: 'Ürünler', icon: Icons.box },
+        { id: 'blog', name: 'Blog', icon: Icons.doc },
+        { id: 'about', name: 'Hakkımızda', icon: Icons.search },
+        { id: 'contact-page', name: 'İletişim Sayfası', icon: Icons.mail },
+        { id: 'contact-messages', name: 'İletişim Mesajları', icon: Icons.users },
+        { id: 'seo', name: 'SEO Yönetimi', icon: Icons.search },
         { id: 'serp-rankings', name: 'Rank Takip', icon: '📈' }
     ];
 
