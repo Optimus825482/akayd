@@ -15,7 +15,8 @@ RUN npm install --ignore-scripts && npm rebuild esbuild
 
 # Backend server + init scripts (P2-6: frontend build nginx container'ında — burada build yok)
 COPY server/ ./server/
-COPY public/ ./public/  # robots.txt + favicon seed (backend /robots.txt serve eder)
+# robots.txt + favicon seed — backend /robots.txt serve eder
+COPY public/ ./public/
 COPY docker/init/ ./docker/init/
 COPY docker/init-db.sh /usr/local/bin/init-db.sh
 COPY docker/startup.sh /usr/local/bin/startup.sh
