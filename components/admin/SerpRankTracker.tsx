@@ -6,10 +6,14 @@ import type { SerpRankingCurrent, SerpKeyword, Notification } from '../../types'
 const ENGINE_ICONS: Record<string, string> = { google: '🔴', yandex: '🟡', bing: '🔵' };
 const ENGINE_LABELS: Record<string, string> = { google: 'Google', yandex: 'Yandex', bing: 'Bing' };
 
+// Rakip takibi — rakip domain'leri keyword'ün domain alanına girilir, checkAllRankings hepsini kontrol eder
 const DOMAINS = [
   { key: '', label: '🌐 Tümü' },
   { key: 'akaydintarim.com.tr', label: '🌿 Akaydın Tarım' },
   { key: 'hendekfindikkirma.com', label: '🥜 Hendek Fındık Kırma' },
+  { key: 'sifafindik.com.tr', label: '⚔️ Şifa Fındık' },
+  { key: 'durakfindik.com.tr', label: '⚔️ Durak Fındık' },
+  { key: 'hazelfindik.com', label: '⚔️ Hazel Fındık' },
 ];
 
 function getPositionColor(pos: number): string {
@@ -44,6 +48,10 @@ const SerpRankTracker: React.FC<SerpRankTrackerProps> = ({ addNotification }) =>
   const [selectedKeyword, setSelectedKeyword] = useState('');
   const [selectedEngine, setSelectedEngine] = useState('');
   const [selectedDays, setSelectedDays] = useState(30);
+
+  // Rakip/keyword ekleme formu
+  const [newKeyword, setNewKeyword] = useState('');
+  const [newDomain, setNewDomain] = useState('akaydintarim.com.tr');
 
   const loadData = useCallback(async () => {
     try {
@@ -89,6 +97,20 @@ const SerpRankTracker: React.FC<SerpRankTrackerProps> = ({ addNotification }) =>
     const interval = setInterval(loadData, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, [loadData]);
+
+  // Keyword + domain ekle (rakip takibi için rakip domain seçilebilir)
+  const handleAddKeyword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newKeyword.trim()) return;
+    try {
+      await serpAPI.addKeyword(newKeyword.trim(), newDomain);
+      setNewKeyword('');
+      addNotification?.('success', 'Eklendi', `"${newKeyword.trim()}" takibe alındı (${newDomain})`);
+      loadData();
+    } catch (err) {
+      addNotification?.('error', 'Hata', 'Keyword eklenirken hata oluştu.');
+    }
+  };
 
   const handleManualCheck = async () => {
     setChecking(true);
@@ -153,6 +175,39 @@ const SerpRankTracker: React.FC<SerpRankTrackerProps> = ({ addNotification }) =>
           </button>
         ))}
       </div>
+
+      {/* Keyword + Rakip Ekleme */}
+      <form onSubmit={handleAddKeyword} className="flex flex-wrap gap-2 bg-white rounded-lg p-3 shadow-sm items-end">
+        <div className="flex-1 min-w-[200px]">
+          <label className="block text-xs font-semibold text-gray-500 mb-1">Anahtar Kelime</label>
+          <input
+            type="text"
+            value={newKeyword}
+            onChange={(e) => setNewKeyword(e.target.value)}
+            placeholder="örn. fındık kırma hendek"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            required
+          />
+        </div>
+        <div className="min-w-[180px]">
+          <label className="block text-xs font-semibold text-gray-500 mb-1">Takip Edilecek Site</label>
+          <select
+            value={newDomain}
+            onChange={(e) => setNewDomain(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          >
+            {DOMAINS.filter(d => d.key).map(d => (
+              <option key={d.key} value={d.key}>{d.label}</option>
+            ))}
+          </select>
+        </div>
+        <button
+          type="submit"
+          className="px-4 py-2.5 rounded-lg text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-all"
+        >
+          ➕ Ekle
+        </button>
+      </form>
 
       {/* Sub Tabs + Manual Check */}
       <div className="flex space-x-2 bg-white rounded-lg p-1 shadow-sm">
