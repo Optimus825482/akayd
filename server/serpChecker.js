@@ -2,6 +2,13 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { checkGSC, isGSCAvailable } from './gscClient.js';
 
+// Kendi domain'lerimiz — GSC'de aranır (rakip domain'ler scraping ile, hibrit)
+const OWN_DOMAINS = ['akaydintarim.com.tr', 'hendekfindikkirma.com'];
+
+function isCompetitorDomain(domain) {
+  return !OWN_DOMAINS.includes(domain);
+}
+
 const USER_AGENTS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
@@ -26,7 +33,8 @@ function sleep(ms) {
 
 async function scrapeGoogle(query, domain) {
   // Google Search Console API mevcutsa onu kullan (daha güvenilir, ücretsiz)
-  if (isGSCAvailable()) {
+  // NOT: Yalnızca kendi domain'lerimiz için — rakip domain GSC'de yok, scraping gerekir (hibrit)
+  if (isGSCAvailable() && !isCompetitorDomain(domain)) {
     try {
       // Domain'i GSC site URL'ine çevir
       let siteUrl;
