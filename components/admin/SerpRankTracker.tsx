@@ -127,10 +127,13 @@ const SerpRankTracker: React.FC<SerpRankTrackerProps> = ({ addNotification }) =>
   }
 
   // Build keyword+domain list from current data
-  const keywordDomainPairs = [...new Set(currentData.map(r => ({ 
-    keyword: r.keyword, 
-    domain: r.domain || 'akaydintarim.com.tr' 
-  })))];
+  // Fix: Set referans eşitliği kullanır — obje array'i dedupe etmez → 3 engine 3 ayrı satır görünürdü.
+  // String anahtar + Map ile gerçek keyword@domain dedup.
+  const keywordDomainPairs = [...new Map(currentData.map(r => {
+    const domain = r.domain || 'akaydintarim.com.tr';
+    const key = `${r.keyword}@${domain}`;
+    return [key, { keyword: r.keyword, domain }];
+  })).values()];
 
   return (
     <div className="space-y-6">
