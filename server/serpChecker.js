@@ -31,6 +31,34 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// Google scraping — GSC'siz, rakip tespiti için (GSC rakip verisi vermez)
+async function scrapeGoogleRaw(query) {
+  const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&hl=tr&gl=TR&num=50`;
+  try {
+    const { data } = await axios.get(url, {
+      headers: {
+        'User-Agent': randomUA(),
+        'Accept-Language': 'tr-TR,tr;q=0.9,en;q=0.8',
+        'Accept': 'text/html,application/xhtml+xml',
+      },
+      timeout: 15000,
+    });
+    const $ = cheerio.load(data);
+    const results = [];
+    $('a[href^="http"]').each((i, el) => {
+      const href = $(el).attr('href');
+      if (href && !href.includes('google.com') && !href.includes('googleadservices')) {
+        results.push(href);
+      }
+    });
+    const unique = [...new Set(results)].slice(0, 10);
+    return unique.map((u, i) => ({ url: u, position: i + 1 }));
+  } catch (err) {
+    console.warn(`[SERP] Google rakip scrape hatası "${query}":`, formatError(err));
+    return null;
+  }
+}
+
 async function scrapeGoogle(query, domain) {
   // Google Search Console API mevcutsa onu kullan (daha güvenilir, ücretsiz)
   // NOT: Yalnızca kendi domain'lerimiz için — rakip domain GSC'de yok, scraping gerekir (hibrit)
@@ -177,6 +205,23 @@ async function saveCompetitors(db, keyword, engine, results) {
   }
 }
 
+// Rakip tespiti için saf scraping — GSC atlanır (GSC rakip verisi vermez).
+async function scrapeForCompetitors(keyword, engine) {
+  let results;
+  if (engine === 'google') {
+    results = await scrapeGoogleRaw(keyword);
+  } else if (engine === 'yandex') {
+    // Yandex scraping'i domain bağımsız — mevcut scrapeYandex domain ister, raw versiyon kullan
+    const r = await scrapeYandex(keyword, 'nonexistent-domain.example');
+    results = r?.results || null;
+  } else if (engine === 'bing') {
+    const r = await scrapeBing(keyword, 'nonexistent-domain.example');
+    results = r?.results || null;
+  }
+  if (!results || !Array.isArray(results)) return null;
+  return results.slice(0, 10);
+}
+
 async function checkKeyword(db, keyword, engine, domain) {
   let result;
   switch (engine) {
@@ -196,11 +241,6 @@ async function checkKeyword(db, keyword, engine, domain) {
         [keyword, keywordId, engine, result.position, result.url, domain]
       );
       console.log(`[SERP:${domain}] ${engine}: "${keyword}" → #${result.position || 'sıralama dışı'}`);
-
-      // Dinamik rakip tespiti — ilk 10 sonucu serp_competitors'a kaydet (GSC sonucu results içermez, atlanır)
-      if (result.results) {
-        await saveCompetitors(db, keyword, engine, result.results);
-      }
     } catch (dbErr) {
       console.error(`[SERP] DB insert error for "${keyword}" ${engine}:`, formatError(dbErr));
     }
@@ -232,11 +272,11 @@ export async function checkAllRankings(db) {
 
     for (const kw of keywords) {
       for (const engine of engines) {
-        // 1. Keyword'ün kendi domain'i için kontrol
+        // 1. Keyword'ün kendi domain'i için kontrol (GSC + scraping)
         await checkKeyword(db, kw.keyword, engine, kw.domain);
         await sleep(3000 + Math.random() * 2000);
         checked++;
-        
+
         // 2. Ek domain'ler için de aynı keyword'ü kontrol et
         for (const extraDomain of EXTRA_DOMAINS) {
           if (extraDomain !== kw.domain) {
@@ -245,6 +285,16 @@ export async function checkAllRankings(db) {
             checked++;
           }
         }
+      }
+
+      // Dinamik rakip tespiti — her keyword için SERP'i 1 kez scrape et (Google'a ayrıca GSC'siz).
+      // GSC rakip verisi vermez; scraping hem Google hem Yandex/Bing'te rakipleri yakalar.
+      for (const engine of engines) {
+        const ownScrape = await scrapeForCompetitors(kw.keyword, engine, kw.domain);
+        if (ownScrape) {
+          await saveCompetitors(db, kw.keyword, engine, ownScrape);
+        }
+        await sleep(2000 + Math.random() * 1000);
       }
     }
     console.log(`[SERP] Kontrol tamamlandı. ${checked} sorgu yapıldı.`);
