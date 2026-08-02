@@ -67,14 +67,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }, [isAuthenticated, activeSection]);
 
     // Auto refresh data every 30 seconds when authenticated
+    // NOT: about/contact-page aktifken poll'u atla — form edit'leri sıfırlanmasın (P1-17)
     React.useEffect(() => {
-        if (isAuthenticated) {
+        if (isAuthenticated && activeSection !== 'about' && activeSection !== 'contact-page') {
             const interval = setInterval(() => {
                 refreshData();
             }, 30000);
             return () => clearInterval(interval);
         }
-    }, [isAuthenticated, refreshData]);
+    }, [isAuthenticated, refreshData, activeSection]);
 
     // Login Screen
     if (!isAuthenticated) {

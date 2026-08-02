@@ -56,7 +56,7 @@ const SEOHead: React.FC<SEOHeadProps> = ({
     const finalNoindex = noindex || pageSEO?.noindex || false;
     const finalNofollow = nofollow || pageSEO?.nofollow || false;
 
-    // Robots meta tag oluştur
+    // Robots meta tag oluştur (P1-4: noindex/nofollow varken "index" eklenmez — geçersiz değer)
     const robotsContent = [];
     if (finalNoindex) robotsContent.push('noindex');
     if (finalNofollow) robotsContent.push('nofollow');

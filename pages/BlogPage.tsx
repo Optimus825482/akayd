@@ -1,17 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import type { BlogPost, SEOSettings, PageSEO } from '../types';
+import { Helmet } from 'react-helmet-async';
+import type { BlogPost, SEOSettings } from '../types';
 import BlogPostCard from '../components/BlogPostCard';
 import SEOHead from '../components/SEOHead';
-import { blogAPI, seoAPI } from '../services/api';
+import { blogAPI } from '../services/api';
+import { usePageSEO } from '../hooks/usePageSEO';
 
 interface BlogPageProps { blogPosts: BlogPost[]; seoSettings?: SEOSettings | null; }
 
+// Minimal whitelist sanitizer — script/event-handler/javascript: URL'leri sıyırır (stored XSS koruması)
+function sanitizeHtml(html: string): string {
+    return html
+        .replace(/<script[\s\S]*?<\/script>/gi, '')
+        .replace(/on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+        .replace(/\s*>\s*/g, '>')
+        .replace(/(href|src)\s*=\s*(["'])\s*javascript:[^"']*\2/gi, '$1=$2$2')
+        .replace(/\n/g, '<br/>');
+}
+
 const BlogPage: React.FC<BlogPageProps> = ({ blogPosts, seoSettings }) => {
     const [selected, setSelected] = useState<BlogPost | null>(null);
-    const [pageSEO, setPageSEO] = useState<PageSEO | null>(null);
-    useEffect(() => { seoAPI.getPageSEO('/blog').then(setPageSEO).catch(()=>{}); }, []);
+    const pageSEO = usePageSEO('/blog');
 
     const openPost = async (post: BlogPost) => { try { await blogAPI.incrementView(Number(post.id)); } catch {} setSelected(post); };
+
+    // P1-13: SearchModal'dan /blog#<id> geldiğinde post'u aç
+    useEffect(() => {
+        const hash = window.location.hash.replace('#', '');
+        if (hash && blogPosts.length > 0) {
+            const found = blogPosts.find(p => p.id === hash);
+            if (found) { openPost(found); window.history.replaceState(null, '', '/blog'); }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [blogPosts.length]);
 
     return (<>
         <SEOHead seoSettings={seoSettings||undefined} pageSEO={pageSEO||undefined}
@@ -55,10 +76,10 @@ const BlogPage: React.FC<BlogPageProps> = ({ blogPosts, seoSettings }) => {
 
         {/* Modal */}
         {selected && (
-            <div className="fixed inset-0 z-50 bg-ink/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={()=>setSelected(null)}>
-                <div className="bg-surface rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-xl" onClick={e=>e.stopPropagation()}>
-                    {selected.imageUrl && <img src={selected.imageUrl} alt={selected.title} className="w-full h-48 md:h-64 object-cover" />}
-                    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+            <>
+            <Helmet>
+                <script type="application/ld+json">
+                    {JSON.stringify({
                         '@context': 'https://schema.org',
                         '@type': 'BlogPosting',
                         headline: selected.title,
@@ -67,7 +88,12 @@ const BlogPage: React.FC<BlogPageProps> = ({ blogPosts, seoSettings }) => {
                         datePublished: selected.date,
                         author: { '@type': 'Person', name: selected.author },
                         publisher: { '@type': 'Organization', name: 'Akaydin Tarim' }
-                    }) }} />
+                    })}
+                </script>
+            </Helmet>
+            <div className="fixed inset-0 z-50 bg-ink/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={()=>setSelected(null)}>
+                <div className="bg-surface rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-xl" onClick={e=>e.stopPropagation()}>
+                    {selected.imageUrl && <img src={selected.imageUrl} alt={selected.title} className="w-full h-48 md:h-64 object-cover" />}
                     <div className="p-8">
                         <div className="flex items-center gap-3 text-xs text-ink-3 mb-4">
                             <span>{selected.author}</span><span>·</span><span>{selected.date}</span>
@@ -76,12 +102,13 @@ const BlogPage: React.FC<BlogPageProps> = ({ blogPosts, seoSettings }) => {
                         <h2 className="text-2xl md:text-3xl font-[family-name:var(--font-display)] font-bold text-ink mb-4">{selected.title}</h2>
                         <p className="text-ink-2 leading-relaxed mb-6">{selected.summary}</p>
                         {selected.content && (
-                            <div className="prose prose-sm max-w-none text-ink-2" dangerouslySetInnerHTML={{__html:selected.content.includes('<')?selected.content:selected.content.replace(/\n/g,'<br/>')}} />
+                            <div className="prose prose-sm max-w-none text-ink-2" dangerouslySetInnerHTML={{__html:sanitizeHtml(selected.content)}} />
                         )}
                         <button onClick={()=>setSelected(null)} className="mt-8 btn btn-primary w-full">Kapat</button>
                     </div>
                 </div>
             </div>
+            </>
         )}
     </>);
 };

@@ -1,15 +1,14 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import type { Product, ContactPageContent, SEOSettings, PageSEO } from '../types';
+import type { Product, ContactPageContent, SEOSettings } from '../types';
 import ProductCard from '../components/ProductCard';
 import SEOHead from '../components/SEOHead';
-import { seoAPI } from '../services/api';
+import { usePageSEO } from '../hooks/usePageSEO';
 
 interface ProductsPageProps { products: Product[]; contactContent: ContactPageContent; seoSettings?: SEOSettings | null; }
 
 const ProductsPage: React.FC<ProductsPageProps> = ({ products, contactContent, seoSettings }) => {
-    const [pageSEO, setPageSEO] = useState<PageSEO | null>(null);
-    useEffect(() => { seoAPI.getPageSEO('/urunler').then(setPageSEO).catch(()=>{}); }, []);
+    const pageSEO = usePageSEO('/urunler');
     const wp = contactContent.phone?.replace(/[^\d]/g,'') || '905397751517';
 
     // ═══ Schema — ItemList for products ═══
@@ -24,7 +23,7 @@ const ProductsPage: React.FC<ProductsPageProps> = ({ products, contactContent, s
         "position": i + 1,
         "name": p.name,
         "description": p.description,
-        "url": `https://akaydintarim.com.tr/urunler#${p.id}`
+        "url": `https://www.akaydintarim.com.tr/urunler#${p.id}`
       }))
     }), [products]);
 

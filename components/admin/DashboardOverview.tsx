@@ -18,7 +18,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     blogPosts
 }) => {
     const featuredProductsCount = products.filter(p => p.isFeatured).length;
-    const recentBlogPosts = blogPosts
+    const recentBlogPosts = [...blogPosts] // P3-13: props'u mutate etme
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .slice(0, 3);
 

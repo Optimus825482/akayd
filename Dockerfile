@@ -15,21 +15,10 @@ WORKDIR /app
 ARG VITE_API_URL
 ARG VITE_STATIC_URL
 
-COPY package.json ./
-RUN npm install --ignore-scripts && npm rebuild esbuild
+COPY package.json package-lock.json ./
+RUN npm ci --ignore-scripts && npm rebuild esbuild
 
-# Frontend build
-COPY tsconfig.json vite.config.ts tailwind.config.js postcss.config.js index.html vite-env.d.ts ./
-COPY index.tsx App.tsx constants.tsx types.ts ./
-COPY components/ ./components/
-COPY pages/ ./pages/
-COPY hooks/ ./hooks/
-COPY services/ ./services/
-COPY public/ ./public/
-COPY index.css ./
-RUN npm run build && npm prune --production
-
-# Backend server + init scripts
+# Backend server + init scripts (P2-6: frontend build nginx container'ında — burada build yok)
 COPY server/ ./server/
 COPY docker/init/ ./docker/init/
 COPY docker/init-db.sh /usr/local/bin/init-db.sh

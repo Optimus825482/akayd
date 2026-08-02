@@ -1,15 +1,14 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import type { Service, SEOSettings, PageSEO } from '../types';
+import type { Service, SEOSettings } from '../types';
 import ServiceCard from '../components/ServiceCard';
 import SEOHead from '../components/SEOHead';
-import { seoAPI } from '../services/api';
+import { usePageSEO } from '../hooks/usePageSEO';
 
 interface ServicesPageProps { services: Service[]; seoSettings?: SEOSettings | null; }
 
 const ServicesPage: React.FC<ServicesPageProps> = ({ services, seoSettings }) => {
-    const [pageSEO, setPageSEO] = useState<PageSEO | null>(null);
-    useEffect(() => { seoAPI.getPageSEO('/hizmetlerimiz').then(setPageSEO).catch(()=>{}); }, []);
+    const pageSEO = usePageSEO('/hizmetlerimiz');
 
     // ═══ Schema — ItemList for services ═══
     const servicesSchema = useMemo(() => ({
@@ -23,7 +22,7 @@ const ServicesPage: React.FC<ServicesPageProps> = ({ services, seoSettings }) =>
         "position": i + 1,
         "name": s.title,
         "description": s.description,
-        "url": `https://akaydintarim.com.tr/hizmetlerimiz#${s.id}`
+        "url": `https://www.akaydintarim.com.tr/hizmetlerimiz#${s.id}`
       }))
     }), [services]);
 

@@ -18,3 +18,8 @@ data/fix_*.cjs
 
 # Docker build artıkları
 .npmrc-docker
+
+# Hassas ortam dosyalari — asla commit etme!
+.env.hosting
+.env.local
+.env.production

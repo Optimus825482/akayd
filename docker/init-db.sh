@@ -18,6 +18,8 @@ if [ "$TABLE_EXISTS" != "t" ]; then
 else
     echo ">>> Tablolar mevcut — eksik şema nesneleri kontrol ediliyor..."
     PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" -f /app/docker/init/01-schema.sql 2>&1 | tail -20
+    echo ">>> Migration (03) uygulanıyor — mevcut DB schema evrimi..."
+    PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" -f /app/docker/init/03-migration.sql 2>&1 | tail -20 || echo ">>> Migration uygulandı (bazı ALTER'ler zaten mevcut olabilir)"
     echo ">>> Seed verisi kontrol ediliyor (veri silinmeden)..."
     # Eksik kayıtları INSERT ... ON CONFLICT DO NOTHING ile ekle
     PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" -c "\i /app/docker/init/02-seed.sql" 2>&1 | tail -10 || echo ">>> Seed kontrolü yapıldı (bazı kayıtlar zaten mevcut olabilir)"

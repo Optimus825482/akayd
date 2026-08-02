@@ -14,6 +14,8 @@ import crypto from 'crypto';
 import multer from 'multer';
 import cron from 'node-cron';
 import axios from 'axios';
+import rateLimit from 'express-rate-limit';
+import { body, validationResult } from 'express-validator';
 import { imageOptimizer } from './imageProcessor.js';
 import { checkAllRankings, checkSingleKeyword } from './serpChecker.js';
 
@@ -55,20 +57,16 @@ const PORT = process.env.PORT || 3003;
 // Trust proxy — Traefik/Nginx arkasında doğru IP tespiti için zorunlu
 app.set('trust proxy', 1);
 
-// Admin Auth
+// Admin Auth — şifre eksikse fail-fast (DB kontrolü gibi)
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const SALT_ROUNDS = 10;
-let ADMIN_PASSWORD_HASH = null;
-
-// Admin şifresini hash'le (sunucu başlangıcında)
-if (ADMIN_PASSWORD) {
-  bcrypt.hash(ADMIN_PASSWORD, SALT_ROUNDS).then(hash => {
-    ADMIN_PASSWORD_HASH = hash;
-    console.log('Admin şifresi hash\'lendi.');
-  }).catch(err => {
-    console.error('Şifre hashleme hatası:', err);
-  });
+if (!ADMIN_PASSWORD) {
+  console.error('HATA: ADMIN_PASSWORD environment variable zorunludur');
+  process.exit(1);
 }
+// Startup race önleme: hash'i dinleme başlamadan önce await et
+const ADMIN_PASSWORD_HASH = await bcrypt.hash(ADMIN_PASSWORD, SALT_ROUNDS);
+console.log('Admin şifresi hash\'lendi.');
 
 const adminTokens = new Map(); // token → {role: "admin"|"editor"|"viewer"}
 
@@ -77,12 +75,32 @@ const toSmallInt = (val) => {
   if (val === true || val === 1 || val === 'true' || val === '1') return 1;
   return 0;
 };
+// P3-1: tek tanım (iki kopyası vardı)
+const stripHtml = (html) => (html || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
 const adminAuth = (req, res, next) => {
   const token = req.headers.authorization?.replace('Bearer ', '') || parseCookies(req).admin_token;
   if (!token || !adminTokens.has(token)) {
     return res.status(401).json({ error: 'Yetkisiz erişim' });
   }
   next();
+};
+
+// İnput validasyon yardımcıları (express-validator) — admin CRUD için
+const validate = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ error: errors.array()[0].msg });
+  }
+  next();
+};
+const textField = (field, label, { required = true, max = 5000, min } = {}) => {
+  let chain = body(field)
+    .optional(required ? { values: 'null' } : true)
+    .isString().withMessage(`${label} metin olmalıdır`)
+    .trim();
+  if (required) chain = chain.notEmpty().withMessage(`${label} zorunludur`);
+  if (min) chain = chain.isLength({ min }).withMessage(`${label} en az ${min} karakter olmalıdır`);
+  return chain.isLength({ max }).withMessage(`${label} en fazla ${max} karakter olabilir`);
 };
 
 // Middleware
@@ -121,9 +139,20 @@ app.use('/uploads', (req, res, next) => {
 }));
 
 // Cache middleware
+// P1-8: admin korumalı route'lar asla public cache'lenmez (s-maxage 86400 = CDN'de 24h sızıntı).
+// Admin verisi: private, no-store. Public içerik: kısa public cache.
+const ADMIN_CACHE_PATHS = [
+  '/api/serp-rankings', '/api/contact/messages', '/api/blog-posts/stats',
+  '/api/seo/sitemap', '/api/seo/robots', '/api/seo/analyze', '/api/seo/pages',
+];
 app.use((req, res, next) => {
-  if (req.method === 'GET' && !req.path.startsWith('/api/admin')) {
-    res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
+  if (req.method === 'GET') {
+    const isAdminPath = ADMIN_CACHE_PATHS.some(p => req.path.startsWith(p));
+    if (isAdminPath) {
+      res.setHeader('Cache-Control', 'private, no-store');
+    } else {
+      res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
+    }
   }
   next();
 });
@@ -142,39 +171,29 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
-// Rate limiting
-const rateLimit = new Map();
-const RATE_LIMIT_WINDOW = 60 * 1000;
-const RATE_LIMIT_MAX = 100;
+// Rate limiting — express-rate-limit (restart'ta sıfırlanmaz, per-proxy-IP güvenilir)
 
-// Periyodik temizlik: süresi dolmuş timestamp'leri filtrele, boş kalan IP'leri sil
-const RATE_LIMIT_CLEANUP_INTERVAL = 10 * 60 * 1000; // 10 dakika
-setInterval(() => {
-  const now = Date.now();
-  for (const [ip, timestamps] of rateLimit) {
-    const valid = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW);
-    if (valid.length === 0) {
-      rateLimit.delete(ip);
-    } else {
-      rateLimit.set(ip, valid);
-    }
-  }
-}, RATE_LIMIT_CLEANUP_INTERVAL);
-
-app.use((req, res, next) => {
-  const ip = req.ip;
-  const now = Date.now();
-  if (!rateLimit.has(ip)) {
-    rateLimit.set(ip, []);
-  }
-  const timestamps = rateLimit.get(ip).filter(t => now - t < RATE_LIMIT_WINDOW);
-  if (timestamps.length >= RATE_LIMIT_MAX) {
-    return res.status(429).json({ error: 'Çok fazla istek, lütfen bekleyin' });
-  }
-  timestamps.push(now);
-  rateLimit.set(ip, timestamps);
-  next();
+// Genel API limiti
+const generalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 100,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Çok fazla istek, lütfen bekleyin' },
 });
+
+// Login için sıkı limiter — brute-force koruması
+const loginLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 5,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Çok fazla giriş denemesi. 1 dakika bekleyin.' },
+  skipSuccessfulRequests: true, // başarılı giriş sayılmaz
+});
+
+app.use('/api/', generalLimiter);
+app.use('/api/admin/login', loginLimiter);
 
 // PostgreSQL bağlantısı (retry ile)
 if (!process.env.DB_USER || !process.env.DB_PASSWORD) {
@@ -235,12 +254,13 @@ db.on('error', (err) => {
 });
 
 // Multer configuration
+// Not: SVG bilinçli olarak çıkarıldı — script gömülebilir (stored XSS). SVG gerekiyorsa whitelist sanitizer ile eklenmeli.
 const ALLOWED_MIME_TYPES = [
   'image/jpeg', 'image/jpg', 'image/png', 'image/x-png',
-  'image/gif', 'image/webp', 'image/svg+xml',
+  'image/gif', 'image/webp',
   'image/avif', 'image/bmp'
 ];
-const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.avif', '.bmp'];
+const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.bmp'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 const storage = multer.diskStorage({
@@ -272,13 +292,13 @@ const upload = multer({
 // Admin login/logout
 app.post('/api/admin/login', async (req, res) => {
   const { password } = req.body;
-  if (!ADMIN_PASSWORD_HASH) return res.status(500).json({ error: 'Admin şifresi yapılandırılmamış' });
   try {
     const match = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
     if (!match) return res.status(401).json({ error: 'Hatalı şifre' });
   } catch {
-    // bcrypt karşılaştırma hatası durumunda düz metin karşılaştırmaya geri dön
-    if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Hatalı şifre' });
+    // bcrypt hatası → DENY (plaintext fallback yok, security)
+    console.error('bcrypt karşılaştırma hatası');
+    return res.status(500).json({ error: 'Giriş işlenirken hata oluştu' });
   }
   const token = crypto.randomBytes(32).toString('hex');
   adminTokens.set(token, { role: 'admin' });
@@ -316,7 +336,7 @@ app.get('/api/services', async (req, res) => {
   }
 });
 
-app.post('/api/services', adminAuth, async (req, res) => {
+app.post('/api/services', adminAuth, textField('title', 'Hizmet başlığı', { max: 255 }), textField('description', 'Hizmet açıklaması', { required: false }), validate, async (req, res) => {
   try {
     const { title, description, iconName } = req.body;
     const result = await db.query(
@@ -332,7 +352,7 @@ app.post('/api/services', adminAuth, async (req, res) => {
   }
 });
 
-app.put('/api/services/:id', adminAuth, async (req, res) => {
+app.put('/api/services/:id', adminAuth, textField('title', 'Hizmet başlığı', { max: 255 }), textField('description', 'Hizmet açıklaması', { required: false }), validate, async (req, res) => {
   try {
     const { id } = req.params;
     const { title, description, iconName } = req.body;
@@ -363,13 +383,15 @@ app.delete('/api/services/:id', adminAuth, async (req, res) => {
 // PRODUCTS API
 app.get('/api/products', async (req, res) => {
   try {
-    const rows = await db.query('SELECT * FROM products ORDER BY id DESC');
-    
-    // Images alanını parse et ve is_featured'ı boolean'a çevir
+    // P1-9: LIMIT — tüm ürünleri sonsuz yükleme (büyüyen tablo = büyüyen payload)
+    const limit = Math.min(parseInt(req.query.limit) || 200, 500);
+    const rows = await db.query('SELECT * FROM products ORDER BY id DESC LIMIT $1', [limit]);
+
+    // Images alanını parse et ve is_featured'ı boolean'a çevir (JSONB → object, eski TEXT → string)
     const processedRows = rows.rows.map(row => ({
       ...row,
-      images: row.images ? JSON.parse(row.images) : [],
-      isFeatured: Boolean(row.is_featured) // Veritabanından gelen tinyint'i boolean'a çevir
+      images: row.images ? (typeof row.images === 'string' ? JSON.parse(row.images) : row.images) : [],
+      isFeatured: Boolean(row.is_featured)
     }));
     
     res.json(processedRows);
@@ -417,13 +439,13 @@ app.post('/api/products', adminAuth, upload.array('images', 10), imageOptimizer,
 app.put('/api/products/:id', adminAuth, upload.array('images', 10), imageOptimizer, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, category, is_featured, deletedImages, keepExistingImages } = req.body;
+    const { name, description, category, is_featured, deletedImages, keepExistingImages, imageOrder } = req.body;
     const uploadedFiles = req.files || [];
-    
+
     // Mevcut images'ları al
     const existing = await db.query('SELECT * FROM products WHERE id = $1', [id]);
     let currentImages = [];
-    
+
     if (existing.rows.length > 0 && existing.rows[0].images) {
       try {
         currentImages = JSON.parse(existing.rows[0].images);
@@ -431,7 +453,7 @@ app.put('/api/products/:id', adminAuth, upload.array('images', 10), imageOptimiz
         currentImages = [];
       }
     }
-    
+
     let allImages = [];
 
     // Silinen görselleri işle (her durumda çalışır)
@@ -442,21 +464,38 @@ app.put('/api/products/:id', adminAuth, upload.array('images', 10), imageOptimiz
 
     let updatedImages = currentImages;
     if (deletedImages) {
-      const toDeleteRaw = JSON.parse(deletedImages);
+      let toDeleteRaw;
+      try { toDeleteRaw = JSON.parse(deletedImages); }
+      catch { toDeleteRaw = []; }
       const toDelete = toDeleteRaw.map(normalizePath);
       updatedImages = currentImages.filter(img => !toDelete.includes(normalizePath(img)));
 
-      // Fiziksel dosyaları sil
+      // Fiziksel dosyaları sil — yalnızca uploads sandbox'ı içinde, basename ile (path traversal koruması)
       toDelete.forEach(imagePath => {
-        const tryPaths = [imagePath, `/akaydin-tarim${imagePath}`];
-        for (const p of tryPaths) {
-          const fullPath = path.join(__dirname, '..', p);
-          if (fs.existsSync(fullPath)) {
-            fs.unlinkSync(fullPath);
-            break;
-          }
+        const safePath = path.basename(imagePath.replace(/\/akaydin-tarim\//g, '/'));
+        if (!safePath || safePath === '.' || safePath === '..') return;
+        const fullPath = path.join(UPLOADS_DIR, safePath);
+        try {
+          if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+        } catch (e) {
+          console.warn(`Dosya silinemedi: ${fullPath} — ${e.message}`);
         }
       });
+    }
+
+    // Ana görsel sıralaması: frontend imageOrder gönderdiyse (yalnızca mevcut, silinmemiş görsellerden) uygula
+    if (imageOrder) {
+      let orderRaw;
+      try { orderRaw = JSON.parse(imageOrder); }
+      catch { orderRaw = null; }
+      if (Array.isArray(orderRaw) && orderRaw.length > 0) {
+        const orderNormalized = orderRaw.map(normalizePath);
+        const kept = updatedImages.map(normalizePath);
+        // Sadece updatedImages içinde geçerlileri sıraya koy, listede olmayanları sona ekle
+        const ordered = orderNormalized.filter(p => kept.includes(p)).map(p => updatedImages[kept.indexOf(p)]);
+        const rest = updatedImages.filter(img => !ordered.includes(img));
+        updatedImages = [...ordered, ...rest];
+      }
     }
 
     // Yeni yüklenen görselleri ekle
@@ -506,7 +545,9 @@ app.delete('/api/products/:id', adminAuth, async (req, res) => {
 // BLOG POSTS API
 app.get('/api/blog-posts', async (req, res) => {
   try {
-    const rows = await db.query('SELECT * FROM blog_posts ORDER BY id DESC');
+    // P1-9: LIMIT — tüm blog'ları sonsuz yükleme (content multi-KB HTML). Modal content'i de bu listeden gelir.
+    const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+    const rows = await db.query('SELECT * FROM blog_posts ORDER BY id DESC LIMIT $1', [limit]);
     res.json(rows.rows);
   } catch (error) {
     console.error(error);
@@ -521,7 +562,6 @@ app.post('/api/blog-posts', adminAuth, upload.single('image'), imageOptimizer, a
     const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
 
     // -- SEO otomatik doldurma: bos alanlari title/content'ten turet --
-    var stripHtml = function(html) { return (html || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim(); };
     var finalSeoTitle = seo_title || stripHtml(title);
     var finalSeoDescription = seo_description || (excerpt || '').substring(0, 160);
     var finalSeoKeywords = seo_keywords;
@@ -574,8 +614,7 @@ app.put('/api/blog-posts/:id', adminAuth, upload.single('image'), imageOptimizer
     }
 
     // -- SEO otomatik doldurma: bos alanlari title/content'ten turet --
-    var stripHtml2 = function(html) { return (html || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim(); };
-    var fSeoTitle = seo_title || stripHtml2(title);
+    var fSeoTitle = seo_title || stripHtml(title);
     var fSeoDesc = seo_description || (excerpt || '').substring(0, 160);
     var fSeoKeys = seo_keywords;
     if (!seo_keywords && title) {
@@ -1435,9 +1474,9 @@ async function generateSitemap() {
   for (const p of products.rows) {
     urls.push({ loc: `${baseUrl}/urun/${p.id}`, priority: '0.6', changefreq: 'monthly', lastmod: p.updated_at ? new Date(p.updated_at).toISOString().split('T')[0] : now });
   }
-  for (const bp of blogPosts.rows) {
-    urls.push({ loc: `${baseUrl}/blog/${bp.id}`, priority: '0.5', changefreq: 'monthly', lastmod: bp.updated_at ? new Date(bp.updated_at).toISOString().split('T')[0] : now });
-  }
+  // P1-2: Blog yazıları URL'siz (modal-based, /blog/:id route'u yok) — 404 sitemap URL üretme.
+  // Blog yazıları indexlenecekse önce App.tsx'e /blog/:id route'u eklenmeli.
+  // (blogPosts.rows yalnızca lastmod hesabı için kullanılıyor)
 
   sitemapCache = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -1539,7 +1578,7 @@ app.get('/api/serp-rankings/keywords', adminAuth, async (req, res) => {
     const { rows } = await db.query('SELECT * FROM serp_keywords ORDER BY id');
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "SERP verileri al�n�rken hata olu�tu" });
   }
 });
 
@@ -1553,7 +1592,7 @@ app.post('/api/serp-rankings/keywords', adminAuth, async (req, res) => {
     );
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Keyword eklenirken hata olu�tu" });
   }
 });
 
@@ -1563,7 +1602,7 @@ app.delete('/api/serp-rankings/keywords/:id', adminAuth, async (req, res) => {
     await db.query('DELETE FROM serp_keywords WHERE id = $1', [req.params.id]);
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Keyword silinirken hata olu�tu" });
   }
 });
 
@@ -1586,7 +1625,7 @@ app.get('/api/serp-rankings/current', adminAuth, async (req, res) => {
     const { rows } = await db.query(query, params);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "S�ralama verileri al�n�rken hata olu�tu" });
   }
 });
 
@@ -1606,7 +1645,7 @@ app.get('/api/serp-rankings/history', adminAuth, async (req, res) => {
     const { rows } = await db.query(query, params);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "S�ralama ge�mi�i al�n�rken hata olu�tu" });
   }
 });
 
@@ -1620,6 +1659,11 @@ app.post('/api/serp-rankings/check', adminAuth, async (req, res) => {
 app.post('/api/serp-rankings/check/:keywordId', adminAuth, async (req, res) => {
   res.json({ message: 'SERP kontrolü başlatıldı' });
   checkSingleKeyword(db, req.params.keywordId).catch(err => console.error('[SERP] Tekli kontrol hatası:', formatError(err)));
+});
+
+// Health check — container healthcheck + traefik için (rate limit / auth / cache dışı)
+app.get('/healthz', (req, res) => {
+  res.json({ ok: true, uptime: process.uptime() });
 });
 
 // Production modda Vite build çıktısını serve et

@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./pages/**/*.{js,ts,jsx,tsx}",
@@ -14,22 +15,24 @@ export default {
         display: ['Roboto Slab', 'Georgia', 'serif'],
         body: ['Inter', 'system-ui', 'sans-serif'],
       },
+      // P1-11: hex yerine CSS var() — index.css'teki :root ve .dark token'larını kullanır.
+      // Böylece .dark class'ı değişince tüm utility'ler otomatik uyar (dark mode çalışır).
       colors: {
-        paper:   '#f7f6f3',
-        'paper-2':'#efede8',
-        'paper-3':'#e0ded7',
-        ink:     '#141a12',
-        'ink-2': '#2d3528',
-        'ink-3': '#5a6552',
-        accent:  '#1a6532',
-        'accent-2':'#228b3a',
-        'accent-bg':'#e6f4ea',
-        earth:   '#8b6508',
-        'earth-bg':'#fdf3e0',
-        sky:     '#1d4ed8',
-        'sky-bg': '#e8f0fe',
-        surface: '#ffffff',
-        rule:    '#d4d2cc',
+        paper:   'var(--color-paper)',
+        'paper-2':'var(--color-paper-2)',
+        'paper-3':'var(--color-paper-3)',
+        ink:     'var(--color-ink)',
+        'ink-2': 'var(--color-ink-2)',
+        'ink-3': 'var(--color-ink-3)',
+        accent:  'var(--color-accent)',
+        'accent-2':'var(--color-accent-2)',
+        'accent-bg':'var(--color-accent-bg)',
+        earth:   'var(--color-earth)',
+        'earth-bg':'var(--color-earth-bg)',
+        sky:     'var(--color-sky)',
+        'sky-bg': 'var(--color-sky-bg)',
+        surface: 'var(--color-surface)',
+        rule:    'var(--color-rule)',
       },
       borderRadius: { 'card': '16px', 'btn': '10px' },
       boxShadow: {

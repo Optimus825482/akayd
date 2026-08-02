@@ -13,14 +13,14 @@ CREATE TABLE IF NOT EXISTS about_page (
   vision TEXT NOT NULL DEFAULT '',
   title TEXT DEFAULT '',
   content TEXT DEFAULT '',
-  images TEXT DEFAULT NULL,
+  images JSONB DEFAULT '[]',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS blog_posts (
   id SERIAL PRIMARY KEY,
-  title VARCHAR(255) NOT NULL,
+  title VARCHAR(255) NOT NULL UNIQUE,
   summary TEXT DEFAULT '',  -- NOT NULL kaldırıldı, default ''
   content TEXT DEFAULT NULL,
   author VARCHAR(100) NOT NULL DEFAULT 'Akaydın Tarım',
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS contact_messages (
   phone VARCHAR(50) DEFAULT NULL,
   subject VARCHAR(255) DEFAULT NULL,
   message TEXT NOT NULL,
-  is_read SMALLINT DEFAULT 0,
+  is_read BOOLEAN DEFAULT false,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS hazelnut_prices (
   scraped_price NUMERIC(10,2) DEFAULT NULL,
   last_scraped_at TIMESTAMP DEFAULT NULL,
   update_mode VARCHAR(20) DEFAULT 'manual',
-  scraping_enabled SMALLINT DEFAULT 1,
+  scraping_enabled BOOLEAN DEFAULT true,
   notes TEXT DEFAULT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS hero_content (
   cta VARCHAR(100) DEFAULT 'Detaylı Bilgi',
   background_gradient VARCHAR(255) DEFAULT 'from-green-600 via-green-700 to-blue-800',
   background_image VARCHAR(255) DEFAULT NULL,
-  is_active SMALLINT DEFAULT 1,
+  is_active BOOLEAN DEFAULT true,
   order_index INTEGER DEFAULT 1,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -105,21 +105,21 @@ CREATE TABLE IF NOT EXISTS page_seo (
   og_description TEXT DEFAULT NULL,
   og_image VARCHAR(500) DEFAULT NULL,
   canonical_url VARCHAR(500) DEFAULT NULL,
-  noindex SMALLINT DEFAULT 0,
-  nofollow SMALLINT DEFAULT 0,
+  noindex BOOLEAN DEFAULT false,
+  nofollow BOOLEAN DEFAULT false,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS products (
   id SERIAL PRIMARY KEY,
-  name VARCHAR(255) NOT NULL,
+  name VARCHAR(255) NOT NULL UNIQUE,
   description TEXT DEFAULT '',
   category VARCHAR(100) DEFAULT 'Genel',
   price NUMERIC(10,2) DEFAULT 0,
   image_url VARCHAR(500) DEFAULT NULL,
-  images TEXT DEFAULT NULL,
-  is_featured SMALLINT DEFAULT 0,
+  images JSONB DEFAULT '[]',
+  is_featured BOOLEAN DEFAULT false,
   seo_title VARCHAR(255) DEFAULT NULL,
   seo_description TEXT DEFAULT NULL,
   seo_keywords TEXT DEFAULT NULL,
@@ -146,7 +146,7 @@ CREATE TABLE IF NOT EXISTS seo_settings (
   google_search_console VARCHAR(255) DEFAULT '',
   facebook_pixel_id VARCHAR(100) DEFAULT '',
   schema_organization TEXT DEFAULT '',
-  sitemap_enabled SMALLINT DEFAULT 1,
+  sitemap_enabled BOOLEAN DEFAULT true,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -162,6 +162,7 @@ CREATE TABLE IF NOT EXISTS serp_keywords (
 CREATE TABLE IF NOT EXISTS serp_rankings (
   id SERIAL PRIMARY KEY,
   keyword VARCHAR(255) NOT NULL,
+  keyword_id INTEGER REFERENCES serp_keywords(id) ON DELETE CASCADE, -- P2-3: keyword silinince history de silinir
   engine VARCHAR(20) NOT NULL CHECK (engine IN ('google', 'yandex', 'bing')),
   position INTEGER NOT NULL DEFAULT 0,
   url VARCHAR(500) DEFAULT NULL,
@@ -169,12 +170,14 @@ CREATE TABLE IF NOT EXISTS serp_rankings (
   checked_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_serp_keyword ON serp_rankings(keyword);
+-- P0-7: Aynı (keyword, engine, domain, checked_at) çift kaydını engelle — cron+manuel+restart yarışında duplicate
+CREATE UNIQUE INDEX IF NOT EXISTS uq_serp_rankings_dedup
+  ON serp_rankings (keyword, engine, domain, checked_at);
 CREATE INDEX IF NOT EXISTS idx_serp_checked_at ON serp_rankings(checked_at);
 
 CREATE TABLE IF NOT EXISTS services (
   id SERIAL PRIMARY KEY,
-  title VARCHAR(255) NOT NULL,
+  title VARCHAR(255) NOT NULL UNIQUE,
   description TEXT DEFAULT '',
   icon_name VARCHAR(100) DEFAULT 'leaf',
   image_url VARCHAR(500) DEFAULT NULL,
@@ -184,3 +187,25 @@ CREATE TABLE IF NOT EXISTS services (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+-- ============================================================
+-- P0-8: updated_at trigger — her UPDATE'te zaman damgasını otomatik güncelle
+-- (data/migrate_to_postgres.sql:208-232'den taşındı, o dosya ölüydü)
+-- ============================================================
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DO $$
+DECLARE t text;
+BEGIN
+  FOREACH t IN ARRAY ARRAY['about_page','blog_posts','contact_messages','contact_page','hazelnut_prices','hero_content','page_seo','products','seo_settings','serp_keywords','serp_rankings','services']
+  LOOP
+    EXECUTE format('DROP TRIGGER IF EXISTS set_updated_at ON %I', t);
+    EXECUTE format('CREATE TRIGGER set_updated_at BEFORE UPDATE ON %I FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()', t);
+  END LOOP;
+END $$;

@@ -1,7 +1,11 @@
 import React from 'react';
+import type { ContactPageContent } from '../types';
 
-const WhatsAppFloat: React.FC = () => {
-  const phone = '905397751517';
+interface WhatsAppFloatProps { contactContent?: ContactPageContent; }
+
+// P3-6: admin'deki whatsapp_phone'a bağlan, hardcoded fallback yalnızca veri yokken
+const WhatsAppFloat: React.FC<WhatsAppFloatProps> = ({ contactContent }) => {
+  const phone = (contactContent?.whatsapp_phone || contactContent?.phone || '905397751517').replace(/[^\d]/g, '');
   const waUrl = `https://wa.me/${phone}`;
 
   return (

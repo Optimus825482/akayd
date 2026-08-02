@@ -12,17 +12,8 @@ const QUALITY = 80;
  */
 export async function processImage(filePath) {
   const ext = path.extname(filePath).toLowerCase();
-  if (!['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'].includes(ext)) {
-    return; // Desteklenmeyen format — olduğu gibi bırak
-  }
-
-  // SVG'yi optimize etmiyoruz (vektörel)
-  if (ext === '.svg') {
-    return {
-      filename: path.basename(filePath),
-      path: filePath,
-      size: fs.statSync(filePath).size,
-    };
+  if (!['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext)) {
+    return; // Desteklenmeyen format — olduğu gibi bırak (SVG dahil: stored XSS riski, upload tarafında engelleniyor)
   }
 
   // WebP zaten optimize edilmiş, tekrar işlenmesine gerek yok
@@ -39,14 +30,15 @@ export async function processImage(filePath) {
 
   try {
     // Önce geçici dosyaya yaz, sonra rename et (aynı dosya üzerine yazma hatasını önle)
-    await sharp(filePath)
+    await sharp(filePath, { limitInputPixels: 30_000_000 }) // pixel-bomb DoS koruması
       .resize(MAX_WIDTH, MAX_HEIGHT, { fit: 'inside', withoutEnlargement: true })
       .webp({ quality: QUALITY })
       .toFile(tmpPath);
 
-    // Orijinal dosyayı sil, geçici dosyayı rename et
-    fs.unlinkSync(filePath);
+    // P1-21: Atomic — tmp'i webpPath'e rename et (aynı fs'de atomic), BAŞARILI olursa orijinali sil.
+    // Eski kod önce unlink sonra rename yapıyordu; rename hata verirse orijinal kayboluyordu.
     fs.renameSync(tmpPath, webpPath);
+    fs.unlinkSync(filePath);
 
     return {
       filename: path.basename(webpPath),
@@ -60,11 +52,14 @@ export async function processImage(filePath) {
       try { fs.unlinkSync(tmpPath); } catch {}
     }
     // Sharp işleyemediyse (örn. bozuk PNG), orijinal dosyayı olduğu gibi bırak
-    return {
-      filename: path.basename(filePath),
-      path: filePath,
-      size: fs.statSync(filePath).size,
-    };
+    if (fs.existsSync(filePath)) {
+      return {
+        filename: path.basename(filePath),
+        path: filePath,
+        size: fs.statSync(filePath).size,
+      };
+    }
+    return null;
   }
 }
 

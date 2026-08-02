@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import type { Product, ContactPageContent, SEOSettings, PageSEO } from '../types';
+import type { Product, ContactPageContent, SEOSettings } from '../types';
 import SEOHead from '../components/SEOHead';
-import { productsAPI, seoAPI } from '../services/api';
+import { productsAPI } from '../services/api';
+import { usePageSEO } from '../hooks/usePageSEO';
 
-const STATIC_URL = import.meta.env.VITE_STATIC_URL || 'http://localhost:3003';
+// P1-7: prod'da localhost'a düşme — origin'e fallback
+const STATIC_URL = import.meta.env.VITE_STATIC_URL
+    || (typeof window !== 'undefined' ? window.location.origin : '');
 const imgUrl = (path: string) => path ? `${STATIC_URL}${path}` : '';
 
 interface ProductDetailPageProps {
@@ -17,29 +20,18 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ contactContent, s
     const [product, setProduct] = useState<Product | null>(null);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [loading, setLoading] = useState(true);
-    const [pageSEO, setPageSEO] = useState<PageSEO | null>(null);
-
-    // SEO verilerini yükle
-    useEffect(() => {
-        const loadPageSEO = async () => {
-            try {
-                const data = await seoAPI.getPageSEO(`/urun/${id}`);
-                setPageSEO(data);
-            } catch (error) {
-                // SEO verileri yüklenemedi
-            }
-        };
-        if (id) {
-            loadPageSEO();
-        }
-    }, [id]);
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const pageSEO = usePageSEO(`/urun/${id}`);
 
     useEffect(() => {
+        let cancelled = false;
         const fetchProduct = async () => {
             if (!id) return;
+            setLoading(true); setLoadError(null);
 
             try {
                 const products = await productsAPI.getAll();
+                if (cancelled) return; // P1-6: stale request'i yoksay (race fix)
                 const foundProduct = products.find((p: any) => p.id.toString() === id);
 
                 if (foundProduct) {
@@ -56,15 +48,18 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ contactContent, s
                             : []
                     };
                     setProduct(mappedProduct);
+                } else {
+                    setProduct(null);
                 }
             } catch (error) {
-                // Ürün detayları alınamadı
+                if (!cancelled) setLoadError('Ürün bilgileri yüklenemedi. Lütfen tekrar deneyin.');
             } finally {
-                setLoading(false);
+                if (!cancelled) setLoading(false);
             }
         };
 
         fetchProduct();
+        return () => { cancelled = true; };
     }, [id]);
 
     if (loading) {
@@ -80,7 +75,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ contactContent, s
             <div className="min-h-screen bg-paper-2 flex items-center justify-center">
                 <div className="text-center">
                     <h1 className="text-4xl font-bold text-ink mb-4">Ürün Bulunamadı</h1>
-                    <p className="text-ink-2 mb-8">Aradığınız ürün mevcut değil.</p>
+                    <p className="text-ink-2 mb-8">{loadError || 'Aradığınız ürün mevcut değil.'}</p>
                     <Link
                         to="/urunler"
                         className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"

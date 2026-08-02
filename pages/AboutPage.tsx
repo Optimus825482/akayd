@@ -1,17 +1,15 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import type { AboutPageContent, SEOSettings, PageSEO } from '../types';
+import type { AboutPageContent, SEOSettings } from '../types';
 import SEOHead from '../components/SEOHead';
-import { seoAPI } from '../services/api';
+import { usePageSEO } from '../hooks/usePageSEO';
 
 interface AboutPageProps { content: AboutPageContent; seoSettings?: SEOSettings | null; }
 
 const AboutPage: React.FC<AboutPageProps> = ({ content, seoSettings }) => {
     const [imgIdx, setImgIdx] = useState(0);
-    const [pageSEO, setPageSEO] = useState<PageSEO | null>(null);
+    const pageSEO = usePageSEO('/hakkimizda');
     const [isVisible, setIsVisible] = useState(false);
-
-    useEffect(() => { seoAPI.getPageSEO('/hakkimizda').then(setPageSEO).catch(()=>{}); }, []);
 
     // Intersection Observer for fade-in
     useEffect(() => {
@@ -40,11 +38,11 @@ const AboutPage: React.FC<AboutPageProps> = ({ content, seoSettings }) => {
       {
         "@context": "https://schema.org",
         "@type": "Organization",
-            "@id": "https://akaydintarim.com.tr/#organization",
+            "@id": "https://www.akaydintarim.com.tr/#organization",
         "name": "Akaydın Tarım",
         "description": "Hendek, Sakarya'da fındık üretimi, fındık kırma & kavurma, organomineral gübre ve tarımsal danışmanlık",
-        "url": "https://akaydintarim.com.tr",
-        "logo": "https://akaydintarim.com.tr/akaylogo.png",
+        "url": "https://www.akaydintarim.com.tr",
+        "logo": "https://www.akaydintarim.com.tr/akaylogo.png",
         "foundingDate": "1999",
         "areaServed": { "@type": "City", "name": "Hendek, Sakarya" }
       },

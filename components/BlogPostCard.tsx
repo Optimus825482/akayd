@@ -1,5 +1,3 @@
-/** @deprecated Henüz kullanılmıyor - ileride aktif edilecek */
-
 import React from 'react';
 import type { BlogPost } from '../types';
 

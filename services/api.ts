@@ -20,9 +20,10 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
     });
 
     if (!response.ok) {
-      // 401: geçersiz/expired token → temizle
-      if (response.status === 401 && token) {
+      // 401: geçersiz/expired token → temizle + UI'a haber ver (login state sıfırlansın)
+      if (response.status === 401) {
         localStorage.removeItem("admin_token");
+        window.dispatchEvent(new CustomEvent('admin:unauthorized'));
       }
       throw new Error(`API hatası: ${response.status}`);
     }
@@ -52,8 +53,9 @@ async function uploadFile(
     });
 
     if (!response.ok) {
-      if (response.status === 401 && token) {
+      if (response.status === 401) {
         localStorage.removeItem("admin_token");
+        window.dispatchEvent(new CustomEvent('admin:unauthorized'));
       }
       throw new Error(`API hatası: ${response.status}`);
     }

@@ -45,6 +45,7 @@ const HeroManagement: React.FC<HeroManagementProps> = ({
 
     const handleHeroSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (loading) return; // duplicate submit guard
         setLoading(true);
 
         try {
@@ -97,7 +98,6 @@ const HeroManagement: React.FC<HeroManagementProps> = ({
             setEditingHero(null);
             setHeroImagePreview('');
         } catch (error) {
-            addNotification('error', 'Hata!', 'Hero içeriği kaydedilirken hata oluştu:');
             addNotification('error', 'Hata!', 'Hero içeriği kaydedilirken hata oluştu.');
         }
         setLoading(false);

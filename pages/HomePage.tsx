@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { Service, Product, HeroContent, ContactPageContent, SEOSettings, PageSEO } from '../types';
+import type { Service, Product, HeroContent, ContactPageContent, SEOSettings } from '../types';
 import ServiceCard from '../components/ServiceCard';
 import ProductCard from '../components/ProductCard';
 import SEOHead from '../components/SEOHead';
-import { seoAPI } from '../services/api';
+import { usePageSEO } from '../hooks/usePageSEO';
 
 interface HomePageProps {
     services: Service[];
@@ -21,29 +21,30 @@ const defaultHeroContent: HeroContent[] = [
 
 const HomePage: React.FC<HomePageProps> = ({ services, products, heroContents, contactContent, seoSettings }) => {
     const [currentSlide, setCurrentSlide] = useState(0);
-    const [pageSEO, setPageSEO] = useState<PageSEO | null>(null);
-
-    useEffect(() => { seoAPI.getPageSEO('/').then(setPageSEO).catch(()=>{}); }, []);
+    const pageSEO = usePageSEO('/');
 
     const activeHero = (heroContents?.length > 0 ? heroContents.filter(h => h.isActive) : defaultHeroContent).sort((a,b) => a.order - b.order);
 
     useEffect(() => {
+        if (activeHero.length === 0) return;
         const t = setInterval(() => setCurrentSlide(p => (p + 1) % activeHero.length), 5000);
         return () => clearInterval(t);
     }, [activeHero.length]);
 
-    const c = activeHero[currentSlide];
+    // P1-5: API sonrası boyut değişirse currentSlide taşmasın
+    const safeIndex = activeHero.length > 0 ? currentSlide % activeHero.length : 0;
+    const c = activeHero.length > 0 ? activeHero[safeIndex] : null;
     const wp = contactContent.phone?.replace(/[^\d]/g,'') || '905397751517';
 
     // ═══ Schema — Organization + LocalBusiness ═══
     const orgSchema = {
       "@context": "https://schema.org",
       "@type": "Organization",
-        "@id": "https://akaydintarim.com.tr/#organization",
+        "@id": "https://www.akaydintarim.com.tr/#organization",
       "name": "Akaydın Tarım",
       "description": "Hendek, Sakarya'da fındık üretimi, fındık kırma & kavurma, organomineral gübre ve tarımsal danışmanlık",
-      "url": "https://akaydintarim.com.tr",
-      "logo": "https://akaydintarim.com.tr/akaylogo.png",
+      "url": "https://www.akaydintarim.com.tr",
+      "logo": "https://www.akaydintarim.com.tr/akaylogo.png",
       "address": {
         "@type": "PostalAddress",
         "streetAddress": contactContent.address?.split(',').slice(0, 2).join(',').trim() || "Remzi Efendi Cd. No:24",
@@ -70,6 +71,7 @@ const HomePage: React.FC<HomePageProps> = ({ services, products, heroContents, c
                 ]} />
 
             {/* ===== HERO — editorial dark ===== */}
+            {c && (
             <section className="relative min-h-[90vh] flex items-center overflow-hidden" style={{background:'linear-gradient(135deg, #0f1f10 0%, #142218 40%, #1a2a1a 100%)'}}>
                 {/* Arka plan görseli varsa göster */}
                 {c.backgroundImage && (
@@ -105,6 +107,7 @@ const HomePage: React.FC<HomePageProps> = ({ services, products, heroContents, c
                     ))}
                 </div>
             </section>
+            )}
 
             {/* ===== NEDEN BIZ — 3 kolon sayısal ===== */}
             <section className="section bg-surface">

@@ -30,11 +30,13 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
     });
     const [productImages, setProductImages] = useState<File[]>([]);
     const [deletedImages, setDeletedImages] = useState<string[]>([]);
+    const [reorderedImages, setReorderedImages] = useState<string[] | null>(null); // Ana görsel değişikliği: yeni sıralama
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
     const handleProductSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (loading) return; // duplicate submit guard
 
         // Öne çıkan ürün kontrolü - yeni ekleme durumunda
         if (!currentProduct && productForm.isFeatured) {
@@ -72,6 +74,11 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
                 formData.append('deletedImages', JSON.stringify(deletedImages));
             }
 
+            // Ana görsel sıralaması değiştiyse bildir
+            if (reorderedImages && reorderedImages.length > 0) {
+                formData.append('imageOrder', JSON.stringify(reorderedImages));
+            }
+
             // Yeni resim yoksa mevcutları koru
             if (productImages.length === 0 && getCurrentImages().length > 0) {
                 formData.append('keepExistingImages', 'true');
@@ -103,7 +110,6 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
 
             closeProductModal();
         } catch (error) {
-            addNotification('error', 'Hata!', 'Ürün kaydedilirken hata oluştu:');
             addNotification('error', 'Hata!', 'Ürün kaydedilirken hata oluştu.');
         }
         setLoading(false);
@@ -127,11 +133,19 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
         return [];
     };
 
+    // Ana görsel sıralaması: reorderedImages varsa onu kullan, yoksa mevcut (silinmişleri hariç)
+    const getDisplayImages = (): string[] => {
+        const base = getCurrentImages();
+        if (reorderedImages) return reorderedImages.filter(i => !deletedImages.includes(i));
+        return base;
+    };
+
     const closeProductModal = () => {
         setCurrentProduct(null);
         setProductForm({ name: '', description: '', category: '', isFeatured: false });
         setProductImages([]);
         setDeletedImages([]);
+        setReorderedImages(null);
         setIsProductModalOpen(false);
     };
 
@@ -363,7 +377,7 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
                                 <div className="mt-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Mevcut Görseller:</label>
                                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                                        {getCurrentImages().map((image, index) => (
+                                        {getDisplayImages().map((image, index) => (
                                             <div key={index} className="relative group">
                                                 <img
                                                     src={image}
@@ -382,12 +396,11 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
                                                             type="button"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                // Ana görsel yap: bu index'i 0'a taşı
-                                                                const imgs = [...getCurrentImages()];
+                                                                // Ana görsel yap: bu index'i 0'a taşı (silinenleri etkilemez)
+                                                                const imgs = [...getDisplayImages()];
                                                                 const moved = imgs.splice(index, 1)[0];
                                                                 imgs.unshift(moved);
-                                                                // State'i güncelle
-                                                                setDeletedImages(d => [...d, ...currentProduct.images!.filter(i => !imgs.includes(i))]);
+                                                                setReorderedImages(imgs);
                                                             }}
                                                             className="bg-yellow-500 text-white p-1.5 rounded-full hover:bg-yellow-600 transition-colors"
                                                             title="Ana Görsel Yap"

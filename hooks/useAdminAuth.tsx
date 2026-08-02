@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3003/api';
 
@@ -29,6 +29,17 @@ export const useAdminAuth = () => {
             }
         };
         verifyToken();
+    }, []);
+
+    // 401 event'i → UI auth state'ini sıfırla (sunucu restart / token expiry)
+    useEffect(() => {
+        const onUnauthorized = () => {
+            setIsAuthenticated(false);
+            setRole('viewer');
+            setPassword('');
+        };
+        window.addEventListener('admin:unauthorized', onUnauthorized);
+        return () => window.removeEventListener('admin:unauthorized', onUnauthorized);
     }, []);
 
     const handleLogin = async (e: React.FormEvent) => {

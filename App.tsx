@@ -50,13 +50,13 @@ function App(): React.ReactNode {
   const loadData = async () => {
     try {
       const [servicesData, productsData, blogPostsData, aboutData, contactData, heroData, seoData] = await Promise.all([
-        servicesAPI.getAll(),
-        productsAPI.getAll(),
-        blogAPI.getAll(),
-        aboutAPI.get(),
-        contactAPI.get(),
-        heroAPI.getAll().catch(() => []), // Hero verisi yoksa boş array döndür
-        seoAPI.getSettings().catch(() => null) // SEO verisi yoksa null döndür
+        servicesAPI.getAll().catch(() => []), // Tek API hatası tüm siteyi çömesin — INITIAL_* seed kalır
+        productsAPI.getAll().catch(() => []),
+        blogAPI.getAll().catch(() => []),
+        aboutAPI.get().catch(() => null),
+        contactAPI.get().catch(() => null),
+        heroAPI.getAll().catch(() => []),
+        seoAPI.getSettings().catch(() => null)
       ]);
 
       setServices(servicesData.map((service: ApiService) => ({
@@ -232,7 +232,7 @@ function App(): React.ReactNode {
                   </Routes>
                 </main>
                 <Footer content={contactContent} />
-                <WhatsAppFloat />
+                <WhatsAppFloat contactContent={contactContent} />
               </div>
             } />
         </Routes>

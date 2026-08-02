@@ -31,7 +31,7 @@ const Footer: React.FC<FooterProps> = ({ content }) => {
 
                     {/* Quick links */}
                     <div>
-                        <h4 className="text-xs font-semibold tracking-[0.15em] uppercase mb-5 text-white/35">Hızlı Erişim</h4>
+                        <h4 className="text-xs font-semibold tracking-[0.15em] uppercase mb-5 text-white/60">Hızlı Erişim</h4>
                         <ul className="space-y-3">
                             {[['/hakkimizda','Hakkımızda'],['/findik-isleme','Fındık İşleme'],['/hizmetlerimiz','Hizmetlerimiz'],['/urunler','Ürünler'],['/blog','Blog']].map(([to,label]) => (
                                 <li key={to}><Link to={to} className="text-sm text-white/60 transition-colors duration-150 hover:text-white">{label}</Link></li>
@@ -41,7 +41,7 @@ const Footer: React.FC<FooterProps> = ({ content }) => {
 
                     {/* Contact */}
                     <div>
-                        <h4 className="text-xs font-semibold tracking-[0.15em] uppercase mb-5 text-white/35">İletişim</h4>
+                        <h4 className="text-xs font-semibold tracking-[0.15em] uppercase mb-5 text-white/60">İletişim</h4>
                         <ul className="space-y-3 text-sm text-white/60">
                             <li className="flex items-start gap-3">
                                 <FaMapMarkerAlt className="w-4 h-4 mt-0.5 shrink-0 text-[#3da35e]" />
@@ -62,7 +62,7 @@ const Footer: React.FC<FooterProps> = ({ content }) => {
 
                     {/* Social */}
                     <div>
-                        <h4 className="text-xs font-semibold tracking-[0.15em] uppercase mb-5 text-white/35">Bizi Takip Edin</h4>
+                        <h4 className="text-xs font-semibold tracking-[0.15em] uppercase mb-5 text-white/60">Bizi Takip Edin</h4>
                         {socialLinks.length > 0 ? (
                             <div className="flex flex-wrap gap-2.5">
                                 {socialLinks.map(s => (
@@ -74,12 +74,12 @@ const Footer: React.FC<FooterProps> = ({ content }) => {
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-xs text-white/25">Admin panelinden ekleyin</p>
+                            <p className="text-xs text-white/50">Admin panelinden ekleyin</p>
                         )}
                     </div>
                 </div>
 
-                <div className="pt-8 border-t border-white/8 text-center text-xs text-white/25">
+                <div className="pt-8 border-t border-white/8 text-center text-xs text-white/50">
                     &copy; {new Date().getFullYear()} Akaydın Tarım. Tüm hakları saklıdır.
                 </div>
             </div>

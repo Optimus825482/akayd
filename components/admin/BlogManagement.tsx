@@ -99,6 +99,7 @@ const BlogManagement: React.FC<BlogManagementProps> = ({
 
     const handleBlogSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (loading) return; // duplicate submit guard
 
         // -- SEO alanlari bossa oneri toast'i goster --
         var missingSeo = [];
@@ -148,7 +149,6 @@ const BlogManagement: React.FC<BlogManagementProps> = ({
 
             closeBlogModal();
         } catch (error) {
-            addNotification('error', 'Hata!', 'Blog yazısı kaydedilirken hata oluştu:');
             addNotification('error', 'Hata!', 'Blog yazısı kaydedilirken hata oluştu.');
         }
         setLoading(false);

@@ -39,6 +39,7 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({
 
     const handleServiceSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (loading) return; // duplicate submit guard
         setLoading(true);
 
         try {
@@ -59,7 +60,6 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({
             setCurrentService(null);
             setServiceForm({ title: '', description: '', iconName: 'Consulting' });
         } catch (error) {
-            addNotification('error', 'Hata!', 'Hizmet kaydedilirken hata oluştu:');
             addNotification('error', 'Hata!', 'Hizmet kaydedilirken hata oluştu.');
         }
         setLoading(false);

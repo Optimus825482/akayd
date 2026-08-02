@@ -155,9 +155,12 @@ async function checkKeyword(db, keyword, engine, domain) {
 
   if (result) {
     try {
+      // keyword_id FK için serp_keywords'tan lookup (P2-3)
+      const kwRes = await db.query('SELECT id FROM serp_keywords WHERE keyword = $1', [keyword]);
+      const keywordId = kwRes.rows[0]?.id ?? null;
       await db.query(
-        'INSERT INTO serp_rankings (keyword, engine, position, url, domain) VALUES ($1, $2, $3, $4, $5)',
-        [keyword, engine, result.position, result.url, domain]
+        'INSERT INTO serp_rankings (keyword, keyword_id, engine, position, url, domain) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (keyword, engine, domain, checked_at) DO NOTHING',
+        [keyword, keywordId, engine, result.position, result.url, domain]
       );
       console.log(`[SERP:${domain}] ${engine}: "${keyword}" → #${result.position || 'sıralama dışı'}`);
     } catch (dbErr) {
@@ -172,7 +175,15 @@ const EXTRA_DOMAINS = process.env.SERP_EXTRA_DOMAINS
   ? process.env.SERP_EXTRA_DOMAINS.split(',').map(d => d.trim())
   : ['hendekfindikkirma.com'];
 
+// P2-12: overlap guard — cron 00:00 + başlangıç + manuel tetik aynı anda çalışmasın
+let rankingRunInProgress = false;
+
 export async function checkAllRankings(db) {
+  if (rankingRunInProgress) {
+    console.log('[SERP] Önceki kontrol hâlâ çalışıyor — bu çalışma atlandı.');
+    return;
+  }
+  rankingRunInProgress = true;
   console.log('[SERP] Kontrol başladı...');
   try {
     const { rows: keywords } = await db.query(
@@ -202,6 +213,8 @@ export async function checkAllRankings(db) {
   } catch (err) {
     console.error('[SERP] Kontrol hatası:', formatError(err));
     throw err;
+  } finally {
+    rankingRunInProgress = false;
   }
 }
 

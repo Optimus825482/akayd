@@ -46,6 +46,8 @@ const SEOManagement: React.FC<SEOManagementProps> = ({ addNotification }) => {
         noindex: false,
         nofollow: false
     });
+    // P1-16: düzenleme modunda id — kaydedince update, yoksa create (duplicate önleme)
+    const [editingPageSEOId, setEditingPageSEOId] = useState<number | null>(null);
 
     // SEO Analysis State
     const [analysisUrl, setAnalysisUrl] = useState('');
@@ -92,8 +94,13 @@ const SEOManagement: React.FC<SEOManagementProps> = ({ addNotification }) => {
         e.preventDefault();
         setLoading(true);
         try {
-            await seoAPI.createPageSEO(newPageSEO);
-            addNotification('success', 'Başarılı!', 'Sayfa SEO ayarı eklendi.');
+            if (editingPageSEOId !== null) {
+                await seoAPI.updatePageSEO(editingPageSEOId, newPageSEO);
+                addNotification('success', 'Başarılı!', 'Sayfa SEO ayarı güncellendi.');
+            } else {
+                await seoAPI.createPageSEO(newPageSEO);
+                addNotification('success', 'Başarılı!', 'Sayfa SEO ayarı eklendi.');
+            }
             setNewPageSEO({
                 page_path: '',
                 page_title: '',
@@ -106,9 +113,10 @@ const SEOManagement: React.FC<SEOManagementProps> = ({ addNotification }) => {
                 noindex: false,
                 nofollow: false
             });
+            setEditingPageSEOId(null);
             loadPageSEO();
         } catch (error) {
-            addNotification('error', 'Hata!', 'Sayfa SEO ayarı eklenirken hata oluştu.');
+            addNotification('error', 'Hata!', 'Sayfa SEO ayarı kaydedilirken hata oluştu.');
         } finally {
             setLoading(false);
         }
@@ -470,6 +478,7 @@ const SEOManagement: React.FC<SEOManagementProps> = ({ addNotification }) => {
                                                         noindex: pageSEO.noindex,
                                                         nofollow: pageSEO.nofollow
                                                     });
+                                                    setEditingPageSEOId(pageSEO.id ?? null); // P1-16
                                                     // Scroll to form
                                                     document.querySelector('form')?.scrollIntoView({ behavior: 'smooth' });
                                                 }}

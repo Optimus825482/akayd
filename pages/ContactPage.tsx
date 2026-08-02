@@ -1,16 +1,28 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import type { ContactPageContent, SEOSettings, PageSEO } from '../types';
+import React, { useState, useMemo } from 'react';
+import type { ContactPageContent, SEOSettings } from '../types';
 import SEOHead from '../components/SEOHead';
-import { contactMessagesAPI, seoAPI } from '../services/api';
+import { contactMessagesAPI } from '../services/api';
+import { usePageSEO } from '../hooks/usePageSEO';
 
 interface ContactPageProps { content: ContactPageContent; seoSettings?: SEOSettings | null; }
+
+// map_embed için iframe-only whitelist (stored XSS koruması)
+function sanitizeMapEmbed(html: string): string {
+    const safe = html
+        .replace(/<script[\s\S]*?<\/script>/gi, '')
+        .replace(/on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+        .replace(/\s*\b(src)\s*=\s*(["'])\s*javascript:[^"']*\2/gi, ' src=$2$2')
+        .replace(/\s*style\s*=\s*(["'])\s*[^"']*\1/gi, ' style="$1width:100%;height:100%;border:0$1"');
+    // iframe dışındaki tüm elementleri kaldır (yalnızca gömme iframe kabul)
+    const m = safe.match(/<iframe[\s\S]*?<\/iframe>/i);
+    return m ? m[0] : '';
+}
 
 const ContactPage: React.FC<ContactPageProps> = ({ content, seoSettings }) => {
     const [submitted, setSubmitted] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [pageSEO, setPageSEO] = useState<PageSEO | null>(null);
-    useEffect(() => { seoAPI.getPageSEO('/iletisim').then(setPageSEO).catch(()=>{}); }, []);
+    const pageSEO = usePageSEO('/iletisim');
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault(); setLoading(true); setError(null);
@@ -19,6 +31,11 @@ const ContactPage: React.FC<ContactPageProps> = ({ content, seoSettings }) => {
         const emailVal = fd.get('email') as string;
         const subject = fd.get('subject') as string || '';
         const message = fd.get('message') as string;
+
+        // Client validasyon — server kurallarıyla eşleşir (name≥2, email regex, msg≥10)
+        if (!name || name.trim().length < 2) { setError('Ad en az 2 karakter olmalıdır.'); setLoading(false); return; }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal || '')) { setError('Geçerli bir e-posta adresi girin.'); setLoading(false); return; }
+        if (!message || message.trim().length < 10) { setError('Mesaj en az 10 karakter olmalıdır.'); setLoading(false); return; }
 
         // WhatsApp mesajı oluştur
         const wp = content.whatsapp_phone || content.phone?.replace(/[^\d]/g, '') || '905397751517';
@@ -30,16 +47,15 @@ const ContactPage: React.FC<ContactPageProps> = ({ content, seoSettings }) => {
             `💬 *Mesaj:* ${message}`
         );
         const waUrl = `https://wa.me/${wp.replace(/[^\d]/g, '')}?text=${wpMessage}`;
-        
-        // WhatsApp'a yönlendir
-        window.open(waUrl, '_blank');
-        
-        // Aynı zamanda backend'e de kaydet
+
+        // Backend'e kaydet — başarısızsa WhatsApp'a YÖNLENDİRME, kullanıcıya hata göster
         try {
             await contactMessagesAPI.create({ name, email: emailVal, phone: undefined, subject: subject || undefined, message });
-        } catch { /* backend kaydı başarısız olsa da WhatsApp'a gitti */ }
-        
-        setSubmitted(true); e.currentTarget.reset();
+            window.open(waUrl, '_blank');
+            setSubmitted(true); e.currentTarget.reset();
+        } catch {
+            setError('Mesaj gönderilemedi. Lütfen tekrar deneyin.');
+        }
         setLoading(false);
     };
 
@@ -47,11 +63,11 @@ const ContactPage: React.FC<ContactPageProps> = ({ content, seoSettings }) => {
     const localBusinessSchema = useMemo(() => ({
       "@context": "https://schema.org",
       "@type": "LocalBusiness",
-        "@id": "https://akaydintarim.com.tr/#localbusiness",
+        "@id": "https://www.akaydintarim.com.tr/#localbusiness",
       "name": "Akaydın Tarım",
       "description": "Hendek, Sakarya'da fındık üretimi, fındık kırma & kavurma, organomineral gübre ve tarımsal danışmanlık hizmetleri.",
-      "image": "https://akaydintarim.com.tr/akaylogo.png",
-      "url": "https://akaydintarim.com.tr",
+      "image": "https://www.akaydintarim.com.tr/akaylogo.png",
+      "url": "https://www.akaydintarim.com.tr",
       "telephone": content.phone || "+902641234567",
       "address": {
         "@type": "PostalAddress",
@@ -177,7 +193,10 @@ const ContactPage: React.FC<ContactPageProps> = ({ content, seoSettings }) => {
                 <h2 className="text-3xl font-[family-name:var(--font-display)] font-bold text-ink mb-6">📍 Bizi Ziyaret Edin</h2>
                 <div className="rounded-xl shadow-lg overflow-hidden" style={{height:'450px'}}>
                     {content.map_embed ? (
-                        <div dangerouslySetInnerHTML={{__html:content.map_embed}} className="w-full h-full" />
+                        <div
+                            dangerouslySetInnerHTML={{__html:sanitizeMapEmbed(content.map_embed)}}
+                            className="w-full h-full"
+                        />
                     ) : (
                         <iframe
                             src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3020.5254561481556!2d30.742233410796548!3d40.79444567126199!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x409d8f614e52c30d%3A0x25ed3a760cc228ca!2zQWtheWTEsW4gVGFyxLFt!5e0!3m2!1str!2str!4v1785626616650!5m2!1str!2str"

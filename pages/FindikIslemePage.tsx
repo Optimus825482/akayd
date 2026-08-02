@@ -1,28 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { ContactPageContent, SEOSettings, PageSEO } from '../types';
+import type { ContactPageContent, SEOSettings } from '../types';
 import SEOHead from '../components/SEOHead';
-import { seoAPI } from '../services/api';
-
-const localBusinessSchema = {
-  "@context": "https://schema.org",
-  "@type": "LocalBusiness",
-  "name": "Akaydın Tarım Fındık İşleme Tesisi",
-  "description": "Hendek Sakarya'da profesyonel fındık kırma, kavurma ve vakumlu paketleme hizmeti. 25+ yıllık deneyim.",
-  "url": "https://www.akaydintarim.com.tr/findik-isleme",
-  "telephone": "+902641234567",
-  "address": {
-    "@type": "PostalAddress",
-    "streetAddress": "Başpınar, Remzi Efendi Cd. No:24 D:b",
-    "addressLocality": "Hendek",
-    "addressRegion": "Sakarya",
-    "postalCode": "54300",
-    "addressCountry": "TR"
-  },
-  "geo": { "@type": "GeoCoordinates", "latitude": 40.7987, "longitude": 30.7480 },
-  "openingHours": "Mo-Sa 08:00-18:00",
-  "priceRange": "₺"
-};
+import { usePageSEO } from '../hooks/usePageSEO';
 
 const seoFaqSchema = {
   "@context": "https://schema.org",
@@ -167,10 +147,9 @@ const galleryImages = [
 /* ──────────────── COMPONENT ──────────────── */
 
 const FindikIslemePage: React.FC<FindikIslemePageProps> = ({ contactContent, seoSettings }) => {
-  const [pageSEO, setPageSEO] = useState<PageSEO | null>(null);
+  const pageSEO = usePageSEO('/findik-isleme');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [openSeoFaq, setOpenSeoFaq] = useState<number | null>(null);
-  useEffect(() => { seoAPI.getPageSEO('/findik-isleme').then(setPageSEO).catch(() => {}); }, []);
 
   const wp = contactContent.whatsapp_phone || contactContent.phone?.replace(/[^\d]/g, '') || '905397751517';
 
@@ -201,10 +180,10 @@ const FindikIslemePage: React.FC<FindikIslemePageProps> = ({ contactContent, seo
   const localBusinessSchema = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
-    "@id": "https://akaydintarim.com.tr/#localbusiness",
+    "@id": "https://www.akaydintarim.com.tr/#localbusiness",
     "name": "Akaydın Tarım - Hendek Fındık Kırma & İşleme",
     "description": "Hendek, Sakarya'da ev tipi fındık kırma, kavurma ve vakumlu paketleme hizmeti. Saatte 5-10 kg kapasite, %98 hasarsız iç fındık.",
-    "image": "https://akaydintarim.com.tr/akaylogo.png",
+    "image": "https://www.akaydintarim.com.tr/akaylogo.png",
     "address": {
       "@type": "PostalAddress",
       "streetAddress": contactContent.address?.split(',').slice(0, 2).join(',').trim() || "Remzi Efendi Cd. No:24",
@@ -241,11 +220,11 @@ const FindikIslemePage: React.FC<FindikIslemePageProps> = ({ contactContent, seo
     "@context": "https://schema.org",
     "@type": "Service",
     "name": "Fındık Kırma, Kavurma ve Vakumlu Paketleme",
-    "provider": { "@type": "LocalBusiness", "name": "Akaydın Tarım", "@id": "https://akaydintarim.com.tr/#localbusiness" },
+    "provider": { "@type": "LocalBusiness", "name": "Akaydın Tarım", "@id": "https://www.akaydintarim.com.tr/#localbusiness" },
     "areaServed": { "@type": "City", "name": "Hendek, Sakarya" },
     "description": "Kabuklu fındığın profesyonel ekipmanla kırılması, kavrulması ve vakumlu paketlenmesi. Ev tipi miktarlar kabul edilir.",
     "serviceType": "Fındık İşleme Hizmeti",
-    "termsOfService": "https://akaydintarim.com.tr/#/findik-isleme",
+    "termsOfService": "https://www.akaydintarim.com.tr/#/findik-isleme",
     "hasOfferCatalog": {
       "@type": "OfferCatalog",
       "name": "Fındık İşleme Hizmetleri",

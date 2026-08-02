@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { ContactMessage } from '../../types';
 import { useContactMessages } from '../../hooks/useAdmin';
+import ConfirmModal from '../ConfirmModal';
 
 const ContactMessagesManagement: React.FC = () => {
     const {
@@ -31,6 +32,9 @@ const ContactMessagesManagement: React.FC = () => {
         setSelectedMessage(null);
         setIsMessageModalOpen(false);
     };
+
+    // P1-19: silme confirm dialog (kalıcı veri kaybı önleme)
+    const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
     const unreadCount = contactMessages.filter(msg => !msg.is_read).length;
 
@@ -195,7 +199,7 @@ const ContactMessagesManagement: React.FC = () => {
 
                             <div className="bg-gray-50 rounded-lg p-3">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">📅 Gönderim Tarihi</label>
-                                <p className="text-gray-900">{new Date(selectedMessage.created_at).toLocaleString('tr-TR')}</p>
+                                <p className="text-gray-900">{(d => !isNaN(d.getTime()) ? d.toLocaleString('tr-TR') : '—')(new Date(selectedMessage.created_at))}</p>
                             </div>
 
                             <div className="bg-gray-50 rounded-lg p-4">
@@ -240,7 +244,7 @@ const ContactMessagesManagement: React.FC = () => {
                                         📞 Ara
                                     </button>
                                     <button
-                                        onClick={() => handleDeleteMessage(selectedMessage.id)}
+                                        onClick={() => setDeleteTarget(selectedMessage.id)}
                                         className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm"
                                     >
                                         🗑️ Sil
@@ -251,6 +255,17 @@ const ContactMessagesManagement: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* P1-19: Silme onay modalı */}
+            <ConfirmModal
+                isOpen={deleteTarget !== null}
+                title="Mesajı Sil"
+                message="Bu mesaj kalıcı olarak silinecek. Emin misiniz?"
+                confirmLabel="Evet, Sil"
+                cancelLabel="Vazgeç"
+                onConfirm={() => { if (deleteTarget) handleDeleteMessage(deleteTarget); setDeleteTarget(null); }}
+                onCancel={() => setDeleteTarget(null)}
+            />
         </>
     );
 };
