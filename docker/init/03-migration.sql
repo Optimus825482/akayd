@@ -5,21 +5,20 @@
 -- init-db.sh bunu her deploy'da koşar (idempotent).
 -- ============================================================
 
--- P2-1: SMALLINT → BOOLEAN
-ALTER TABLE contact_messages ALTER COLUMN is_read TYPE BOOLEAN USING is_read::boolean;
-ALTER TABLE hero_content ALTER COLUMN is_active TYPE BOOLEAN USING is_active::boolean;
-ALTER TABLE page_seo ALTER COLUMN noindex TYPE BOOLEAN USING noindex::boolean;
-ALTER TABLE page_seo ALTER COLUMN nofollow TYPE BOOLEAN USING nofollow::boolean;
-ALTER TABLE products ALTER COLUMN is_featured TYPE BOOLEAN USING is_featured::boolean;
-ALTER TABLE seo_settings ALTER COLUMN sitemap_enabled TYPE BOOLEAN USING sitemap_enabled::boolean;
-ALTER TABLE hazelnut_prices ALTER COLUMN scraping_enabled TYPE BOOLEAN USING scraping_enabled::boolean;
+-- P2-1: SMALLINT → BOOLEAN (Postgres'te smallint::boolean cast YOK — `<> 0` kullan)
+ALTER TABLE contact_messages ALTER COLUMN is_read TYPE BOOLEAN USING (is_read <> 0);
+ALTER TABLE hero_content ALTER COLUMN is_active TYPE BOOLEAN USING (is_active <> 0);
+ALTER TABLE page_seo ALTER COLUMN noindex TYPE BOOLEAN USING (noindex <> 0);
+ALTER TABLE page_seo ALTER COLUMN nofollow TYPE BOOLEAN USING (nofollow <> 0);
+ALTER TABLE products ALTER COLUMN is_featured TYPE BOOLEAN USING (is_featured <> 0);
+ALTER TABLE seo_settings ALTER COLUMN sitemap_enabled TYPE BOOLEAN USING (sitemap_enabled <> 0);
+ALTER TABLE hazelnut_prices ALTER COLUMN scraping_enabled TYPE BOOLEAN USING (scraping_enabled <> 0);
 
--- P2-2: images TEXT → JSONB (mevcut JSON string'leri parse et)
-ALTER TABLE about_page ALTER COLUMN images TYPE JSONB USING (CASE WHEN images IS NULL OR images = '' THEN '[]'::jsonb ELSE images::jsonb END);
-ALTER TABLE products ALTER COLUMN images TYPE JSONB USING (CASE WHEN images IS NULL OR images = '' THEN '[]'::jsonb ELSE images::jsonb END);
--- Güvenlik: bozuk JSON satırı varsa '[]' yap
-UPDATE about_page SET images = '[]'::jsonb WHERE images IS NULL;
-UPDATE products SET images = '[]'::jsonb WHERE images IS NULL;
+-- P2-2: images TEXT → JSONB — ÖNCE bozuk/boş satırları temizle, SONRA cast (cast bozuk JSON'da patlar)
+UPDATE about_page SET images = '[]' WHERE images IS NULL OR btrim(COALESCE(images, '')) = '' OR images NOT SIMILAR TO '\[.*\]';
+UPDATE products SET images = '[]' WHERE images IS NULL OR btrim(COALESCE(images, '')) = '' OR images NOT SIMILAR TO '\[.*\]';
+ALTER TABLE about_page ALTER COLUMN images TYPE JSONB USING images::jsonb;
+ALTER TABLE products ALTER COLUMN images TYPE JSONB USING images::jsonb;
 
 -- P2-3: serp_rankings.keyword_id FK + mevcut keyword'leri eşle
 ALTER TABLE serp_rankings ADD COLUMN IF NOT EXISTS keyword_id INTEGER REFERENCES serp_keywords(id) ON DELETE CASCADE;
@@ -43,7 +42,8 @@ $$ LANGUAGE plpgsql;
 DO $$
 DECLARE t text;
 BEGIN
-  FOREACH t IN ARRAY ARRAY['about_page','blog_posts','contact_messages','contact_page','hazelnut_prices','hero_content','page_seo','products','seo_settings','serp_keywords','serp_rankings','services']
+  -- serp_rankings ve serp_keywords'ta updated_at kolonu YOK — trigger eklenmez (NEW.updated_at hatası)
+  FOREACH t IN ARRAY ARRAY['about_page','blog_posts','contact_messages','contact_page','hazelnut_prices','hero_content','page_seo','products','seo_settings','services']
   LOOP
     EXECUTE format('DROP TRIGGER IF EXISTS set_updated_at ON %I', t);
     EXECUTE format('CREATE TRIGGER set_updated_at BEFORE UPDATE ON %I FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()', t);

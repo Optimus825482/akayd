@@ -203,7 +203,8 @@ $$ LANGUAGE plpgsql;
 DO $$
 DECLARE t text;
 BEGIN
-  FOREACH t IN ARRAY ARRAY['about_page','blog_posts','contact_messages','contact_page','hazelnut_prices','hero_content','page_seo','products','seo_settings','serp_keywords','serp_rankings','services']
+  -- Not: serp_rankings ve serp_keywords'ta updated_at kolonu yok — trigger onlara eklenmez
+  FOREACH t IN ARRAY ARRAY['about_page','blog_posts','contact_messages','contact_page','hazelnut_prices','hero_content','page_seo','products','seo_settings','services']
   LOOP
     EXECUTE format('DROP TRIGGER IF EXISTS set_updated_at ON %I', t);
     EXECUTE format('CREATE TRIGGER set_updated_at BEFORE UPDATE ON %I FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()', t);
