@@ -1578,7 +1578,7 @@ app.get('/api/serp-rankings/keywords', adminAuth, async (req, res) => {
     const { rows } = await db.query('SELECT * FROM serp_keywords ORDER BY id');
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: "SERP verileri alınırken hata oluştu" });
+    res.status(500).json({ error: "SERP verileri alï¿½nï¿½rken hata oluï¿½tu" });
   }
 });
 
@@ -1592,7 +1592,7 @@ app.post('/api/serp-rankings/keywords', adminAuth, async (req, res) => {
     );
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Keyword eklenirken hata oluştu" });
+    res.status(500).json({ error: "Keyword eklenirken hata oluï¿½tu" });
   }
 });
 
@@ -1602,7 +1602,7 @@ app.delete('/api/serp-rankings/keywords/:id', adminAuth, async (req, res) => {
     await db.query('DELETE FROM serp_keywords WHERE id = $1', [req.params.id]);
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: "Keyword silinirken hata oluştu" });
+    res.status(500).json({ error: "Keyword silinirken hata oluï¿½tu" });
   }
 });
 
@@ -1625,7 +1625,7 @@ app.get('/api/serp-rankings/current', adminAuth, async (req, res) => {
     const { rows } = await db.query(query, params);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: "Sıralama verileri alınırken hata oluştu" });
+    res.status(500).json({ error: "Sï¿½ralama verileri alï¿½nï¿½rken hata oluï¿½tu" });
   }
 });
 
@@ -1645,7 +1645,7 @@ app.get('/api/serp-rankings/history', adminAuth, async (req, res) => {
     const { rows } = await db.query(query, params);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: "Sıralama geçmişi alınırken hata oluştu" });
+    res.status(500).json({ error: "Sï¿½ralama geï¿½miï¿½i alï¿½nï¿½rken hata oluï¿½tu" });
   }
 });
 
@@ -1666,27 +1666,8 @@ app.get('/healthz', (req, res) => {
   res.json({ ok: true, uptime: process.uptime() });
 });
 
-// Production modda Vite build Ã§Ä±ktÄ±sÄ±nÄ± serve et
-if (process.env.NODE_ENV === 'production') {
-  const distPath = path.join(__dirname, '../dist');
-
-  // Statik dosyalar (JS, CSS, resimler)
-  app.use(express.static(distPath, {
-    maxAge: '30d',
-    setHeaders: (res) => {
-      res.setHeader('Access-Control-Allow-Origin', '*');
-    }
-  }));
-
-  // Favicon ve robots.txt
-  app.use(express.static(path.join(__dirname, '../public'), { maxAge: '7d' }));
-
-  // TÃ¼m route'larÄ± index.html'e yÃ¶nlendir (SPA client-side routing)
-  // API ve uploads hariÃ§
-  app.get(/^\/(?!api\/|uploads\/).*/, (req, res) => {
-    res.sendFile(path.join(distPath, 'index.html'));
-  });
-}
+// Favicon ve robots.txt (public/) â€” SPA artÄ±k nginx container'Ä±ndan serve ediliyor (P2-6)
+app.use(express.static(path.join(__dirname, '../public'), { maxAge: '7d' }));
 
 app.listen(PORT, async () => {
   console.log(`AkaydÄ±n TarÄ±m sunucusu port ${PORT} Ã¼zerinde Ã§alÄ±ÅŸÄ±yor.`);
