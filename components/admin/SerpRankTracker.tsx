@@ -36,14 +36,31 @@ interface SerpRankTrackerProps {
   addNotification?: (type: Notification['type'], title: string, message: string) => void;
 }
 
+// Dinamik rakip satırı (serp_competitors)
+interface CompetitorRow {
+  domain: string;
+  keyword: string;
+  engine: string;
+  position: number;
+  url?: string;
+  checked_at: string;
+  first_seen?: string;
+  last_seen?: string;
+  checks?: number;
+  trend?: 'new' | 'up' | 'down' | 'same' | 'out';
+  position_change?: number | null;
+}
+
 const SerpRankTracker: React.FC<SerpRankTrackerProps> = ({ addNotification }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'graphs' | 'table'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'graphs' | 'table' | 'competitors'>('dashboard');
   const [activeDomain, setActiveDomain] = useState('');
   const [currentData, setCurrentData] = useState<SerpRankingCurrent[]>([]);
   const [keywords, setKeywords] = useState<SerpKeyword[]>([]);
   const [history, setHistory] = useState<SerpRankingCurrent[]>([]);
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
+  const [competitors, setCompetitors] = useState<CompetitorRow[]>([]);
+  const [competitorsLoading, setCompetitorsLoading] = useState(false);
 
   const [selectedKeyword, setSelectedKeyword] = useState('');
   const [selectedEngine, setSelectedEngine] = useState('');
@@ -97,6 +114,23 @@ const SerpRankTracker: React.FC<SerpRankTrackerProps> = ({ addNotification }) =>
     const interval = setInterval(loadData, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, [loadData]);
+
+  // Dinamik rakip listesi yükle
+  const loadCompetitors = useCallback(async () => {
+    setCompetitorsLoading(true);
+    try {
+      const data = await serpAPI.getCompetitors({ days: selectedDays, keyword: selectedKeyword || undefined });
+      setCompetitors(data);
+    } catch (err) {
+      console.error('Rakip listesi yükleme hatası:', err);
+    } finally {
+      setCompetitorsLoading(false);
+    }
+  }, [selectedDays, selectedKeyword]);
+
+  useEffect(() => {
+    if (activeTab === 'competitors') loadCompetitors();
+  }, [activeTab, loadCompetitors]);
 
   // Keyword + domain ekle (rakip takibi için rakip domain seçilebilir)
   const handleAddKeyword = async (e: React.FormEvent) => {
@@ -215,6 +249,7 @@ const SerpRankTracker: React.FC<SerpRankTrackerProps> = ({ addNotification }) =>
           { id: 'dashboard' as const, label: '📊 Dashboard' },
           { id: 'graphs' as const, label: '📈 Grafikler' },
           { id: 'table' as const, label: '📋 Detay Tablo' },
+          { id: 'competitors' as const, label: '⚔️ Rakip Analizi' },
         ].map(tab => (
           <button
             key={tab.id}
@@ -402,6 +437,90 @@ const SerpRankTracker: React.FC<SerpRankTrackerProps> = ({ addNotification }) =>
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* ⚔️ RAKİP ANALİZİ — dinamik tespit (serp_competitors) */}
+      {activeTab === 'competitors' && (
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">⚔️ Dinamik Rakip Analizi</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Her kontrolde SERP ilk 10'u otomatik taranır — rakip domain'leri senin girmene gerek kalmadan kaydedilir.
+                  <span className="font-medium text-gray-700"> Yeni giren</span>, <span className="font-medium text-gray-700">çıkan</span> ve <span className="font-medium text-gray-700">sırası değişen</span> rakipler burada.
+                </p>
+              </div>
+              <button
+                onClick={loadCompetitors}
+                disabled={competitorsLoading}
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {competitorsLoading ? '⏳ Yükleniyor...' : '🔄 Yenile'}
+              </button>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            {competitorsLoading ? (
+              <div className="p-8 text-center text-gray-500">Rakip verileri yükleniyor...</div>
+            ) : competitors.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                Henüz rakip verisi yok. İlk SERP kontrolünden sonra burada görünür.
+                <br />
+                <span className="text-sm text-gray-400">Not: Rakipler scraping ile tespit edilir — Google CAPTCHA'ya takılırsa pozisyonlar boş kalabilir.</span>
+              </div>
+            ) : (
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rakip Site</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Keyword</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Motor</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Pozisyon</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Trend</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">İlk Görülme</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Kontrol Sayısı</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Son Kontrol</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {competitors.map((c, i) => (
+                    <tr key={`${c.domain}-${c.keyword}-${c.engine}-${i}`} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <a href={`https://${c.domain}`} target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 hover:text-indigo-800">
+                          {c.domain}
+                        </a>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{c.keyword}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center text-sm">{ENGINE_ICONS[c.engine] || c.engine}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        {c.position > 0 ? (
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-bold ${getPositionBg(c.position)} ${getPositionColor(c.position)} border`}>#{c.position}</span>
+                        ) : (
+                          <span className="text-sm text-gray-400">—</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        {c.trend === 'new' && <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">🆕 Yeni</span>}
+                        {c.trend === 'up' && <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">▲ +{c.position_change}</span>}
+                        {c.trend === 'down' && <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">▼ {c.position_change !== null ? c.position_change : ''}</span>}
+                        {c.trend === 'same' && <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600">= Sabit</span>}
+                        {c.trend === 'out' && <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-500">Çıktı</span>}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                        {c.first_seen ? new Date(c.first_seen).toLocaleDateString('tr-TR') : '—'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">{c.checks || 0}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                        {c.checked_at ? new Date(c.checked_at).toLocaleString('tr-TR') : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       )}

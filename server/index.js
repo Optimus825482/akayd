@@ -1661,6 +1661,74 @@ app.post('/api/serp-rankings/check/:keywordId', adminAuth, async (req, res) => {
   checkSingleKeyword(db, req.params.keywordId).catch(err => console.error('[SERP] Tekli kontrol hatası:', formatError(err)));
 });
 
+// ===== Dinamik rakip tespiti — serp_competitors =====
+// Her kontrol'de SERP ilk 10'undan otomatik toplanan rakip domain'leri.
+// "Yeni giren" = ilk kez görülen; "sıra değişen" = pozisyon farkı; "çıkan" = son kontrolde yok.
+app.get('/api/serp-rankings/competitors', adminAuth, async (req, res) => {
+  try {
+    const { keyword, engine, domain, days } = req.query;
+    const sinceDays = Math.max(1, Math.min(90, parseInt(days) || 30));
+    const params = [sinceDays];
+    let where = 'checked_at >= NOW() - INTERVAL \'1 DAY\' * $1';
+    if (keyword) { params.push(keyword); where += ` AND keyword = $${params.length}`; }
+    if (engine) { params.push(engine); where += ` AND engine = $${params.length}`; }
+    if (domain) { params.push(domain); where += ` AND domain = $${params.length}`; }
+
+    // Son durum: her domain'in en güncel pozisyonu (keyword+engine bazında)
+    const current = await db.query(`
+      SELECT DISTINCT ON (domain, keyword, engine) domain, keyword, engine, position, url, checked_at
+      FROM serp_competitors WHERE ${where}
+      ORDER BY domain, keyword, engine, checked_at DESC
+    `, params);
+
+    // İlk görülme + son görülme
+    const seen = await db.query(`
+      SELECT domain, keyword, engine, MIN(checked_at) as first_seen, MAX(checked_at) as last_seen, COUNT(*) as checks
+      FROM serp_competitors WHERE ${where}
+      GROUP BY domain, keyword, engine
+    `, params);
+
+    // Son iki kontrol arası pozisyon farkı (trend)
+    const recent = await db.query(`
+      SELECT * FROM (
+        SELECT domain, keyword, engine, position, checked_at,
+          ROW_NUMBER() OVER (PARTITION BY domain, keyword, engine ORDER BY checked_at DESC) rn
+        FROM serp_competitors WHERE ${where}
+      ) t WHERE rn <= 2 ORDER BY domain, keyword, engine, rn
+    `, params);
+
+    // trend hesabı: son iki kayıttan pozisyon farkı
+    const trendMap = {};
+    for (const row of recent.rows) {
+      const key = `${row.domain}|${row.keyword}|${row.engine}`;
+      if (!trendMap[key]) trendMap[key] = [];
+      trendMap[key].push(row.position);
+    }
+    const seenMap = {};
+    for (const s of seen.rows) seenMap[`${s.domain}|${s.keyword}|${s.engine}`] = s;
+
+    const competitors = current.rows.map(r => {
+      const key = `${r.domain}|${r.keyword}|${r.engine}`;
+      const posHist = trendMap[key] || [];
+      const prev = posHist.length > 1 ? posHist[1] : null;
+      const meta = seenMap[key] || {};
+      return {
+        ...r,
+        first_seen: meta.first_seen || null,
+        last_seen: meta.last_seen || null,
+        checks: meta.checks || 0,
+        trend: prev === null ? 'new' : (prev === 0 ? 'new' : (r.position === 0 ? 'out' : (r.position < prev ? 'up' : (r.position > prev ? 'down' : 'same')))),
+        position_change: prev !== null && prev > 0 ? prev - r.position : null,
+      };
+    });
+
+    res.json(competitors);
+  } catch (err) {
+    console.error('[SERP] Rakip listesi hatası:', formatError(err));
+    res.status(500).json({ error: 'Rakip verileri alınırken hata oluştu' });
+  }
+});
+
 // Health check — container healthcheck + traefik için (rate limit / auth / cache dışı)
 app.get('/healthz', (req, res) => {
   res.json({ ok: true, uptime: process.uptime() });

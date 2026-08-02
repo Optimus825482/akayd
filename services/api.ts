@@ -253,6 +253,15 @@ export const serpAPI = {
   triggerCheck: () => apiCall("/serp-rankings/check", { method: 'POST' }),
   triggerCheckKeyword: (keywordId: number) =>
     apiCall(`/serp-rankings/check/${keywordId}`, { method: 'POST' }),
+  // Dinamik rakip tespiti (serp_competitors)
+  getCompetitors: (params: { keyword?: string; engine?: string; domain?: string; days?: number }) => {
+    const qs = new URLSearchParams();
+    if (params.keyword) qs.set('keyword', params.keyword);
+    if (params.engine) qs.set('engine', params.engine);
+    if (params.domain) qs.set('domain', params.domain);
+    qs.set('days', String(params.days || 30));
+    return apiCall(`/serp-rankings/competitors?${qs.toString()}`);
+  },
 };
 
 export default {

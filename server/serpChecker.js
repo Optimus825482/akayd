@@ -72,14 +72,14 @@ async function scrapeGoogle(query, domain) {
       }
     });
 
-    // Dedupe and find domain match
-    const unique = [...new Set(results)];
-    for (let i = 0; i < Math.min(unique.length, 50); i++) {
-      if (unique[i].includes(domain)) {
-        return { position: i + 1, url: unique[i] };
-      }
-    }
-    return { position: 0, url: null };
+    // Sıralı sonuçları döndür — hem kendi pozisyonu hem rakip tespiti için
+    const unique = [...new Set(results)].slice(0, 50);
+    const ownPos = unique.findIndex(u => u.includes(domain)) + 1;
+    return {
+      position: ownPos,
+      url: ownPos > 0 ? unique[ownPos - 1] : null,
+      results: unique.map((u, i) => ({ url: u, position: i + 1 })),
+    };
   } catch (err) {
     console.error(`[SERP] Google scrape error for "${query}":`, formatError(err));
     return null;
@@ -106,13 +106,13 @@ async function scrapeYandex(query, domain) {
       }
     });
 
-    const unique = [...new Set(results)];
-    for (let i = 0; i < Math.min(unique.length, 50); i++) {
-      if (unique[i].includes(domain)) {
-        return { position: i + 1, url: unique[i] };
-      }
-    }
-    return { position: 0, url: null };
+    const unique = [...new Set(results)].slice(0, 50);
+    const ownPos = unique.findIndex(u => u.includes(domain)) + 1;
+    return {
+      position: ownPos,
+      url: ownPos > 0 ? unique[ownPos - 1] : null,
+      results: unique.map((u, i) => ({ url: u, position: i + 1 })),
+    };
   } catch (err) {
     console.error(`[SERP] Yandex scrape error for "${query}":`, formatError(err));
     return null;
@@ -139,16 +139,41 @@ async function scrapeBing(query, domain) {
       }
     });
 
-    const unique = [...new Set(results)];
-    for (let i = 0; i < Math.min(unique.length, 50); i++) {
-      if (unique[i].includes(domain)) {
-        return { position: i + 1, url: unique[i] };
-      }
-    }
-    return { position: 0, url: null };
+    const unique = [...new Set(results)].slice(0, 50);
+    const ownPos = unique.findIndex(u => u.includes(domain)) + 1;
+    return {
+      position: ownPos,
+      url: ownPos > 0 ? unique[ownPos - 1] : null,
+      results: unique.map((u, i) => ({ url: u, position: i + 1 })),
+    };
   } catch (err) {
     console.error(`[SERP] Bing scrape error for "${query}":`, formatError(err));
     return null;
+  }
+}
+
+// SERP ilk 10'undan rakip domain'leri tespit et ve serp_competitors'a kaydet.
+// Kullanıcı bir şey girmez — her kontrol'de otomatik. Kendi domain'lerimiz hariç.
+async function saveCompetitors(db, keyword, engine, results) {
+  if (!results || !Array.isArray(results)) return;
+  try {
+    const values = [];
+    const params = [];
+    for (const r of results.slice(0, 10)) {
+      let hostname;
+      try { hostname = new URL(r.url).hostname.replace(/^www\./, ''); } catch { continue; }
+      if (OWN_DOMAINS.includes(hostname) || hostname === '') continue; // kendi site, atla
+      params.push(keyword, engine, hostname, r.position, r.url);
+      values.push(`($${params.length - 4}, $${params.length - 3}, $${params.length - 2}, $${params.length - 1}, $${params.length})`);
+    }
+    if (values.length > 0) {
+      await db.query(
+        `INSERT INTO serp_competitors (keyword, engine, domain, position, url) VALUES ${values.join(',')} ON CONFLICT DO NOTHING`,
+        params
+      );
+    }
+  } catch (err) {
+    console.error(`[SERP] Rakip kaydetme hatası "${keyword}" ${engine}:`, formatError(err));
   }
 }
 
@@ -171,6 +196,11 @@ async function checkKeyword(db, keyword, engine, domain) {
         [keyword, keywordId, engine, result.position, result.url, domain]
       );
       console.log(`[SERP:${domain}] ${engine}: "${keyword}" → #${result.position || 'sıralama dışı'}`);
+
+      // Dinamik rakip tespiti — ilk 10 sonucu serp_competitors'a kaydet (GSC sonucu results içermez, atlanır)
+      if (result.results) {
+        await saveCompetitors(db, keyword, engine, result.results);
+      }
     } catch (dbErr) {
       console.error(`[SERP] DB insert error for "${keyword}" ${engine}:`, formatError(dbErr));
     }

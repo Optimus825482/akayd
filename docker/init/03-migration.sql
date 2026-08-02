@@ -57,3 +57,19 @@ DELETE FROM serp_rankings a USING serp_rankings b
     AND a.domain = b.domain AND a.checked_at = b.checked_at;
 CREATE UNIQUE INDEX IF NOT EXISTS uq_serp_rankings_dedup
   ON serp_rankings (keyword, engine, domain, checked_at);
+
+-- Dinamik rakip tespiti (mevcut DB'ler için)
+CREATE TABLE IF NOT EXISTS serp_competitors (
+  id SERIAL PRIMARY KEY,
+  keyword VARCHAR(255) NOT NULL,
+  engine VARCHAR(20) NOT NULL CHECK (engine IN ('google', 'yandex', 'bing')),
+  domain VARCHAR(255) NOT NULL,
+  position INTEGER NOT NULL,
+  title VARCHAR(500) DEFAULT NULL,
+  url VARCHAR(500) DEFAULT NULL,
+  checked_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_serp_competitors_dedup
+  ON serp_competitors (keyword, engine, domain, position, checked_at);
+CREATE INDEX IF NOT EXISTS idx_serp_competitors_domain ON serp_competitors (domain);
+CREATE INDEX IF NOT EXISTS idx_serp_competitors_checked_at ON serp_competitors (checked_at);
